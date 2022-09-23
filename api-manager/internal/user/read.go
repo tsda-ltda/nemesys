@@ -10,14 +10,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// User struct for MGetHandler responses
+// User struct for MGetHandler json responses
 type _MGetUser struct {
 	Id       int    `json:"id"`
 	Username string `json:"username"`
 	Name     string `json:"name"`
 }
 
-// User struct for GetHandler responses
+// User struct for GetHandler json responses
 type _GetUser struct {
 	Id       int    `json:"id"`
 	Username string `json:"username"`
