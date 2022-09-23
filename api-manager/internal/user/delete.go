@@ -12,7 +12,7 @@ import (
 // Deletes user from databse
 // Responses:
 //   - 400 If invalid id
-//   - 400 If user doens't exists
+//   - 404 If user not founded
 //   - 201 If succeeded
 func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {

@@ -14,8 +14,7 @@ import (
 // Responses:
 //   - 400 If invalid body
 //   - 400 If user's fields are invalid
-//   - 400 If username is already in use
-//   - 400 If email is already in use
+//   - 404 If user not founded
 //   - 200 If succeeded
 func UpdateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
