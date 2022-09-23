@@ -40,6 +40,9 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
+		// set id
+		user.Id = id
+
 		// check if user exists
 		e, err := api.PgConn.Users.Exists(c.Request.Context(), id)
 		if err != nil {
@@ -56,6 +59,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		_, err = api.PgConn.Users.Update(c.Request.Context(), user)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
+			log.Printf("\nfail to update user, err: %s", err)
 			return
 		}
 
