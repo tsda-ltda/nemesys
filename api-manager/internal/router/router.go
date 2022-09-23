@@ -11,8 +11,10 @@ func Set(api *api.API) {
 	// get api routes
 	r := api.Router
 
-	// user CUD
+	// user CRUD
+	r.GET("/users", user.MGetHandler(api))
 	r.POST("/users", user.CreateHandler(api))
-	r.DELETE("/users/:id", user.DeleteHandler(api))
+	r.GET("/users/:id", user.GetHandler(api))
 	r.PATCH("/users/:id", user.UpdateHandler(api))
+	r.DELETE("/users/:id", user.DeleteHandler(api))
 }
