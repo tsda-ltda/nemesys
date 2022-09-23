@@ -16,5 +16,11 @@ func (pg *PgConn) Init() error {
 		return err
 	}
 
+	// create teams table
+	_, err = pg.Teams.CreateTable(ctx)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

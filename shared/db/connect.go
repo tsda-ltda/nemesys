@@ -26,5 +26,8 @@ func ConnectToPG(url string) (*PgConn, error) {
 		Users: UsersORM{
 			conn: conn,
 		},
+		Teams: TeamsORM{
+			conn: conn,
+		},
 	}, nil
 }
