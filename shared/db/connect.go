@@ -20,7 +20,11 @@ func ConnectToPG(url string) (*PgConn, error) {
 		return nil, err
 	}
 
+	// create ORMs
 	return &PgConn{
-		conn,
+		Conn: conn,
+		Users: UsersORM{
+			conn: conn,
+		},
 	}, nil
 }
