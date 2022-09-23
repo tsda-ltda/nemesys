@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 )
@@ -43,15 +44,39 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		// set id
 		user.Id = id
 
-		// check if user exists
-		e, err := api.PgConn.Users.Exists(c.Request.Context(), id)
+		var exists, usernameInUse, emailInUse bool
+		sql := `SELECT EXISTS (
+				SELECT 1 FROM users WHERE id = $1
+			) as EX1, EXISTS (
+				SELECT 1 FROM users WHERE id != $1 AND username = $2
+			) as EX2, EXISTS (
+				SELECT 1 FROM users WHERE id != $1 AND email = $3
+			) as EX3
+		`
+		err = api.PgConn.QueryRow(c.Request.Context(), sql, id, user.Username, user.Email).Scan(
+			&exists, &usernameInUse, &emailInUse,
+		)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to query user, err: %s", err)
+			log.Printf("\nfail to query in users, err: %s", err)
 			return
 		}
-		if !e {
+
+		// check if user exists
+		if !exists {
 			c.Status(http.StatusNotFound)
+			return
+		}
+
+		// check if username is in use
+		if usernameInUse {
+			c.JSON(http.StatusBadRequest, tools.NewMsg("username already in use"))
+			return
+		}
+
+		// check if email is in use
+		if emailInUse {
+			c.JSON(http.StatusBadRequest, tools.NewMsg("email already in use"))
 			return
 		}
 
