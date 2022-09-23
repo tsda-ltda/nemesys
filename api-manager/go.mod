@@ -26,7 +26,7 @@ require (
 )
 
 require (
-	github.com/fernandotsda/nemesys/shared v0.0.0-20220923145321-40ebb9b69569
+	github.com/fernandotsda/nemesys/shared v0.0.0-20220923194335-1d451947b0fd
 	github.com/gin-gonic/gin v1.8.1
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
