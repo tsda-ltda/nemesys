@@ -45,7 +45,7 @@ func (u *UsersORM) Create(ctx context.Context, user models.User) (pgconn.Command
 func (u *UsersORM) Update(ctx context.Context, user models.User) (pgconn.CommandTag, error) {
 	sql := `UPDATE users SET 
 		(name, username, password, email, role, teams_ids) =
-		($1, $2, $3, $4, $5, $6)
+		($1, $2, $3, $4, $5, $6) WHERE id = $7
 	`
 	return u.conn.Exec(ctx, sql,
 		user.Name,
@@ -54,6 +54,7 @@ func (u *UsersORM) Update(ctx context.Context, user models.User) (pgconn.Command
 		user.Email,
 		user.Role,
 		user.TeamsIds,
+		user.Id,
 	)
 }
 
