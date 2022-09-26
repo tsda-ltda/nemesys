@@ -25,7 +25,7 @@ func (u *TeamsORM) CreateTable(ctx context.Context) (pgconn.CommandTag, error) {
 
 // Creates a new user
 func (u *TeamsORM) Create(ctx context.Context, team models.Team) (pgconn.CommandTag, error) {
-	sql := `INSERT INTO users (name, ident, users_ids)
+	sql := `INSERT INTO teams (name, ident, users_ids)
 		VALUES($1, $2, $3)
 	`
 	return u.conn.Exec(ctx, sql,
