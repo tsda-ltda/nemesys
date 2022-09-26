@@ -14,7 +14,7 @@ import (
 // Creates a new user on databse
 // Responses:
 //   - 400 If invalid body
-//   - 400 If user's fields are invalid
+//   - 400 If json fields are invalid
 //   - 404 If user not founded
 //   - 200 If succeeded
 func UpdateHandler(api *api.API) func(c *gin.Context) {

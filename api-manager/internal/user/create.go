@@ -13,7 +13,7 @@ import (
 // Creates a new user on databse
 // Responses:
 //   - 400 If invalid body
-//   - 400 If user's fields are invalid
+//   - 400 If json fields are invalid
 //   - 400 If username is already in use
 //   - 400 If email is already in use
 //   - 200 If succeeded

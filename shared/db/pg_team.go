@@ -18,12 +18,12 @@ func (u *TeamsORM) CreateTable(ctx context.Context) (pgconn.CommandTag, error) {
 		id serial4 PRIMARY KEY,
 		name VARCHAR (50) NOT NULL,
 		ident VARCHAR (50) UNIQUE NOT NULL,
-		users_ids INT[]
+		users_ids INT[] NOT NULL,
 	)`
 	return u.conn.Exec(ctx, sql)
 }
 
-// Creates a new user
+// Creates a new team
 func (u *TeamsORM) Create(ctx context.Context, team models.Team) (pgconn.CommandTag, error) {
 	sql := `INSERT INTO teams (name, ident, users_ids)
 		VALUES($1, $2, $3)
@@ -55,7 +55,7 @@ func (u *TeamsORM) Delete(ctx context.Context, id int) (pgconn.CommandTag, error
 	return u.conn.Exec(ctx, sql, id)
 }
 
-// Check by id if user exists
+// Check by id if team exists
 func (u *TeamsORM) Exists(ctx context.Context, id int) (bool, error) {
 	var e bool
 	sql := `SELECT EXISTS(SELECT 1 FROM teams WHERE id = $1)`

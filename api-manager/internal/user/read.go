@@ -31,7 +31,7 @@ type _GetUser struct {
 // Responses:
 //   - 400 If invalid id
 //   - 404 If user not foud
-//   - 200 If succeeded, containing the users
+//   - 200 If succeeded
 func GetHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		// get id from param
@@ -74,14 +74,14 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 	}
 }
 
-// Get multiple users in database
+// Get multiple users in database.
 // Params:
 //   - "limit" Limit of users returned. Default is 30, max is 30, min is 0.
 //   - "offset" Offset for searching. Default is 0, min is 0.
 //
 // Responses:
-//   - 400 If invalid params
-//   - 200 If succeeded, containing the users
+//   - 400 If invalid params.
+//   - 200 If succeeded.
 func MGetHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		// db query params
