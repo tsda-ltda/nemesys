@@ -1,3 +1,4 @@
 *.env
 *.exe
 lauch.json
+*/.vscode/*
