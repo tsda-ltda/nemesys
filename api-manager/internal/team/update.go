@@ -1,0 +1,90 @@
+package team
+
+import (
+	"log"
+	"net/http"
+	"strconv"
+
+	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	"github.com/gin-gonic/gin"
+)
+
+// Team struct for CreateHandler json requests
+type _UpdateTeam struct {
+	Name  string `json:"name" validate:"required,max=50,min=2"`
+	Ident string `json:"ident" validate:"required,max=50,min=2"`
+}
+
+// Updates a team on database.
+// Responses:
+//   - 400 If invalid id.
+//   - 400 If invalid body.
+//   - 400 If json fields are invalid
+//   - 400 If ident is already in use.
+//   - 404 If team does not exists.
+//   - 200 If succeeded.
+func UpdateHandler(api *api.API) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		// get team id
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
+		// bind team
+		var team _UpdateTeam
+		err = c.ShouldBind(&team)
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
+		// validate team
+		err = api.Validate.Struct(team)
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
+		// check if ident exists in database
+		var identInUse bool
+		sql := `SELECT EXISTS (
+				SELECT 1 FROM teams WHERE ident = $1 AND id != $2
+			);
+		`
+		// query row
+		err = api.PgConn.QueryRow(c.Request.Context(), sql, team.Ident, id).Scan(&identInUse)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			log.Printf("\nfail to query team's ident, err: %s", err)
+			return
+		}
+
+		// check if ident is in use
+		if identInUse {
+			c.JSON(http.StatusBadRequest, tools.NewMsg("ident already in use"))
+			return
+		}
+
+		// update team in database
+		sql = `UPDATE teams SET (name, ident) = ($1, $2) WHERE id = $3`
+		f, err := api.PgConn.Exec(c.Request.Context(), sql, team.Name, team.Ident, id)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			log.Printf("\nfail to update team, err: %s", err)
+			return
+		}
+
+		// check if team exists
+		if f.RowsAffected() == 0 {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		log.Printf("\nteam '%s' updated successfully", team.Ident)
+
+		c.Status(http.StatusOK)
+	}
+}
