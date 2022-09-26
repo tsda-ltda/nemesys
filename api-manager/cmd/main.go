@@ -12,7 +12,7 @@ func main() {
 	// load enviroment
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("fail to load enviroment, err: %s", err)
+		log.Printf("\nfail to load enviroment file, err: %s", err)
 	}
 
 	// create api
