@@ -7,6 +7,7 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,14 +16,6 @@ type _MGetTeam struct {
 	Id    int    `json:"id"`
 	Name  string `json:"name"`
 	Ident string `json:"ident"`
-}
-
-// Team struct for GetHandler json responses
-type _GetTeam struct {
-	Id       int    `json:"id"`
-	Name     string `json:"name"`
-	Ident    string `json:"ident"`
-	UsersIds []int  `json:"users-ids"`
 }
 
 // Get team in database
@@ -52,7 +45,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// get team
-		var team _GetTeam
+		var team models.Team
 		sql := `SELECT id, name, ident, users_ids FROM teams WHERE id = $1`
 		err = api.PgConn.QueryRow(c.Request.Context(), sql, id).Scan(
 			&team.Id,
