@@ -35,31 +35,36 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// Check if username is in use
-		e, err := api.PgConn.Users.ExistsByUsername(c.Request.Context(), user.Username)
+		// check if username and email exists in database
+		var usernameInUse, emailInUse bool
+		sql := `SELECT EXISTS (
+				SELECT 1 FROM users WHERE username = $1
+			) as EX1, EXISTS (
+				SELECT 1 FROM users WHERE email = $2
+			) as EX2;
+		`
+
+		// query row
+		err = api.PgConn.QueryRow(c.Request.Context(), sql, user.Username, user.Email).Scan(&usernameInUse, &emailInUse)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to query username, err: %s", err)
+			log.Printf("\nfail to query username and email, err: %s", err)
 			return
 		}
-		if e {
-			c.JSON(http.StatusBadRequest, tools.NewMsg("username already exists"))
+
+		// check if username is in use
+		if usernameInUse {
+			c.JSON(http.StatusBadRequest, tools.NewMsg("username already in use"))
 			return
 		}
 
 		// check if email is in use
-		e, err = api.PgConn.Users.ExistsByEmail(c.Request.Context(), user.Email)
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to query email, err: %s", err)
-			return
-		}
-		if e {
-			c.JSON(http.StatusBadRequest, tools.NewMsg("email already exists"))
+		if emailInUse {
+			c.JSON(http.StatusBadRequest, tools.NewMsg("email already in use"))
 			return
 		}
 
-		// create user
+		// save user in database
 		_, err = api.PgConn.Users.Create(c.Request.Context(), user)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
