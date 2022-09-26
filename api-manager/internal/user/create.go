@@ -6,20 +6,29 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
-	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 )
 
-// Creates a new user on databse
+// User struct for CreateHandler json responses.
+type _CreateUser struct {
+	Id       int    `json:"id" validate:"-"`
+	Role     int    `json:"role" validate:"required"`
+	Name     string `json:"name" validate:"required,min=2,max=50"`
+	Username string `json:"username" validate:"required,min=3,max=50"`
+	Password string `json:"password" validate:"required,min=5,max=50"`
+	Email    string `json:"email" validate:"required,email"`
+}
+
+// Creates a new user on database.
 // Responses:
-//   - 400 If invalid body
-//   - 400 If json fields are invalid
-//   - 400 If username is already in use
-//   - 400 If email is already in use
-//   - 200 If succeeded
+//   - 400 If invalid body.
+//   - 400 If json fields are invalid.
+//   - 400 If username is already in use.
+//   - 400 If email is already in use.
+//   - 200 If succeeded.
 func CreateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		var user models.User
+		var user _CreateUser
 
 		// bind user
 		err := c.ShouldBind(&user)
@@ -65,7 +74,15 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// save user in database
-		_, err = api.PgConn.Users.Create(c.Request.Context(), user)
+		sql = `INSERT INTO users (name, username, password, email, role)
+		VALUES($1, $2, $3, $4, $5)`
+		_, err = api.PgConn.Exec(c.Request.Context(), sql,
+			user.Name,
+			user.Username,
+			user.Password,
+			user.Email,
+			user.Role,
+		)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			log.Printf("\nfail to create user, err: %s", err)

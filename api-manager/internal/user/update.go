@@ -7,16 +7,16 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
-	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 )
 
-// Creates a new user on databse
+// Creates a new user on database.
 // Responses:
-//   - 400 If invalid body
-//   - 400 If json fields are invalid
-//   - 404 If user not founded
-//   - 200 If succeeded
+//   - 400 If invalid body.
+//   - 400 If json fields are invalid.
+//   - 400 If username or email already in use.
+//   - 404 If user not founded.
+//   - 200 If succeeded.
 func UpdateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		// get id param
@@ -27,7 +27,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// bind user
-		var user models.User
+		var user _CreateUser
 		err = c.ShouldBind(&user)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -81,7 +81,18 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// update user
-		_, err = api.PgConn.Users.Update(c.Request.Context(), user)
+		sql = `UPDATE users SET 
+		(name, username, password, email, role) =
+		($1, $2, $3, $4, $5) WHERE id = $6
+		`
+		_, err = api.PgConn.Exec(c.Request.Context(), sql,
+			&user.Name,
+			&user.Username,
+			&user.Password,
+			&user.Email,
+			&user.Role,
+			id,
+		)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			log.Printf("\nfail to update user, err: %s", err)
