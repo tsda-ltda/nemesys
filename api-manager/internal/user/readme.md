@@ -32,11 +32,11 @@ Creates a new user.
 
 ## Update
 
-Updates a user.
+Updates a user by id.
 
 ### Details
 
-- **Route URL**: `POST` `/users/:id`
+- **Route URL**: `PATCH` `/users/:id`
 - **Parameters**: No parameters.
 - **Body**:
 
@@ -61,7 +61,7 @@ Updates a user.
 
 ## Delete
 
-Deletes a user.
+Deletes a user by id.
 
 ### Details
 
@@ -74,6 +74,10 @@ Deletes a user.
   - 200 If succeeded.
 
 ## Get users
+
+Get a list of users.
+
+### Details
 
 - **Route URL**: `GET` `/users`
 - **Parameters**:
@@ -92,6 +96,10 @@ Deletes a user.
 ```
 
 ## Get user
+
+Get a user by id.
+
+### Details
 
 - **Route URL**: `GET` `/users/:id`
 - **Parameters**: No parameters.
