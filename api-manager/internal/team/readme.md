@@ -118,7 +118,7 @@ Update users that are part of the team.
 
 ### Details
 
-- **Route URL**: `PATCH` `/teams/:(ident or id)`
+- **Route URL**: `PATCH` `/teams/:(ident or id)/users`
 - **Parameters**: No parameters.
 - **Body**:
 
