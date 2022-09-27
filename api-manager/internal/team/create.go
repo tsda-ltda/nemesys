@@ -3,6 +3,7 @@ package team
 import (
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -13,6 +14,7 @@ import (
 type _CreateTeam struct {
 	Name  string `json:"name" validate:"required,max=50,min=2"`
 	Ident string `json:"ident" validate:"required,max=50,min=2"`
+	Descr string `json:"descr" validate:"max=255"`
 }
 
 // Creates a new team on databse.
@@ -39,6 +41,13 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
+		// validate ident
+		_, err = strconv.Atoi(team.Ident)
+		if err == nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
 		// check if ident exists in database
 		var identInUse bool
 		sql := `SELECT EXISTS (
@@ -61,8 +70,8 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// save team in database
-		sql = `INSERT INTO teams (name, ident, users_ids) VALUES($1, $2, $3)`
-		_, err = api.PgConn.Exec(c.Request.Context(), sql, team.Name, team.Ident, []int{})
+		sql = `INSERT INTO teams (name, descr, ident, users_ids) VALUES($1, $2, $3, $4)`
+		_, err = api.PgConn.Exec(c.Request.Context(), sql, team.Name, team.Descr, team.Ident, []int{})
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			log.Printf("\nfail to create team, err: %s", err)
