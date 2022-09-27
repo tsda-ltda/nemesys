@@ -17,7 +17,7 @@ func (u *UsersORM) CreateTable(ctx context.Context) (pgconn.CommandTag, error) {
 		id serial4 PRIMARY KEY,
 		name VARCHAR (50) NOT NULL,
 		username VARCHAR (50) UNIQUE NOT NULL,
-		password VARCHAR (50) NOT NULL,
+		password VARCHAR (255) NOT NULL,
 		email VARCHAR (255) UNIQUE NOT NULL,
 		role INT2 NOT NULL,
 		teams_ids INT[]
