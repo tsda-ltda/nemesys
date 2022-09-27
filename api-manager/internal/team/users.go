@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/gin-gonic/gin"
@@ -17,7 +16,6 @@ type _TeamUsers struct {
 
 // Updates a team - users relation on databse.
 // Responses:
-//   - 400 If invalid id.
 //   - 400 If invalid body.
 //   - 400 If json is invalid or have duplicated elements.
 //   - 404 If team does not exists.
@@ -25,9 +23,9 @@ type _TeamUsers struct {
 func UsersHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		// get team id
-		id, err := strconv.Atoi(c.Param("id"))
+		id, err := getId(api, c)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.Status(http.StatusNotFound)
 			return
 		}
 
@@ -58,15 +56,20 @@ func UsersHandler(api *api.API) func(c *gin.Context) {
 		// get prev users
 		var prevUsers []int
 		sql := `SELECT users_ids FROM teams WHERE id = $1`
-		err = api.PgConn.QueryRow(c.Request.Context(), sql, id).Scan(&prevUsers)
+		rows, err := api.PgConn.Query(c.Request.Context(), sql, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			log.Printf("\nfail to query users_ids from teams, err: %s", err)
 			return
 		}
 
-		// check if team exists
-		if prevUsers == nil {
+		// scan rows
+		for rows.Next() {
+			rows.Scan(&prevUsers)
+		}
+
+		// check if team doesn't exists
+		if rows.CommandTag().RowsAffected() == 0 {
 			c.Status(http.StatusNotFound)
 			return
 		}
