@@ -18,6 +18,7 @@ func (u *TeamsORM) CreateTable(ctx context.Context) (pgconn.CommandTag, error) {
 		id serial4 PRIMARY KEY,
 		name VARCHAR (50) NOT NULL,
 		ident VARCHAR (50) UNIQUE NOT NULL,
+		desc VARCHAR (255) NOT NULL,
 		users_ids INT[] NOT NULL,
 	)`
 	return u.conn.Exec(ctx, sql)
@@ -25,12 +26,13 @@ func (u *TeamsORM) CreateTable(ctx context.Context) (pgconn.CommandTag, error) {
 
 // Creates a new team
 func (u *TeamsORM) Create(ctx context.Context, team models.Team) (pgconn.CommandTag, error) {
-	sql := `INSERT INTO teams (name, ident, users_ids)
+	sql := `INSERT INTO teams (name, ident, desc, users_ids)
 		VALUES($1, $2, $3)
 	`
 	return u.conn.Exec(ctx, sql,
 		team.Name,
 		team.Ident,
+		team.Desc,
 		team.UsersIds,
 	)
 }
@@ -38,13 +40,14 @@ func (u *TeamsORM) Create(ctx context.Context, team models.Team) (pgconn.Command
 // Updates a team
 func (u *TeamsORM) Update(ctx context.Context, team models.Team) (pgconn.CommandTag, error) {
 	sql := `UPDATE teams SET
-		(name, users_ids, ident) =
+		(name, users_ids, ident, desc) =
 		($1, $2, $3) WHERE id = $4
 	`
 	return u.conn.Exec(ctx, sql,
 		team.Name,
 		team.UsersIds,
 		team.Ident,
+		team.Desc,
 		team.Id,
 	)
 }

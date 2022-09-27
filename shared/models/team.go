@@ -5,4 +5,5 @@ type Team struct {
 	UsersIds []int  `json:"users-ids" validate:"required"`
 	Name     string `json:"name" validate:"required,min=2,max=50"`
 	Ident    string `json:"ident" validate:"required,min=2,max=50"`
+	Desc     string `json:"desc" validate:"max=255"`
 }
