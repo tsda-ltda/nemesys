@@ -3,7 +3,6 @@ package team
 import (
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -16,46 +15,47 @@ type _MGetTeam struct {
 	Id    int    `json:"id"`
 	Name  string `json:"name"`
 	Ident string `json:"ident"`
+	Descr string `json:"descr"`
 }
 
 // Get team in database
 // Responses:
-//   - 400 If invalid id
 //   - 404 If team not foud
 //   - 200 If succeeded
 func GetHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		// get id from param
-		id, err := strconv.Atoi(c.Param("id"))
+		// get team id
+		id, err := getId(api, c)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
-			return
-		}
-
-		// check if team exists
-		e, err := api.PgConn.Teams.Exists(c.Request.Context(), id)
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to query team, err: %s", err)
-			return
-		}
-		if !e {
 			c.Status(http.StatusNotFound)
 			return
 		}
 
 		// get team
 		var team models.Team
-		sql := `SELECT id, name, ident, users_ids FROM teams WHERE id = $1`
-		err = api.PgConn.QueryRow(c.Request.Context(), sql, id).Scan(
-			&team.Id,
-			&team.Name,
-			&team.Ident,
-			&team.UsersIds,
-		)
+		sql := `SELECT users_ids, name, ident FROM teams WHERE id = $1`
+		rows, err := api.PgConn.Query(c.Request.Context(), sql, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			log.Printf("\nfail to query team, err: %s", err)
+			return
+		}
+
+		// scan results
+		for rows.Next() {
+			rows.Scan(
+				&team.UsersIds,
+				&team.Name,
+				&team.Name,
+			)
+		}
+
+		// set id
+		team.Id = id
+
+		// check if team doesn't exists
+		if rows.CommandTag().RowsAffected() == 0 {
+			c.Status(http.StatusNotFound)
 			return
 		}
 
