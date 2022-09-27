@@ -14,11 +14,11 @@ import (
 type _UpdateTeam struct {
 	Name  string `json:"name" validate:"required,max=50,min=2"`
 	Ident string `json:"ident" validate:"required,max=50,min=2"`
+	Descr string `json:"descr" validate:"max=255"`
 }
 
 // Updates a team on database.
 // Responses:
-//   - 400 If invalid id.
 //   - 400 If invalid body.
 //   - 400 If json fields are invalid
 //   - 400 If ident is already in use.
@@ -27,9 +27,9 @@ type _UpdateTeam struct {
 func UpdateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		// get team id
-		id, err := strconv.Atoi(c.Param("id"))
+		id, err := getId(api, c)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.Status(http.StatusNotFound)
 			return
 		}
 
@@ -48,29 +48,35 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// check if ident exists in database
-		var identInUse bool
-		sql := `SELECT EXISTS (
-				SELECT 1 FROM teams WHERE ident = $1 AND id != $2
-			);
-		`
-		// query row
-		err = api.PgConn.QueryRow(c.Request.Context(), sql, team.Ident, id).Scan(&identInUse)
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to query team's ident, err: %s", err)
+		// validate ident
+		_, err = strconv.Atoi(team.Ident)
+		if err == nil {
+			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		// check if ident is in use
-		if identInUse {
-			c.JSON(http.StatusBadRequest, tools.NewMsg("ident already in use"))
-			return
+		// check if ident is already in use
+		if team.Ident != c.Param("ident") {
+			var identInUse bool
+			sql := `SELECT EXISTS (SELECT 1 FROM teams WHERE ident = $1);`
+
+			// query row
+			err = api.PgConn.QueryRow(c.Request.Context(), sql, team.Ident).Scan(&identInUse)
+			if err != nil {
+				c.Status(http.StatusInternalServerError)
+				log.Printf("\nfail to query team's ident, err: %s", err)
+				return
+			}
+
+			if identInUse {
+				c.JSON(http.StatusBadRequest, tools.NewMsg("ident already in use"))
+				return
+			}
 		}
 
 		// update team in database
-		sql = `UPDATE teams SET (name, ident) = ($1, $2) WHERE id = $3`
-		f, err := api.PgConn.Exec(c.Request.Context(), sql, team.Name, team.Ident, id)
+		sql := `UPDATE teams SET (name, ident, descr) = ($1, $2, $3) WHERE id = $4`
+		f, err := api.PgConn.Exec(c.Request.Context(), sql, team.Name, team.Ident, team.Descr, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			log.Printf("\nfail to update team, err: %s", err)
