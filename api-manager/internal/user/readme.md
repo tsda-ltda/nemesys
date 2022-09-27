@@ -101,7 +101,7 @@ Get a user by id.
 
 ### Details
 
-- **Route URL**: `GET` `/users/:id`
+- **Route URL**: `GET` `/users/:id/users`
 - **Parameters**: No parameters.
 - **Body**: No body.
 - **Responses**:
