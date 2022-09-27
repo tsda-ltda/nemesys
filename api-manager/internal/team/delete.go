@@ -43,7 +43,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// delete team
-		_, err = api.PgConn.Teams.Delete(c.Request.Context(), id)
+		_, err = api.PgConn.Exec(c.Request.Context(), "DELETE FROM teams WHERE id = $1", id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			log.Printf("\nfail to delete team, err: %s", err)
