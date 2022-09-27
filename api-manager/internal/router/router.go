@@ -22,7 +22,8 @@ func Set(api *api.API) {
 	// teams CRUD
 	r.GET("/teams", team.MGetHandler(api))
 	r.POST("/teams", team.CreateHandler(api))
-	r.GET("/teams/:id", team.GetHandler(api))
-	r.DELETE("/teams/:id", team.DeleteHandler(api))
-	r.PATCH("/teams/:id/users", team.UsersHandler(api))
+	r.PATCH("/teams/:ident", team.UpdateHandler(api))
+	r.GET("/teams/:ident", team.GetHandler(api))
+	r.DELETE("/teams/:ident", team.DeleteHandler(api))
+	r.PATCH("/teams/:ident/users", team.UsersHandler(api))
 }
