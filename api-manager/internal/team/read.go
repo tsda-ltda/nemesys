@@ -33,7 +33,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 
 		// get team
 		var team models.Team
-		sql := `SELECT users_ids, name, ident FROM teams WHERE id = $1`
+		sql := `SELECT users_ids, descr, name, ident FROM teams WHERE id = $1`
 		rows, err := api.PgConn.Query(c.Request.Context(), sql, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
@@ -45,8 +45,9 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		for rows.Next() {
 			rows.Scan(
 				&team.UsersIds,
+				&team.Descr,
 				&team.Name,
-				&team.Name,
+				&team.Ident,
 			)
 		}
 
@@ -87,7 +88,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// search teams
-		sql := `SELECT id, name, ident FROM teams LIMIT $1 OFFSET $2`
+		sql := `SELECT id, name, descr, ident FROM teams LIMIT $1 OFFSET $2`
 		rows, err := api.PgConn.Query(c.Request.Context(), sql, limit, offset)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
@@ -100,7 +101,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 		teams := []_MGetTeam{}
 		for rows.Next() {
 			var t _MGetTeam
-			rows.Scan(&t.Id, &t.Name, &t.Ident)
+			rows.Scan(&t.Id, &t.Name, &t.Descr, &t.Ident)
 			teams = append(teams, t)
 		}
 
