@@ -1,0 +1,43 @@
+# Postgresql host. Default is "127.0.0.1".
+PG_HOST=
+
+# Postgresql port. Default is "5432".
+PG_PORT=
+
+# Postgresql username. Default is "postgres".
+PG_USERNAME=
+
+# Postgresql password. Default is "postgres".
+PG_PW=
+
+# Postgresql database name. Default is "dev".
+PG_DB_NAME=
+
+# Redis for authentication host. Default is "localhost".
+RDB_AUTH_HOST=
+
+# Redis for authentication host. Default is "6379".
+RDB_AUTH_PORT=
+
+# Redis for authentication database. Default is "0".
+RDB_AUTH_DB=
+
+# Redis for authentication password. Default is "".
+RDB_AUTH_PW=
+
+# API Manager host. Default is "localhost".
+API_MANAGER_HOST=
+
+# API Manager port. Default is "9000".
+API_MANAGER_PORT=
+
+# User session cookie time to live (seconds). Default is "604900" (one week).
+USER_SESSION_TTL=
+
+# User session token character size. Default is "64".
+USER_SESSION_TOKEN_SIZE=
+
+# The bcrypt cost for hashing users password. May vary according
+# to each machine config, the recommended is to set a cost 
+# that makes '/login' route take around 200ms. Default is "11".
+USER_PW_BCRYPT_COST=
