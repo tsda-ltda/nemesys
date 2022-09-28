@@ -28,11 +28,11 @@ var (
 	APIManagerPort = "9000"
 
 	// User session cookie time to live (seconds). Default is "604900" (one week).
-	UserSessionTTL = 604800
+	UserSessionTTL = "604800"
 	// User session token character size. Default is "64".
-	UserSessionTokenSize = 64
+	UserSessionTokenSize = "64"
 	// The bcrypt cost for hashing users password. May vary according
 	// to each machine config, the recommended is to set a cost
 	// that makes '/login' route take around 200ms. Default is "11".
-	USER_PW_BCRYPT_COST = 11
+	UserPWBcryptCost = "11"
 )

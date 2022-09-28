@@ -50,4 +50,10 @@ func Init() {
 	set("RDB_AUTH_DB", &RDBAuthDB)
 	set("RDB_AUTH_PW", &RDBAuthPW)
 
+	set("API_MANAGER_HOST", &APIManagerHost)
+	set("API_MANAGER_PORT", &APIManagerPort)
+
+	set("USER_SESSION_TTL", &UserSessionTTL)
+	set("USER_SESSION_TOKEN_SIZE", &UserSessionTokenSize)
+	set("USER_PW_BCRYPT_COST", &UserPWBcryptCost)
 }
