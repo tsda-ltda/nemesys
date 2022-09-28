@@ -18,7 +18,7 @@ func (u *TeamsORM) CreateTable(ctx context.Context) (pgconn.CommandTag, error) {
 		name VARCHAR (50) NOT NULL,
 		ident VARCHAR (50) UNIQUE NOT NULL,
 		descr VARCHAR (255) NOT NULL,
-		users_ids INT[] NOT NULL,
+		users_ids INT[] NOT NULL
 	)`
 	return u.conn.Exec(ctx, sql)
 }
