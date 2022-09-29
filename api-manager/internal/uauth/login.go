@@ -1,14 +1,15 @@
-package user
+package uauth
 
 import (
 	"log"
 	"net/http"
-	"os"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
 	"github.com/fernandotsda/nemesys/api-manager/internal/roles"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,6 +20,12 @@ type _Login struct {
 	Password string `json:"password" validate:"required,min=5,max=50"`
 }
 
+// Login into a user account.
+// Responses:
+//   - 400 If invalid body.
+//   - 400 If invalid body fields.
+//   - 404 If username or password is incorrect.
+//   - 200 If succeeded.
 func LoginHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		var form _Login
@@ -72,7 +79,9 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// save session token in cookie
-		c.SetCookie(SessionCookieName, token, 1000, "/", os.Getenv("HOST"), false, true)
+		ttl, _ := strconv.Atoi(env.UserSessionTTL)
+		c.SetCookie(SessionCookieName, token, ttl, "/", env.APIManagerHost, false, true)
+
 		c.Status(http.StatusOK)
 	}
 }
