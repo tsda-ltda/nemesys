@@ -1,3 +1,9 @@
+# Default master username. Default is "admin".
+USERNAME=
+
+# Default master password (is strongly recommended to not use the default value). Default is "admin".
+PW=
+
 # Postgresql host. Default is "127.0.0.1".
 PG_HOST=
 
