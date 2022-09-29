@@ -8,6 +8,7 @@ Creates a new team.
 
 ### Details
 
+- **Role**: Manager
 - **Route URL**: `POST` `/teams`
 - **Parameters**: No parameters.
 - **Body**:
@@ -33,6 +34,7 @@ Updates a team by id or ident.
 
 ### Details
 
+- **Role**: Manager
 - **Route URL**: `PATCH` `/teams/:(ident or id)`
 - **Parameters**: No parameters.
 - **Body**:
@@ -59,6 +61,7 @@ Deletes a team by id or ident.
 
 ### Details
 
+- **Role**: Manager
 - **Route URL**: `DELETE` `/teams/:(ident or id)`
 - **Parameters**: No parameters.
 - **Body**: No body.
@@ -72,6 +75,7 @@ Get a list of teams.
 
 ### Details
 
+- **Role**: Manager
 - **Route URL**: `GET` `/teams`
 - **Parameters**:
   - "limit" Limit of teams returned. Default is 30, max is 30, min is 0.
@@ -95,6 +99,7 @@ Get a team by id or ident.
 
 ### Details
 
+- **Role**: Manager
 - **Route URL**: `GET` `/teams/:(ident or id)`
 - **Parameters**: No parameters.
 - **Body**: No body.
@@ -118,6 +123,7 @@ Update users that are part of the team.
 
 ### Details
 
+- **Role**: Manager
 - **Route URL**: `PATCH` `/teams/:(ident or id)/users`
 - **Parameters**: No parameters.
 - **Body**:
@@ -128,6 +134,7 @@ Update users that are part of the team.
 }
 ```
 
+- **Role**: Manager
 - **Responses**:
   - 400 If invalid body.
   - 400 If have duplicated users.

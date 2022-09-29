@@ -8,6 +8,7 @@ Creates a new user.
 
 ### Details
 
+- **Role**: Admin
 - **Route URL**: `POST` `/users`
 - **Parameters**: No parameters.
 - **Body**:
@@ -36,6 +37,7 @@ Updates a user by id.
 
 ### Details
 
+- **Role**: Admin
 - **Route URL**: `PATCH` `/users/:id`
 - **Parameters**: No parameters.
 - **Body**:
@@ -65,6 +67,7 @@ Deletes a user by id.
 
 ### Details
 
+- **Role**: Admin
 - **Route URL**: `DELETE` `/users/:id`
 - **Parameters**: No parameters.
 - **Body**: No body.
@@ -79,6 +82,7 @@ Get a list of users.
 
 ### Details
 
+- **Role**: Manager
 - **Route URL**: `GET` `/users`
 - **Parameters**:
   - "limit" Limit of users returned. Default is 30, max is 30, min is 0.
@@ -101,6 +105,7 @@ Get a user by id.
 
 ### Details
 
+- **Role**: Admin (or Onwer)
 - **Route URL**: `GET` `/users/:id/users`
 - **Parameters**: No parameters.
 - **Body**: No body.
