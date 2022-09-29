@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/gin-gonic/gin"
 )
@@ -58,7 +59,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to query in users, err: %s", err)
+			log.Printf("fail to query in users, err: %s", err)
 			return
 		}
 
@@ -80,22 +81,30 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
+		// hash password
+		pwHashed, err := auth.Hash(user.Password, api.UserPWBcryptCost)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			log.Printf("fail to hash password, err: %s", err)
+			return
+		}
+
 		// update user
 		sql = `UPDATE users SET 
 		(name, username, password, email, role) =
 		($1, $2, $3, $4, $5) WHERE id = $6
 		`
 		_, err = api.PgConn.Exec(c.Request.Context(), sql,
-			&user.Name,
-			&user.Username,
-			&user.Password,
-			&user.Email,
-			&user.Role,
+			user.Name,
+			user.Username,
+			pwHashed,
+			user.Email,
+			user.Role,
 			id,
 		)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to update user, err: %s", err)
+			log.Printf("fail to update user, err: %s", err)
 			return
 		}
 

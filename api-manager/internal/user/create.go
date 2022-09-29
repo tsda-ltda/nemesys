@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/gin-gonic/gin"
 )
@@ -57,7 +58,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		err = api.PgConn.QueryRow(c.Request.Context(), sql, user.Username, user.Email).Scan(&usernameInUse, &emailInUse)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to query username and email, err: %s", err)
+			log.Printf("fail to query username and email, err: %s", err)
 			return
 		}
 
@@ -73,22 +74,30 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
+		// hash password
+		pwHashed, err := auth.Hash(user.Password, api.UserPWBcryptCost)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			log.Printf("fail to hash password, err: %s", err)
+			return
+		}
+
 		// save user in database
 		sql = `INSERT INTO users (name, username, password, email, role)
 		VALUES($1, $2, $3, $4, $5)`
 		_, err = api.PgConn.Exec(c.Request.Context(), sql,
 			user.Name,
 			user.Username,
-			user.Password,
+			pwHashed,
 			user.Email,
 			user.Role,
 		)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to create user, err: %s", err)
+			log.Printf("fail to create user, err: %s", err)
 			return
 		}
-		log.Printf("\nuser '%s' created successfuly", user.Username)
+		log.Printf("user '%s' created successfuly", user.Username)
 
 		c.Status(http.StatusOK)
 	}
