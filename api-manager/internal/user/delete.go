@@ -26,7 +26,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		flag, err := api.PgConn.Exec(c.Request.Context(), "DELETE FROM users WHERE id = $1", id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to delete user, err: %s", err)
+			log.Printf("fail to delete user, err: %s", err)
 			return
 		}
 		if flag.RowsAffected() == 0 {
@@ -34,7 +34,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		log.Printf("\nuser id %d deleted successfully", id)
+		log.Printf("user id %d deleted successfully", id)
 
 		c.Status(http.StatusNoContent)
 	}

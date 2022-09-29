@@ -64,7 +64,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			err = api.PgConn.QueryRow(c.Request.Context(), sql, team.Ident).Scan(&identInUse)
 			if err != nil {
 				c.Status(http.StatusInternalServerError)
-				log.Printf("\nfail to query team's ident, err: %s", err)
+				log.Printf("fail to query team's ident, err: %s", err)
 				return
 			}
 
@@ -79,7 +79,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		f, err := api.PgConn.Exec(c.Request.Context(), sql, team.Name, team.Ident, team.Descr, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to update team, err: %s", err)
+			log.Printf("fail to update team, err: %s", err)
 			return
 		}
 
@@ -89,7 +89,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		log.Printf("\nteam '%s' updated successfully", team.Ident)
+		log.Printf("team '%s' updated successfully", team.Ident)
 
 		c.Status(http.StatusOK)
 	}

@@ -59,7 +59,7 @@ func UsersHandler(api *api.API) func(c *gin.Context) {
 		rows, err := api.PgConn.Query(c.Request.Context(), sql, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to query users_ids from teams, err: %s", err)
+			log.Printf("fail to query users_ids from teams, err: %s", err)
 			return
 		}
 
@@ -115,7 +115,7 @@ func UsersHandler(api *api.API) func(c *gin.Context) {
 		_, err = api.PgConn.Exec(c.Request.Context(), sql, users.UsersIds, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to update users_ids in team, err: %s", err)
+			log.Printf("fail to update users_ids in team, err: %s", err)
 			return
 		}
 
@@ -136,7 +136,7 @@ func updateUsersTeamsIds(removed []int, added []int, team int, api *api.API, req
 	for _, id := range removed {
 		_, err := api.PgConn.Exec(ctx, sql, id, team)
 		if err != nil {
-			log.Printf("\nfail to remove team id from user, userid: %d, err: %s", id, err)
+			log.Printf("fail to remove team id from user, userid: %d, err: %s", id, err)
 		}
 	}
 
@@ -145,7 +145,7 @@ func updateUsersTeamsIds(removed []int, added []int, team int, api *api.API, req
 	for _, id := range added {
 		_, err := api.PgConn.Exec(ctx, sql, id, team)
 		if err != nil {
-			log.Printf("\nfail to save team id in user, userid: %d, err: %s", id, err)
+			log.Printf("fail to save team id in user, userid: %d, err: %s", id, err)
 		}
 	}
 }

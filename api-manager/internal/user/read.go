@@ -45,7 +45,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		e, err := api.PgConn.Users.Exists(c.Request.Context(), id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to query user existence, err: %s", err)
+			log.Printf("fail to query user existence, err: %s", err)
 			return
 		}
 		if !e {
@@ -66,7 +66,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to query user, err: %s", err)
+			log.Printf("fail to query user, err: %s", err)
 			return
 		}
 
@@ -102,7 +102,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 		rows, err := api.PgConn.Query(c.Request.Context(), sql, limit, offset)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to query users, err: %s", err)
+			log.Printf("fail to query users, err: %s", err)
 			return
 		}
 		defer rows.Close()

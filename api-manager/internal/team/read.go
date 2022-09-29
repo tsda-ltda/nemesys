@@ -37,7 +37,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		rows, err := api.PgConn.Query(c.Request.Context(), sql, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to query team, err: %s", err)
+			log.Printf("fail to query team, err: %s", err)
 			return
 		}
 
@@ -92,7 +92,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 		rows, err := api.PgConn.Query(c.Request.Context(), sql, limit, offset)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to query teams, err: %s", err)
+			log.Printf("fail to query teams, err: %s", err)
 			return
 		}
 		defer rows.Close()
