@@ -35,7 +35,7 @@ func Init() {
 	// load env file
 	err := godotenv.Load(path)
 	if err != nil {
-		log.Printf("\nfail to load enviroment file, path: %s, err: %s", path, err)
+		log.Printf("fail to load enviroment file, path: %s, err: %s", path, err)
 	}
 
 	// set config

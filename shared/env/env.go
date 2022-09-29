@@ -2,6 +2,11 @@ package env
 
 // All enviroment variables
 var (
+	// Default master username. Default is "admin".
+	Username = "admin"
+	// Default master password (is strongly recommended to not use the default value). Default is "admin".
+	PW = "admin"
+
 	// Postgresql host. Default is "127.0.0.1".
 	PGHost = "127.0.0.1"
 	// Postgresql port. Default is "5432".
