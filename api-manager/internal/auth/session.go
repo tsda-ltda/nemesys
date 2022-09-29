@@ -43,9 +43,9 @@ func (a *Auth) ReadSessionMetadata(bytes []byte) (metadata SessionMeta, err erro
 
 // Crates a new session for a user and saves on Redis and remove any old session.
 func (a *Auth) NewSession(ctx context.Context, meta SessionMeta) (string, error) {
-	// get old session
-	oldToken, err := a.rdb.Get(ctx, ReverseSessionKey(meta.UserId)).Result()
-	if err != nil && err != redis.Nil {
+	// delete old session
+	err := a.RemoveSession(ctx, meta.UserId)
+	if err != nil {
 		return "", err
 	}
 
@@ -57,9 +57,6 @@ func (a *Auth) NewSession(ctx context.Context, meta SessionMeta) (string, error)
 
 	// create command pipeline
 	p := a.rdb.Pipeline()
-
-	// delete session and reverse session key
-	p.Del(ctx, SessionKey(oldToken), ReverseSessionKey(meta.UserId))
 
 	// save reverse session key
 	p.Set(ctx, ReverseSessionKey(meta.UserId), token, a.SessionTTL)
@@ -74,6 +71,18 @@ func (a *Auth) NewSession(ctx context.Context, meta SessionMeta) (string, error)
 	}
 
 	return token, nil
+}
+
+// RemoveSession removes a user session. If session doesn't exists returns an error.
+func (a *Auth) RemoveSession(ctx context.Context, userId int) error {
+	// get old session
+	oldToken, err := a.rdb.Get(ctx, ReverseSessionKey(userId)).Result()
+	if err != nil && err != redis.Nil {
+		return err
+	}
+
+	// delete session
+	return a.rdb.Del(ctx, SessionKey(oldToken), ReverseSessionKey(userId)).Err()
 }
 
 // Validate validates a session on Redis and return the user metadata. An error
