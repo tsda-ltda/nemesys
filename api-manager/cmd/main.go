@@ -1,31 +1,36 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/router"
-	"github.com/joho/godotenv"
+	"github.com/fernandotsda/nemesys/api-manager/internal/user"
+	"github.com/fernandotsda/nemesys/shared/env"
 )
 
 func main() {
 	// load enviroment
-	err := godotenv.Load()
-	if err != nil {
-		log.Printf("\nfail to load enviroment file, err: %s", err)
-	}
+	env.Init()
 
 	// create api
 	api, err := api.New()
 	if err != nil {
-		log.Fatalf("fail to create api, err :  %s", err)
+		log.Fatalf("%s", err)
 	}
 	defer api.Close()
+
+	// create default user
+	err = user.CreateDefaultUser(context.Background(), api)
+	if err != nil {
+		log.Fatalf("fail to create default user, err: %s", err)
+	}
 
 	// set routes
 	router.Set(api)
 
 	// listen and server
-	err = api.Run(":9000")
+	err = api.Run()
 	log.Fatalf("finished, err: %s", err)
 }
