@@ -26,7 +26,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		rows, err := api.PgConn.Query(c.Request.Context(), sql, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to query team id and users ids, err: %s", err)
+			log.Printf("fail to query team id and users ids, err: %s", err)
 			return
 		}
 
@@ -46,7 +46,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		_, err = api.PgConn.Exec(c.Request.Context(), "DELETE FROM teams WHERE id = $1", id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to delete team, err: %s", err)
+			log.Printf("fail to delete team, err: %s", err)
 			return
 		}
 

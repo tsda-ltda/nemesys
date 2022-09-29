@@ -59,7 +59,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		err = api.PgConn.QueryRow(c.Request.Context(), sql, team.Ident).Scan(&identInUse)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to query team's ident, err: %s", err)
+			log.Printf("fail to query team's ident, err: %s", err)
 			return
 		}
 
@@ -74,10 +74,10 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		_, err = api.PgConn.Exec(c.Request.Context(), sql, team.Name, team.Descr, team.Ident, []int{})
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("\nfail to create team, err: %s", err)
+			log.Printf("fail to create team, err: %s", err)
 			return
 		}
-		log.Printf("\nteam '%s' created successfuly", team.Ident)
+		log.Printf("team '%s' created successfuly", team.Ident)
 
 		c.Status(http.StatusOK)
 	}
