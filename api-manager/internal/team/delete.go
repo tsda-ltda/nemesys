@@ -21,37 +21,17 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// get users ids
-		sql := `SELECT users_ids FROM teams WHERE id = $1`
-		rows, err := api.PgConn.Query(c.Request.Context(), sql, id)
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to query team id and users ids, err: %s", err)
-			return
-		}
-
-		// scan results
-		var usersIds []int
-		for rows.Next() {
-			rows.Scan(&usersIds)
-		}
-
-		// check if team doesn't exists
-		if rows.CommandTag().RowsAffected() == 0 {
-			c.Status(http.StatusNotFound)
-			return
-		}
-
 		// delete team
-		_, err = api.PgConn.Exec(c.Request.Context(), "DELETE FROM teams WHERE id = $1", id)
+		t, err := api.PgConn.Exec(c.Request.Context(), "DELETE FROM teams WHERE id = $1", id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			log.Printf("fail to delete team, err: %s", err)
 			return
 		}
-
-		// remove team id from users
-		go updateUsersTeamsIds(usersIds, []int{}, id, api, c.Request.Context())
+		if t.RowsAffected() == 0 {
+			c.Status(http.StatusNotFound)
+			return
+		}
 
 		c.Status(http.StatusNoContent)
 	}
