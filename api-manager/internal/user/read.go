@@ -24,7 +24,6 @@ type _GetUser struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Role     string `json:"role"`
-	TeamsIds []int  `json:"teams-ids"`
 }
 
 // Get user in database
@@ -55,14 +54,13 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 
 		// get user
 		var user _GetUser
-		sql := `SELECT id, username, name, email, role, teams_ids FROM users WHERE id = $1`
+		sql := `SELECT id, username, name, email, role FROM users WHERE id = $1`
 		err = api.PgConn.QueryRow(c.Request.Context(), sql, id).Scan(
 			&user.Id,
 			&user.Username,
 			&user.Name,
 			&user.Email,
 			&user.Role,
-			&user.TeamsIds,
 		)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)

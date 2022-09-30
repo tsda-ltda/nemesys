@@ -10,8 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Team struct for MGetHandler json responses
-type _MGetTeam struct {
+// Team struct for MGetHandler and UserTeams json responses
+type _SanitizedTeam struct {
 	Id    int    `json:"id"`
 	Name  string `json:"name"`
 	Ident string `json:"ident"`
@@ -33,18 +33,17 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 
 		// get team
 		var team models.Team
-		sql := `SELECT users_ids, descr, name, ident FROM teams WHERE id = $1`
+		sql := `SELECT descr, name, ident FROM teams WHERE id = $1`
 		rows, err := api.PgConn.Query(c.Request.Context(), sql, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			log.Printf("fail to query team, err: %s", err)
 			return
 		}
-
+		defer rows.Close()
 		// scan results
 		for rows.Next() {
 			rows.Scan(
-				&team.UsersIds,
 				&team.Descr,
 				&team.Name,
 				&team.Ident,
@@ -98,9 +97,9 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 		defer rows.Close()
 
 		// scan teams
-		teams := []_MGetTeam{}
+		teams := []_SanitizedTeam{}
 		for rows.Next() {
-			var t _MGetTeam
+			var t _SanitizedTeam
 			rows.Scan(&t.Id, &t.Name, &t.Descr, &t.Ident)
 			teams = append(teams, t)
 		}

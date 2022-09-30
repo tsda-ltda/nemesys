@@ -70,8 +70,8 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// save team in database
-		sql = `INSERT INTO teams (name, descr, ident, users_ids) VALUES($1, $2, $3, $4)`
-		_, err = api.PgConn.Exec(c.Request.Context(), sql, team.Name, team.Descr, team.Ident, []int{})
+		sql = `INSERT INTO teams (name, descr, ident) VALUES($1, $2, $3)`
+		_, err = api.PgConn.Exec(c.Request.Context(), sql, team.Name, team.Descr, team.Ident)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			log.Printf("fail to create team, err: %s", err)
