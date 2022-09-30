@@ -18,8 +18,7 @@ const (
 			username VARCHAR (50) UNIQUE NOT NULL,
 			password VARCHAR (255) NOT NULL,
 			email VARCHAR (255) UNIQUE NOT NULL,
-			role INT2 NOT NULL,
-			teams_ids INT[]
+			role INT2 NOT NULL
 		);
 	`
 
@@ -29,9 +28,25 @@ const (
 			id serial4 PRIMARY KEY,
 			name VARCHAR (50) NOT NULL,
 			ident VARCHAR (50) UNIQUE NOT NULL,
-			descr VARCHAR (255) NOT NULL,
-			users_ids INT[] NOT NULL
+			descr VARCHAR (255) NOT NULL
 		);
+	`
+
+	// Creates the team-users relation table if not exists
+	sqlCreateUsersTeamsTable = `
+		CREATE TABLE IF NOT EXISTS users_teams (
+			userId int,
+			teamId int,
+
+			CONSTRAINT fk_userId
+				FOREIGN KEY(userId)
+					REFERENCES users(id)
+					ON DELETE CASCADE,
+			CONSTRAINT fk_teamId
+				FOREIGN KEY(teamId)
+					REFERENCES teams(id)
+					ON DELETE CASCADE
+		)
 	`
 )
 
@@ -55,6 +70,12 @@ func PGConnectAndInit() (conn *db.PgConn, err error) {
 	_, err = conn.Exec(ctx, sqlCreateTeamsTable)
 	if err != nil {
 		return nil, fmt.Errorf("fail to create teams table, err: %s", err)
+	}
+
+	// create teams users realtion table
+	_, err = conn.Exec(ctx, sqlCreateUsersTeamsTable)
+	if err != nil {
+		return nil, fmt.Errorf("fail to create users teams relation table, err: %s", err)
 	}
 
 	return conn, nil
