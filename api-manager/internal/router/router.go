@@ -5,6 +5,7 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/roles"
 	"github.com/fernandotsda/nemesys/api-manager/internal/team"
 	"github.com/fernandotsda/nemesys/api-manager/internal/user"
+	"github.com/fernandotsda/nemesys/shared/env"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/uauth"
@@ -13,7 +14,7 @@ import (
 // Set all api routes
 func Set(api *api.API) {
 	// get api routes
-	r := api.Router
+	r := api.Router.Group(env.APIManagerRoutesPrefix)
 
 	// User authentication
 	r.POST("/login", uauth.LoginHandler(api))
@@ -21,21 +22,30 @@ func Set(api *api.API) {
 	r.POST("/users/:id/logout", middleware.Protect(api, roles.Admin), uauth.ForceLogout(api))
 
 	// users
-	r.GET("/users", middleware.Protect(api, roles.TeamsManager), user.MGetHandler(api))
-	r.POST("/users", middleware.Protect(api, roles.Admin), user.CreateHandler(api))
-	r.GET("/users/:id", middleware.ProtectUser(api, roles.Admin), user.GetHandler(api))
-	r.PATCH("/users/:id", middleware.Protect(api, roles.Admin), user.UpdateHandler(api))
-	r.DELETE("/users/:id", middleware.Protect(api, roles.Admin), user.DeleteHandler(api))
-
-	// team management
-	tm := r.Group("/teams", middleware.Protect(api, roles.TeamsManager))
+	users := r.Group("/users")
 	{
-		tm.GET("/", team.MGetHandler(api))
-		tm.POST("/", team.CreateHandler(api))
-		tm.PATCH("/:ident", team.UpdateHandler(api))
-		tm.GET("/:ident", team.GetHandler(api))
-		tm.DELETE("/:ident", team.DeleteHandler(api))
-		tm.PATCH("/:ident/users", team.UsersHandler(api))
+		users.GET("/", middleware.Protect(api, roles.TeamsManager), user.MGetHandler(api))
+		users.POST("/", middleware.Protect(api, roles.Admin), user.CreateHandler(api))
+		users.GET("/:id", middleware.ProtectUser(api, roles.Admin), user.GetHandler(api))
+		users.PATCH("/:id", middleware.Protect(api, roles.Admin), user.UpdateHandler(api))
+		users.DELETE("/:id", middleware.Protect(api, roles.Admin), user.DeleteHandler(api))
 	}
 
+	// teams
+	teams := r.Group("/teams", middleware.Protect(api, roles.Viewer))
+	{
+		teams.GET("/", team.UserTeamsHandler(api))
+	}
+
+	// teams config
+	teamConfig := r.Group("/config/teams", middleware.Protect(api, roles.TeamsManager))
+	{
+		teamConfig.GET("/", team.MGetHandler(api))
+		teamConfig.POST("/", team.CreateHandler(api))
+		teamConfig.PATCH("/:ident", team.UpdateHandler(api))
+		teamConfig.GET("/:ident", team.GetHandler(api))
+		teamConfig.DELETE("/:ident", team.DeleteHandler(api))
+		teamConfig.POST("/:ident/users", team.AddUserHandler(api))
+		teamConfig.DELETE("/:ident/users/:userId", team.RemoveUserHandler(api))
+	}
 }
