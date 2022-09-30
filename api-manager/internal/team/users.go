@@ -1,151 +1,168 @@
 package team
 
 import (
-	"context"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/gin-gonic/gin"
 )
 
-// TeamUsers struct for UsersHandler json requests.
-type _TeamUsers struct {
-	UsersIds []int `json:"users-ids" validate:"required,max=1000"`
+// UserId struct for AddUserHandler json requests.
+type _UserId struct {
+	UserId int `json:"user-id" validate:"required"`
 }
 
-// Updates a team - users relation on databse.
+// Add a user to team.
 // Responses:
 //   - 400 If invalid body.
-//   - 400 If json is invalid or have duplicated elements.
+//   - 400 If invalid user id.
+//   - 400 If user is already a member.
 //   - 404 If team does not exists.
 //   - 200 If succeeded.
-func UsersHandler(api *api.API) func(c *gin.Context) {
+func AddUserHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		// get team id
-		id, err := getId(api, c)
-		if err != nil {
-			c.Status(http.StatusNotFound)
-			return
-		}
-
-		var users _TeamUsers
-		err = c.ShouldBind(&users)
+		teamId, err := getId(api, c)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		// validate users
-		err = api.Validate.Struct(users)
+		// get user id
+		var userId _UserId
+		err = c.ShouldBind(&userId)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		// check if has duplicated users
-		for i, id := range users.UsersIds {
-			for ii, idd := range users.UsersIds {
-				if i != ii && id == idd {
-					c.Status(http.StatusBadRequest)
-					return
-				}
-			}
+		// validate userid
+		err = api.Validate.Struct(userId)
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return
 		}
 
-		// get prev users
-		var prevUsers []int
-		sql := `SELECT users_ids FROM teams WHERE id = $1`
-		rows, err := api.PgConn.Query(c.Request.Context(), sql, id)
+		// query realation existence
+		var e bool
+		sql := `SELECT EXISTS (SELECT 1 FROM users_teams WHERE userId = $1 AND teamId = $2)`
+		err = api.PgConn.QueryRow(c.Request.Context(), sql, userId.UserId, teamId).Scan(&e)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to query users_ids from teams, err: %s", err)
+			log.Printf("fail to query users_teams, err: %s", err)
 			return
 		}
 
-		// scan rows
-		for rows.Next() {
-			rows.Scan(&prevUsers)
-		}
-
-		// check if team doesn't exists
-		if rows.CommandTag().RowsAffected() == 0 {
-			c.Status(http.StatusNotFound)
+		// check if realation already exists
+		if e {
+			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		// find added users
-		added := []int{}
-		for _, new := range users.UsersIds {
-			e := false
-			for _, old := range prevUsers {
-				if new == old {
-					e = true
-					break
-				}
-			}
-			if !e {
-				added = append(added, new)
-			}
-		}
-
-		// find removed users
-		removed := []int{}
-		for _, old := range prevUsers {
-			e := false
-			for _, new := range users.UsersIds {
-				if new == old {
-					e = true
-					break
-				}
-			}
-			if !e {
-				removed = append(removed, old)
-			}
-		}
-
-		// check if no member was added or removed
-		if len(added) == 0 && len(removed) == 0 {
-			c.Status(http.StatusOK)
-			return
-		}
-
-		// set team's users_ids
-		sql = `UPDATE teams SET users_ids = $1 WHERE id = $2`
-		_, err = api.PgConn.Exec(c.Request.Context(), sql, users.UsersIds, id)
+		// add user
+		sql = `INSERT INTO users_teams (userid, teamid) VALUES ($1,$2)`
+		_, err = api.PgConn.Exec(c.Request.Context(), sql, userId.UserId, teamId)
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to update users_ids in team, err: %s", err)
+			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		// update users's teams ids asynchronously
-		go updateUsersTeamsIds(removed, added, id, api, c.Request.Context())
 		c.Status(http.StatusOK)
 	}
 }
 
-// Update users teams relation when request context is done
-func updateUsersTeamsIds(removed []int, added []int, team int, api *api.API, reqctx context.Context) {
-	// wait api send response
-	<-reqctx.Done()
-	ctx := context.Background()
-
-	// remove team id for old users
-	sql := `UPDATE users SET teams_ids = array_remove(teams_ids, $2) WHERE id = $1`
-	for _, id := range removed {
-		_, err := api.PgConn.Exec(ctx, sql, id, team)
+// Remove a user from team.
+// Responses:
+//   - 400 If invalid user id.
+//   - 400 If user is already a member.
+//   - 404 If relation does not exists.
+//   - 204 If succeeded.
+func RemoveUserHandler(api *api.API) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		// get team teamId
+		teamId, err := getId(api, c)
 		if err != nil {
-			log.Printf("fail to remove team id from user, userid: %d, err: %s", id, err)
+			c.Status(http.StatusNotFound)
+			return
 		}
+
+		// get user id
+		userId, err := strconv.Atoi(c.Param("userId"))
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
+		// remove user from team
+		sql := `DELETE FROM users_teams WHERE userId = $1 AND teamId = $2`
+		t, err := api.PgConn.Exec(c.Request.Context(), sql, userId, teamId)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		// check if relation exists
+		if t.RowsAffected() == 0 {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		c.Status(http.StatusNoContent)
 	}
+}
 
-	// save team id for new users
-	sql = `UPDATE users SET teams_ids = array_append(teams_ids, $2) WHERE id = $1`
-	for _, id := range added {
-		_, err := api.PgConn.Exec(ctx, sql, id, team)
+// Get user's teams.
+// Params:
+//   - "limit" Limit of teams returned. Default is 30, max is 30, min is 0.
+//   - "offset" Offset for searching. Default is 0, min is 0.
+//
+// Responses:
+//   - 400 If invalid params.
+//   - 200 If succeeded.
+func UserTeamsHandler(api *api.API) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		// db query params
+		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
-			log.Printf("fail to save team id in user, userid: %d, err: %s", id, err)
+			c.Status(http.StatusBadRequest)
+			return
 		}
+
+		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
+		// get user session metadata
+		meta, err := tools.GetSessionMeta(c)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			log.Printf("fail to read session metadata, err: %s", err)
+			return
+		}
+
+		// query teams
+		sql := `SELECT id, name, ident, descr FROM users_teams ut LEFT JOIN teams t ON ut.teamId = t.id WHERE ut.userid = $1 LIMIT $2 OFFSET $3;`
+		rows, err := api.PgConn.Query(c.Request.Context(), sql, meta.UserId, limit, offset)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			log.Printf("fail to query users teams, err: %s", err)
+			return
+		}
+
+		// scan rows
+		var teams []_SanitizedTeam
+		for rows.Next() {
+			var t _SanitizedTeam
+			rows.Scan(&t.Id, &t.Name, &t.Ident, &t.Descr)
+			teams = append(teams, t)
+		}
+		rows.Close()
+
+		c.JSON(http.StatusOK, teams)
 	}
 }
