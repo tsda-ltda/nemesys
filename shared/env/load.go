@@ -52,6 +52,7 @@ func Init() {
 
 	set("API_MANAGER_HOST", &APIManagerHost)
 	set("API_MANAGER_PORT", &APIManagerPort)
+	set("API_MANAGER_ROUTES_PREFIX", &APIManagerRoutesPrefix)
 
 	set("USER_SESSION_TTL", &UserSessionTTL)
 	set("USER_SESSION_TOKEN_SIZE", &UserSessionTokenSize)

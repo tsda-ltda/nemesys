@@ -31,6 +31,8 @@ var (
 	APIManagerHost = "localhost"
 	// API Manager port. Default is "9000".
 	APIManagerPort = "9000"
+	// API Manager port. Default is "9000".
+	APIManagerRoutesPrefix = "/api/v1"
 
 	// User session cookie time to live (seconds). Default is "604900" (one week).
 	UserSessionTTL = "604800"
