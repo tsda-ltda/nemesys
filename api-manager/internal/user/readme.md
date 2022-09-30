@@ -119,7 +119,6 @@ Get a user by id.
   "id": "number",
   "username": "string",
   "name": "string",
-  "role": "number",
-  "teams-ids": "number[]"
+  "role": "number"
 }
 ```
