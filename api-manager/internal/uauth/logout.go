@@ -68,6 +68,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 			log.Printf("fail to query user role, err: %s", err)
 			return
 		}
+		defer rows.Close()
 
 		// scan role
 		var userRole roles.Role

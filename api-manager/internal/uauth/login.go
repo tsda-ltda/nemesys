@@ -52,6 +52,7 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 			log.Printf("fail to get user's password, err: %s", err)
 			return
 		}
+		defer rows.Close()
 
 		// scan rows
 		var hashedPw string
