@@ -1,13 +1,14 @@
 package user
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -59,7 +60,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to query in users, err: %s", err)
+			api.Log.Error("fail to check if user username and email exists", logger.ErrField(err))
 			return
 		}
 
@@ -85,15 +86,12 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		pwHashed, err := auth.Hash(user.Password, api.UserPWBcryptCost)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to hash password, err: %s", err)
+			api.Log.Error("fail to hash password", logger.ErrField(err))
 			return
 		}
 
 		// update user
-		sql = `UPDATE users SET 
-		(name, username, password, email, role) =
-		($1, $2, $3, $4, $5) WHERE id = $6
-		`
+		sql = `UPDATE users SET (name, username, password, email, role) = ($1, $2, $3, $4, $5) WHERE id = $6`
 		_, err = api.PgConn.Exec(c.Request.Context(), sql,
 			user.Name,
 			user.Username,
@@ -104,10 +102,10 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to update user, err: %s", err)
+			api.Log.Error("fail to update user", logger.ErrField(err))
 			return
 		}
-
+		api.Log.Debug(fmt.Sprintf("user '%s' updated with success", user.Username))
 		c.Status(http.StatusOK)
 	}
 }

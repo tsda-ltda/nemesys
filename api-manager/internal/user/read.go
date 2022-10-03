@@ -1,12 +1,12 @@
 package user
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -44,7 +44,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		e, err := api.PgConn.Users.Exists(c.Request.Context(), id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to query user existence, err: %s", err)
+			api.Log.Error("fail to check if user exists", logger.ErrField(err))
 			return
 		}
 		if !e {
@@ -64,7 +64,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to query user, err: %s", err)
+			api.Log.Error("fail to query user by id", logger.ErrField(err))
 			return
 		}
 
@@ -100,7 +100,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 		rows, err := api.PgConn.Query(c.Request.Context(), sql, limit, offset)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to query users, err: %s", err)
+			api.Log.Error("fail to query users", logger.ErrField(err))
 			return
 		}
 		defer rows.Close()

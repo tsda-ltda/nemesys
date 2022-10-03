@@ -1,12 +1,13 @@
 package team
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -50,16 +51,13 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		// check if ident exists in database
 		var identInUse bool
-		sql := `SELECT EXISTS (
-				SELECT 1 FROM teams WHERE ident = $1
-			);
-		`
+		sql := `SELECT EXISTS ( SELECT 1 FROM teams WHERE ident = $1 );`
 
 		// query row
 		err = api.PgConn.QueryRow(c.Request.Context(), sql, team.Ident).Scan(&identInUse)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to query team's ident, err: %s", err)
+			api.Log.Error("fail to query postgres team ident", logger.ErrField(err))
 			return
 		}
 
@@ -74,10 +72,10 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		_, err = api.PgConn.Exec(c.Request.Context(), sql, team.Name, team.Descr, team.Ident)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to create team, err: %s", err)
+			api.Log.Error("fail to create team", logger.ErrField(err))
 			return
 		}
-		log.Printf("team '%s' created successfuly", team.Ident)
+		api.Log.Debug(fmt.Sprintf("team '%s' created with success", team.Ident))
 
 		c.Status(http.StatusOK)
 	}

@@ -1,12 +1,13 @@
 package team
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -64,7 +65,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			err = api.PgConn.QueryRow(c.Request.Context(), sql, team.Ident).Scan(&identInUse)
 			if err != nil {
 				c.Status(http.StatusInternalServerError)
-				log.Printf("fail to query team's ident, err: %s", err)
+				api.Log.Error("fail to query team by ident", logger.ErrField(err))
 				return
 			}
 
@@ -79,7 +80,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		f, err := api.PgConn.Exec(c.Request.Context(), sql, team.Name, team.Ident, team.Descr, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to update team, err: %s", err)
+			api.Log.Error("fail to update team", logger.ErrField(err))
 			return
 		}
 
@@ -89,7 +90,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		log.Printf("team '%s' updated successfully", team.Ident)
+		api.Log.Debug(fmt.Sprintf("team '%s' updated successfully", team.Ident))
 
 		c.Status(http.StatusOK)
 	}

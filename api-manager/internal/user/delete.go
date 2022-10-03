@@ -1,11 +1,12 @@
 package user
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,7 +27,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		flag, err := api.PgConn.Exec(c.Request.Context(), "DELETE FROM users WHERE id = $1", id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to delete user, err: %s", err)
+			api.Log.Error("fail to delete user", logger.ErrField(err))
 			return
 		}
 		if flag.RowsAffected() == 0 {
@@ -34,8 +35,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		log.Printf("user id %d deleted successfully", id)
-
+		api.Log.Debug(fmt.Sprintf("user id %d deleted with success", id))
 		c.Status(http.StatusNoContent)
 	}
 }

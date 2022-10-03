@@ -1,11 +1,11 @@
 package team
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 )
@@ -37,7 +37,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		rows, err := api.PgConn.Query(c.Request.Context(), sql, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to query team, err: %s", err)
+			api.Log.Debug("fail to query team by id", logger.ErrField(err))
 			return
 		}
 		defer rows.Close()
@@ -91,7 +91,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 		rows, err := api.PgConn.Query(c.Request.Context(), sql, limit, offset)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to query teams, err: %s", err)
+			api.Log.Error("fail to query teams", logger.ErrField(err))
 			return
 		}
 		defer rows.Close()

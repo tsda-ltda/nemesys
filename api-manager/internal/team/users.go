@@ -1,12 +1,13 @@
 package team
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -52,7 +53,7 @@ func AddUserHandler(api *api.API) func(c *gin.Context) {
 		err = api.PgConn.QueryRow(c.Request.Context(), sql, userId.UserId, teamId).Scan(&e)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to query users_teams, err: %s", err)
+			api.Log.Error("fail to query users_teams", logger.ErrField(err))
 			return
 		}
 
@@ -110,6 +111,8 @@ func RemoveUserHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
+		api.Log.Debug(fmt.Sprintf("userid '%d' removed from team '%s'", userId, c.Param(":ident")))
+
 		c.Status(http.StatusNoContent)
 	}
 }
@@ -141,7 +144,7 @@ func UserTeamsHandler(api *api.API) func(c *gin.Context) {
 		meta, err := tools.GetSessionMeta(c)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to read session metadata, err: %s", err)
+			api.Log.Error("fail to read session metadata", logger.ErrField(err))
 			return
 		}
 
@@ -150,7 +153,7 @@ func UserTeamsHandler(api *api.API) func(c *gin.Context) {
 		rows, err := api.PgConn.Query(c.Request.Context(), sql, meta.UserId, limit, offset)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to query users teams, err: %s", err)
+			api.Log.Error("fail to query user's teams", logger.ErrField(err))
 			return
 		}
 

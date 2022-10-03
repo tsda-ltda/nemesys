@@ -1,12 +1,12 @@
 package user
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -58,7 +58,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		err = api.PgConn.QueryRow(c.Request.Context(), sql, user.Username, user.Email).Scan(&usernameInUse, &emailInUse)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to query username and email, err: %s", err)
+			api.Log.Error("fail to check username and email on postgres", logger.ErrField(err))
 			return
 		}
 
@@ -78,7 +78,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		pwHashed, err := auth.Hash(user.Password, api.UserPWBcryptCost)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to hash password, err: %s", err)
+			api.Log.Error("fail to hash password", logger.ErrField(err))
 			return
 		}
 
@@ -94,11 +94,9 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to create user, err: %s", err)
+			api.Log.Error("fail to create user", logger.ErrField(err))
 			return
 		}
-		log.Printf("user '%s' created successfuly", user.Username)
-
 		c.Status(http.StatusOK)
 	}
 }

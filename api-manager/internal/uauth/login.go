@@ -1,7 +1,6 @@
 package uauth
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/roles"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/env"
+	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -49,7 +49,7 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 		rows, err := api.PgConn.Query(c.Request.Context(), sql, form.Username)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to get user's password, err: %s", err)
+			api.Log.Error("fail to get user's password", logger.ErrField(err))
 			return
 		}
 		defer rows.Close()
@@ -75,7 +75,7 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 		})
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to create user session, err: %s", err)
+			api.Log.Error("fail to create user session", logger.ErrField(err))
 			return
 		}
 

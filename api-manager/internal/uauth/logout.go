@@ -1,13 +1,14 @@
 package uauth
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/roles"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,7 +24,7 @@ func Logout(api *api.API) func(c *gin.Context) {
 		meta, err := tools.GetSessionMeta(c)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Println(err)
+			api.Log.Error("fail to get session metadata", logger.ErrField(err))
 			return
 		}
 
@@ -33,6 +34,7 @@ func Logout(api *api.API) func(c *gin.Context) {
 			c.Status(http.StatusBadRequest)
 			return
 		}
+		api.Log.Debug(fmt.Sprintf("user '%d' logout with success", meta.UserId))
 
 		c.Status(http.StatusOK)
 	}
@@ -49,7 +51,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 		meta, err := tools.GetSessionMeta(c)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Println(err)
+			api.Log.Error("fail to get session metadata", logger.ErrField(err))
 			return
 		}
 
@@ -65,7 +67,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 		rows, err := api.PgConn.Query(c.Request.Context(), sql, userId)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			log.Printf("fail to query user role, err: %s", err)
+			api.Log.Error("fail to query user's role", logger.ErrField(err))
 			return
 		}
 		defer rows.Close()
@@ -94,6 +96,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 			c.Status(http.StatusBadRequest)
 			return
 		}
+		api.Log.Debug(fmt.Sprintf("user '%d' forcibly logout with success", userId))
 
 		c.Status(http.StatusOK)
 	}
