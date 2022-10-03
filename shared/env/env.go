@@ -2,6 +2,12 @@ package env
 
 // All enviroment variables
 var (
+	// LOG LEVELS = (debug, info, warn, error, dpanic, panic, fatal)
+	// Minimum log level to enable console logs in API Manager service. Default is debug.
+	LogConsoleLevelAPIManager = "debug"
+	// Minimum log level to enable console logs in API Manager service. Default is info.
+	LogBroadcastLevelAPIManager = "info"
+
 	// Default master username. Default is "admin".
 	Username = "admin"
 	// Default master password (is strongly recommended to not use the default value). Default is "admin".

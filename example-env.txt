@@ -1,3 +1,11 @@
+# Log levels: debug, info, warn, error, dpanic, panic, fatal
+
+# Minimum log level to enable console logs in API Manager service. Default is debug.
+LOG_CONSOLE_LEVEL_API_MANAGER=
+
+# Minimum log level to enable console logs in API Manager service. Default is info.
+LOG_BROADCAST_LEVEL_API_MANAGER=
+
 # Default master username. Default is "admin".
 USERNAME=
 
