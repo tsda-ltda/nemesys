@@ -11,7 +11,7 @@ import (
 type Logger struct {
 	*zap.Logger
 	conn       *amqp.Connection
-	Config     Config
+	WrapConfig Config
 	amqpWriter *AMQPLoggerWriter
 }
 
@@ -73,13 +73,12 @@ func New(conn *amqp.Connection, config Config) (logger *Logger, err error) {
 		zap.AddCaller(),
 		zap.AddStacktrace(zapcore.ErrorLevel),
 	)
-
 	// create logger
 	logger = &Logger{
 		conn:       conn,
 		Logger:     z,
 		amqpWriter: amqpW,
-		Config:     config,
+		WrapConfig: config,
 	}
 	return logger, nil
 }
