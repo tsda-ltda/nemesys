@@ -1,7 +1,6 @@
 package env
 
 import (
-	"log"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -27,17 +26,16 @@ func set(key string, out *string) {
 	*out = e
 }
 
-// Init initialize all variables in the package according to the enviroment.
-func Init() {
+func LoadEnvFile() error {
 	// get env file path
 	path := load("ENV_FILE", ".env")
 
 	// load env file
-	err := godotenv.Load(path)
-	if err != nil {
-		log.Printf("fail to load enviroment file, path: %s, err: %s", path, err)
-	}
+	return godotenv.Load(path)
+}
 
+// Init initialize all variables in the package according to the enviroment.
+func Init() {
 	// set config
 	set("PG_HOST", &PGHost)
 	set("PG_PORT", &PGPort)
