@@ -4,7 +4,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Hash returns a hash of cost equal to 14.
+// Hash returns hashs a secret.
 func Hash(secret string, cost int) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(secret), cost)
 	return string(bytes), err
