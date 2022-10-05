@@ -2,32 +2,29 @@ package db
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/jackc/pgx/v5"
 )
 
 // Connects to a Postgresql database server
-func ConnectToPG(url string) (*PgConn, error) {
+func ConnectToPG() (*PgConn, error) {
+	ctx := context.Background()
+
 	// connect to pg db
-	conn, err := pgx.Connect(context.Background(), url)
+	conn, err := pgx.Connect(ctx, fmt.Sprintf("postgres://%s:%s@%s:%s/%s", env.PGUsername, env.PGPW, env.PGHost, env.PGPort, env.PGDBName))
 	if err != nil {
 		return nil, err
 	}
 
 	// ping db
-	err = conn.Ping(context.Background())
+	err = conn.Ping(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// create ORMs
 	return &PgConn{
 		Conn: conn,
-		Users: UsersORM{
-			conn: conn,
-		},
-		Teams: TeamsORM{
-			conn: conn,
-		},
 	}, nil
 }
