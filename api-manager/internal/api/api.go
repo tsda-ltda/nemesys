@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
-	_db "github.com/fernandotsda/nemesys/api-manager/internal/db"
 	"github.com/fernandotsda/nemesys/shared/db"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/logger"
@@ -36,14 +35,14 @@ type API struct {
 // Create a new API instance.
 func New(loggger *logger.Logger) (*API, error) {
 	// connect to postgresql
-	pgConn, err := _db.PGConnectAndInit()
+	pgConn, err := db.ConnectToPG()
 	if err != nil {
 		return nil, err
 	}
 	loggger.Info("connected to postgresql")
 
 	// connect to redis auth
-	rdbAuth, err := _db.RDBAuthConnectAndInit()
+	rdbAuth, err := db.RDBAuthConnect()
 	if err != nil {
 		return nil, err
 	}

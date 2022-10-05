@@ -9,7 +9,8 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/user"
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/env"
-	"github.com/fernandotsda/nemesys/shared/logger"
+	"github.com/fernandotsda/nemesys/shared/initdb"
+	_logger "github.com/fernandotsda/nemesys/shared/logger"
 )
 
 func main() {
@@ -29,29 +30,39 @@ func main() {
 	}
 
 	// create logger
-	logger, err := logger.New(conn, logger.Config{
+	logger, err := _logger.New(conn, _logger.Config{
 		Service:        "api-manager",
-		ConsoleLevel:   logger.ParseLevelEnv(env.LogConsoleLevelAPIManager),
-		BroadcastLevel: logger.ParseLevelEnv(env.LogBroadcastLevelAPIManager),
+		ConsoleLevel:   _logger.ParseLevelEnv(env.LogConsoleLevelAPIManager),
+		BroadcastLevel: _logger.ParseLevelEnv(env.LogBroadcastLevelAPIManager),
 	})
-
 	if err != nil {
-		log.Fatalf("fail to create logger, err: %s", err)
+		log.Fatalf("fail to create internal logger, err: %s", err)
+	}
+
+	// inicialize database
+	init, err := initdb.PG()
+	if err != nil {
+		logger.Fatal("fail to initialize database", _logger.ErrField(err))
 	}
 
 	// create api
 	api, err := api.New(logger)
 	if err != nil {
-		log.Fatalf("fail to create api, err: %s", err)
+		logger.Fatal("fail to create api", _logger.ErrField(err))
 	}
 	defer api.Close()
 
-	// create default user
-	err = user.CreateDefaultUser(context.Background(), api)
-	if err != nil {
-		logger.Fatal("fail to create default user, err: " + err.Error())
+	// check if database was initialized
+	if init {
+		logger.Info("database initialized")
+
+		// create default user
+		err = user.CreateDefaultUser(context.Background(), api)
+		if err != nil {
+			logger.Fatal("fail to create default user", _logger.ErrField(err))
+		}
+		logger.Info("default master user created")
 	}
-	logger.Info("default master user created with success")
 
 	// set routes
 	router.Set(api)
