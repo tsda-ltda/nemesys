@@ -1,8 +1,8 @@
-package db
+package initdb
 
 const (
 	// Creates the users table if not exists.
-	sqlCreateUsersTable = `CREATE TABLE IF NOT EXISTS users (
+	sqlCreateUsersTable = `CREATE TABLE users (
 			id serial4 PRIMARY KEY,
 			name VARCHAR (50) NOT NULL,
 			username VARCHAR (50) UNIQUE NOT NULL,
@@ -12,7 +12,7 @@ const (
 	);`
 
 	// Creates the team table if not exists.
-	sqlCreateTeamsTable = `CREATE TABLE IF NOT EXISTS teams (
+	sqlCreateTeamsTable = `CREATE TABLE teams (
 			id serial4 PRIMARY KEY,
 			name VARCHAR (50) NOT NULL,
 			ident VARCHAR (50) UNIQUE NOT NULL,
@@ -20,7 +20,7 @@ const (
 	);`
 
 	// Creates the team-users relation table if not exists
-	sqlCreateUsersTeamsTable = `CREATE TABLE IF NOT EXISTS users_teams (
+	sqlCreateUsersTeamsTable = `CREATE TABLE users_teams (
 			userId int,
 			teamId int,
 
@@ -32,5 +32,15 @@ const (
 				FOREIGN KEY(teamId)
 					REFERENCES teams(id)
 					ON DELETE CASCADE
+	);`
+
+	// Creates the data-policies table if not exists
+	sqlCreateDataPoliciesTable = `CREATE TABLE data_policies (
+		id serial4  PRIMARY KEY,
+		descr VARCHAR (255) NOT NULL,
+		use_aggregation bool NOT NULL,
+		retention int NOT NULL,
+		aggregation_retention int NOT NULL,
+		aggregation_interval int NOT NULL
 	);`
 )

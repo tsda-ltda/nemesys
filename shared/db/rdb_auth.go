@@ -10,7 +10,7 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-func RDBAuthConnectAndInit() (c *redis.Client, err error) {
+func RDBAuthConnect() (c *redis.Client, err error) {
 	ctx := context.Background()
 
 	// get redis auth database number
