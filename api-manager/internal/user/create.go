@@ -13,7 +13,7 @@ import (
 // User struct for CreateHandler json responses.
 type _CreateUser struct {
 	Id       int    `json:"id" validate:"-"`
-	Role     int    `json:"role" validate:"required"`
+	Role     int    `json:"role" validate:"required,min=1,max=4"`
 	Name     string `json:"name" validate:"required,min=2,max=50"`
 	Username string `json:"username" validate:"required,min=3,max=50"`
 	Password string `json:"password" validate:"required,min=5,max=50"`
