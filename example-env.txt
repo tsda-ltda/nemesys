@@ -12,6 +12,18 @@ USERNAME=
 # Default master password (is strongly recommended to not use the default value). Default is "admin".
 PW=
 
+# AMQP Username. Default is "guest".
+AMQPUsername=
+
+# AMQP password. Default is "guest".
+AMQPPassword=
+
+# AMQP host. Default is "localhost".
+AMQPHost=
+
+# AMQP port. Defaul is "5672".
+AMQPPort=
+
 # Postgresql host. Default is "127.0.0.1".
 PG_HOST=
 
