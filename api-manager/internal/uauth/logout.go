@@ -21,6 +21,9 @@ import (
 //   - "sess_meta" Session metadata.
 func Logout(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
+		// get session metadata
 		meta, err := tools.GetSessionMeta(c)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
@@ -29,7 +32,7 @@ func Logout(api *api.API) func(c *gin.Context) {
 		}
 
 		// remove session
-		err = api.Auth.RemoveSession(c.Request.Context(), meta.UserId)
+		err = api.Auth.RemoveSession(ctx, meta.UserId)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
@@ -47,6 +50,8 @@ func Logout(api *api.API) func(c *gin.Context) {
 //   - 200 If succeeded.
 func ForceLogout(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
 		// get session metadata
 		meta, err := tools.GetSessionMeta(c)
 		if err != nil {
@@ -64,7 +69,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 
 		// get target user's role
 		sql := `SELECT role FROM users WHERE id = $1`
-		rows, err := api.PgConn.Query(c.Request.Context(), sql, userId)
+		rows, err := api.PgConn.Query(ctx, sql, userId)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to query user's role", logger.ErrField(err))
@@ -91,7 +96,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 		}
 
 		// remove session
-		err = api.Auth.RemoveSession(c.Request.Context(), userId)
+		err = api.Auth.RemoveSession(ctx, userId)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return

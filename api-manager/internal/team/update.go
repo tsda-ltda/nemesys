@@ -27,6 +27,8 @@ type _UpdateTeam struct {
 //   - 200 If succeeded.
 func UpdateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
 		// get team id
 		id, err := getId(api, c)
 		if err != nil {
@@ -62,7 +64,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			sql := `SELECT EXISTS (SELECT 1 FROM teams WHERE ident = $1);`
 
 			// query row
-			err = api.PgConn.QueryRow(c.Request.Context(), sql, team.Ident).Scan(&identInUse)
+			err = api.PgConn.QueryRow(ctx, sql, team.Ident).Scan(&identInUse)
 			if err != nil {
 				c.Status(http.StatusInternalServerError)
 				api.Log.Error("fail to query team by ident", logger.ErrField(err))
@@ -77,7 +79,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 
 		// update team in database
 		sql := `UPDATE teams SET (name, ident, descr) = ($1, $2, $3) WHERE id = $4`
-		f, err := api.PgConn.Exec(c.Request.Context(), sql, team.Name, team.Ident, team.Descr, id)
+		f, err := api.PgConn.Exec(ctx, sql, team.Name, team.Ident, team.Descr, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to update team", logger.ErrField(err))

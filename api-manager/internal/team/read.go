@@ -24,6 +24,8 @@ type _SanitizedTeam struct {
 //   - 200 If succeeded
 func GetHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
 		// get team id
 		id, err := getId(api, c)
 		if err != nil {
@@ -34,7 +36,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		// get team
 		var team models.Team
 		sql := `SELECT descr, name, ident FROM teams WHERE id = $1`
-		rows, err := api.PgConn.Query(c.Request.Context(), sql, id)
+		rows, err := api.PgConn.Query(ctx, sql, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Debug("fail to query team by id", logger.ErrField(err))
@@ -73,6 +75,8 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 //   - 200 If succeeded.
 func MGetHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
 		// db query params
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
@@ -88,7 +92,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 
 		// search teams
 		sql := `SELECT id, name, descr, ident FROM teams LIMIT $1 OFFSET $2`
-		rows, err := api.PgConn.Query(c.Request.Context(), sql, limit, offset)
+		rows, err := api.PgConn.Query(ctx, sql, limit, offset)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to query teams", logger.ErrField(err))

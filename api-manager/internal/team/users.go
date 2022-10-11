@@ -25,6 +25,8 @@ type _UserId struct {
 //   - 200 If succeeded.
 func AddUserHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
 		// get team id
 		teamId, err := getId(api, c)
 		if err != nil {
@@ -50,7 +52,7 @@ func AddUserHandler(api *api.API) func(c *gin.Context) {
 		// query realation existence
 		var e bool
 		sql := `SELECT EXISTS (SELECT 1 FROM users_teams WHERE userId = $1 AND teamId = $2)`
-		err = api.PgConn.QueryRow(c.Request.Context(), sql, userId.UserId, teamId).Scan(&e)
+		err = api.PgConn.QueryRow(ctx, sql, userId.UserId, teamId).Scan(&e)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to query users_teams", logger.ErrField(err))
@@ -65,7 +67,7 @@ func AddUserHandler(api *api.API) func(c *gin.Context) {
 
 		// add user
 		sql = `INSERT INTO users_teams (userid, teamid) VALUES ($1,$2)`
-		_, err = api.PgConn.Exec(c.Request.Context(), sql, userId.UserId, teamId)
+		_, err = api.PgConn.Exec(ctx, sql, userId.UserId, teamId)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
@@ -83,6 +85,8 @@ func AddUserHandler(api *api.API) func(c *gin.Context) {
 //   - 204 If succeeded.
 func RemoveUserHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
 		// get team teamId
 		teamId, err := getId(api, c)
 		if err != nil {
@@ -99,7 +103,7 @@ func RemoveUserHandler(api *api.API) func(c *gin.Context) {
 
 		// remove user from team
 		sql := `DELETE FROM users_teams WHERE userId = $1 AND teamId = $2`
-		t, err := api.PgConn.Exec(c.Request.Context(), sql, userId, teamId)
+		t, err := api.PgConn.Exec(ctx, sql, userId, teamId)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			return
@@ -127,6 +131,8 @@ func RemoveUserHandler(api *api.API) func(c *gin.Context) {
 //   - 200 If succeeded.
 func UserTeamsHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
 		// db query params
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
@@ -149,8 +155,9 @@ func UserTeamsHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// query teams
-		sql := `SELECT id, name, ident, descr FROM users_teams ut LEFT JOIN teams t ON ut.teamId = t.id WHERE ut.userid = $1 LIMIT $2 OFFSET $3;`
-		rows, err := api.PgConn.Query(c.Request.Context(), sql, meta.UserId, limit, offset)
+		sql := `SELECT id, name, ident, descr FROM users_teams ut 
+		LEFT JOIN teams t ON ut.teamId = t.id WHERE ut.userid = $1 LIMIT $2 OFFSET $3;`
+		rows, err := api.PgConn.Query(ctx, sql, meta.UserId, limit, offset)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to query user's teams", logger.ErrField(err))

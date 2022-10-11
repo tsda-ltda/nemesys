@@ -1,7 +1,6 @@
 package team
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -26,6 +25,7 @@ type _CreateTeam struct {
 //   - 200 If succeeded.
 func CreateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
 		var team _CreateTeam
 
 		// bind team
@@ -54,7 +54,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		sql := `SELECT EXISTS ( SELECT 1 FROM teams WHERE ident = $1 );`
 
 		// query row
-		err = api.PgConn.QueryRow(c.Request.Context(), sql, team.Ident).Scan(&identInUse)
+		err = api.PgConn.QueryRow(ctx, sql, team.Ident).Scan(&identInUse)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to query postgres team ident", logger.ErrField(err))
@@ -69,13 +69,13 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		// save team in database
 		sql = `INSERT INTO teams (name, descr, ident) VALUES($1, $2, $3)`
-		_, err = api.PgConn.Exec(c.Request.Context(), sql, team.Name, team.Descr, team.Ident)
+		_, err = api.PgConn.Exec(ctx, sql, team.Name, team.Descr, team.Ident)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to create team", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug(fmt.Sprintf("team '%s' created with success", team.Ident))
+		api.Log.Debug("new team created, ident: " + team.Ident)
 
 		c.Status(http.StatusOK)
 	}

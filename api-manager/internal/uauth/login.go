@@ -28,6 +28,7 @@ type _Login struct {
 //   - 200 If succeeded.
 func LoginHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
 		var form _Login
 
 		// bind login form
@@ -46,7 +47,7 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 
 		// get hashed password
 		sql := `SELECT password, role, id FROM users WHERE username = $1`
-		rows, err := api.PgConn.Query(c.Request.Context(), sql, form.Username)
+		rows, err := api.PgConn.Query(ctx, sql, form.Username)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get user's password", logger.ErrField(err))
@@ -69,7 +70,7 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// create new session
-		token, err := api.Auth.NewSession(c.Request.Context(), auth.SessionMeta{
+		token, err := api.Auth.NewSession(ctx, auth.SessionMeta{
 			UserId: id,
 			Role:   role,
 		})

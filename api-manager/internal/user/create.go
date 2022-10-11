@@ -29,6 +29,7 @@ type _CreateUser struct {
 //   - 200 If succeeded.
 func CreateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
 		var user _CreateUser
 
 		// bind user
@@ -55,7 +56,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		`
 
 		// query row
-		err = api.PgConn.QueryRow(c.Request.Context(), sql, user.Username, user.Email).Scan(&usernameInUse, &emailInUse)
+		err = api.PgConn.QueryRow(ctx, sql, user.Username, user.Email).Scan(&usernameInUse, &emailInUse)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check username and email on postgres", logger.ErrField(err))
@@ -85,7 +86,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		// save user in database
 		sql = `INSERT INTO users (name, username, password, email, role)
 		VALUES($1, $2, $3, $4, $5)`
-		_, err = api.PgConn.Exec(c.Request.Context(), sql,
+		_, err = api.PgConn.Exec(ctx, sql,
 			user.Name,
 			user.Username,
 			pwHashed,
@@ -97,6 +98,8 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("fail to create user", logger.ErrField(err))
 			return
 		}
+		api.Log.Debug("new user created, username: " + user.Username)
+
 		c.Status(http.StatusOK)
 	}
 }

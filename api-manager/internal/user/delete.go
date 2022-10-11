@@ -17,6 +17,8 @@ import (
 //   - 201 If succeeded
 func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
 		// get id from param
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
@@ -24,7 +26,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		flag, err := api.PgConn.Exec(c.Request.Context(), "DELETE FROM users WHERE id = $1", id)
+		flag, err := api.PgConn.Exec(ctx, "DELETE FROM users WHERE id = $1", id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to delete user", logger.ErrField(err))
@@ -35,7 +37,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		api.Log.Debug(fmt.Sprintf("user id %d deleted with success", id))
+		api.Log.Debug("user deleted with success, id: " + fmt.Sprint(id))
 		c.Status(http.StatusNoContent)
 	}
 }

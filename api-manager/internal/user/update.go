@@ -1,7 +1,6 @@
 package user
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -21,6 +20,8 @@ import (
 //   - 200 If succeeded.
 func UpdateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
 		// get id param
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
@@ -53,9 +54,8 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 				SELECT 1 FROM users WHERE id != $1 AND username = $2
 			) as EX2, EXISTS (
 				SELECT 1 FROM users WHERE id != $1 AND email = $3
-			) as EX3
-		`
-		err = api.PgConn.QueryRow(c.Request.Context(), sql, id, user.Username, user.Email).Scan(
+			) as EX3`
+		err = api.PgConn.QueryRow(ctx, sql, id, user.Username, user.Email).Scan(
 			&exists, &usernameInUse, &emailInUse,
 		)
 		if err != nil {
@@ -92,7 +92,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 
 		// update user
 		sql = `UPDATE users SET (name, username, password, email, role) = ($1, $2, $3, $4, $5) WHERE id = $6`
-		_, err = api.PgConn.Exec(c.Request.Context(), sql,
+		_, err = api.PgConn.Exec(ctx, sql,
 			user.Name,
 			user.Username,
 			pwHashed,
@@ -105,7 +105,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("fail to update user", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug(fmt.Sprintf("user '%s' updated with success", user.Username))
+		api.Log.Debug("user updated with success, username: " + user.Username)
 		c.Status(http.StatusOK)
 	}
 }

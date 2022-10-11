@@ -1,7 +1,6 @@
 package team
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
@@ -15,6 +14,7 @@ import (
 //   - 204 If succeeded
 func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
 		// get id
 		id, err := getId(api, c)
 		if err != nil {
@@ -23,7 +23,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// delete team
-		t, err := api.PgConn.Exec(c.Request.Context(), "DELETE FROM teams WHERE id = $1", id)
+		t, err := api.PgConn.Exec(ctx, "DELETE FROM teams WHERE id = $1", id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to delete team", logger.ErrField(err))
@@ -33,7 +33,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			c.Status(http.StatusNotFound)
 			return
 		}
-		api.Log.Debug(fmt.Sprintf("team '%s' deleted with success", c.Param("ident")))
+		api.Log.Debug("team deleted, ident: " + c.Param("ident"))
 
 		c.Status(http.StatusNoContent)
 	}

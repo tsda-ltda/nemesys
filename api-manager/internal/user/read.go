@@ -33,6 +33,8 @@ type _GetUser struct {
 //   - 200 If succeeded
 func GetHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
 		// get id from param
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
@@ -41,7 +43,9 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if user exists
-		e, err := api.PgConn.Users.Exists(c.Request.Context(), id)
+		var e bool
+		sql := `SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)`
+		err = api.PgConn.QueryRow(ctx, sql, id).Scan(&e)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if user exists", logger.ErrField(err))
@@ -54,8 +58,8 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 
 		// get user
 		var user _GetUser
-		sql := `SELECT id, username, name, email, role FROM users WHERE id = $1`
-		err = api.PgConn.QueryRow(c.Request.Context(), sql, id).Scan(
+		sql = `SELECT id, username, name, email, role FROM users WHERE id = $1`
+		err = api.PgConn.QueryRow(ctx, sql, id).Scan(
 			&user.Id,
 			&user.Username,
 			&user.Name,
@@ -82,6 +86,8 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 //   - 200 If succeeded.
 func MGetHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
 		// db query params
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
@@ -97,7 +103,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 
 		// search users
 		sql := `SELECT id, username, name FROM users LIMIT $1 OFFSET $2`
-		rows, err := api.PgConn.Query(c.Request.Context(), sql, limit, offset)
+		rows, err := api.PgConn.Query(ctx, sql, limit, offset)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to query users", logger.ErrField(err))
