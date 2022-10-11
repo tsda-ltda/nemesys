@@ -1,6 +1,7 @@
 package router
 
 import (
+	datapolicy "github.com/fernandotsda/nemesys/api-manager/internal/data-policy"
 	"github.com/fernandotsda/nemesys/api-manager/internal/middleware"
 	"github.com/fernandotsda/nemesys/api-manager/internal/roles"
 	"github.com/fernandotsda/nemesys/api-manager/internal/team"
@@ -48,4 +49,14 @@ func Set(api *api.API) {
 		teamConfig.POST("/:ident/users", team.AddUserHandler(api))
 		teamConfig.DELETE("/:ident/users/:userId", team.RemoveUserHandler(api))
 	}
+
+	// data-policies
+	dp := r.Group("/config/data-policies", middleware.Protect(api, roles.Master))
+	{
+		dp.GET("/", datapolicy.MGetHandler(api))
+		dp.POST("/", datapolicy.CreateHandler(api))
+		dp.DELETE("/:id", datapolicy.DeleteHandler(api))
+		dp.PATCH("/:id", datapolicy.UpdateHandler(api))
+	}
+
 }
