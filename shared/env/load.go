@@ -37,6 +37,19 @@ func LoadEnvFile() error {
 // Init initialize all variables in the package according to the enviroment.
 func Init() {
 	// set config
+	set("LOG_CONSOLE_LEVEL_API_MANAGER", &LogConsoleLevelAPIManager)
+	set("LOG_BROADCAST_LEVEL_API_MANAGER", &LogBroadcastLevelAPIManager)
+
+	set("USERNAME", &Username)
+	set("PASSWORD", &PW)
+
+	set("MAX_DATA_POLICIES", &MaxDataPolicies)
+
+	set("AMQP_USERNAME", &AMQPUsername)
+	set("AMQP_PASSWORD", &AMQPPassword)
+	set("AMQP_PORT", &AMQPPort)
+	set("AMQP_HOST", &AMQPHost)
+
 	set("PG_HOST", &PGHost)
 	set("PG_PORT", &PGPort)
 	set("PG_USERNAME", &PGUsername)

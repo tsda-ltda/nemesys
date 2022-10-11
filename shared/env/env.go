@@ -13,6 +13,18 @@ var (
 	// Default master password (is strongly recommended to not use the default value). Default is "admin".
 	PW = "admin"
 
+	// Max data policies. Default is "8".
+	MaxDataPolicies = "8"
+
+	// AMQP Username. Default is "guest".
+	AMQPUsername = "guest"
+	// AMQP password. Default is "guest".
+	AMQPPassword = "guest"
+	// AMQP host. Default is "localhost".
+	AMQPHost = "localhost"
+	// AMQP port. Defaul is "5672".
+	AMQPPort = "5672"
+
 	// Postgresql host. Default is "127.0.0.1".
 	PGHost = "127.0.0.1"
 	// Postgresql port. Default is "5432".
