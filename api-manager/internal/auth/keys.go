@@ -1,12 +1,15 @@
 package auth
 
-import "fmt"
+import (
+	"strconv"
+)
 
 // SessionKey returns a RDB key for sessions.
 func SessionKey(session string) string {
-	return fmt.Sprintf("sessions:%s", session)
+	return "sessions:" + session
 }
 
+// ReverseSessionKey returns a RDB key for user current session
 func ReverseSessionKey(userId int) string {
-	return fmt.Sprintf("users:sessions:%d", userId)
+	return "users:sessions:" + strconv.Itoa(userId)
 }
