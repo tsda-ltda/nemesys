@@ -31,7 +31,7 @@ const (
 	sqlUsersDelete         = `DELETE FROM users WHERE id=$1;`
 	sqlUsersMGetSimplified = `SELECT id, username, name FROM users LIMIT $1 OFFSET $2;`
 	sqlUsersGetWithoutPW   = `SELECT username, name, email, role FROM users WHERE id = $1;`
-	sqlUsersLoginInfo      = `SELECT id, role, password FROM uesrs WHERE id = $1;`
+	sqlUsersLoginInfo      = `SELECT id, role, password FROM users WHERE id = $1;`
 	sqlUsersGetRole        = `SELECT role FROM users WHERE id = $1;`
 
 	sqlUsersUsernameEmailAvailableUpdate = `SELECT 
@@ -64,7 +64,7 @@ func (c *Users) ExistsUsernameEmail(ctx context.Context, username string, email 
 
 // Create saves an user in database. Returns an err if fails to create.
 func (c *Users) Create(ctx context.Context, user models.User) error {
-	_, err := c.Exec(ctx, sqlUsersCreate, user.Role, user.Name, user.Password, user.Email)
+	_, err := c.Exec(ctx, sqlUsersCreate, user.Role, user.Name, user.Username, user.Password, user.Email)
 	return err
 }
 
@@ -85,7 +85,7 @@ func (c *Users) MGetSimplified(ctx context.Context, limit int, offset int) (user
 	defer rows.Close()
 	for rows.Next() {
 		var u models.UserSimplified
-		err = rows.Scan(&u)
+		err = rows.Scan(&u.Id, &u.Username, &u.Name)
 		if err != nil {
 			return users, err
 		}
