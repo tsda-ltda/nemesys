@@ -25,6 +25,10 @@ func ConnectToPG() (*PgConn, error) {
 	}
 
 	return &PgConn{
-		Conn: conn,
+		Conn:       conn,
+		Users:      Users{Conn: conn},
+		Teams:      Teams{Conn: conn},
+		Contexts:   Contexts{Conn: conn},
+		DataPolicy: DataPolicy{Conn: conn},
 	}, nil
 }

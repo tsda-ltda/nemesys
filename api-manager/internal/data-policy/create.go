@@ -5,11 +5,14 @@ import (
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 )
+
+const msgMaxDP = "Max number of data policies reached."
 
 // Creates a new data policy.
 // Responses:
@@ -36,40 +39,37 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// count number of data policies already created
-		sql := `SELECT COUNT(*) FROM data_policies;`
-		var n int
-		err = api.PgConn.QueryRow(ctx, sql).Scan(&n)
+		// get number of data policies in the system
+		n, err := api.PgConn.DataPolicy.Count(ctx)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to count number of data polcies", logger.ErrField(err))
 			return
 		}
 
-		// check if number of data policies is the maximum number permited
+		// get maximum permited data policies
 		max, err := strconv.Atoi(env.MaxDataPolicies)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to parse env.MaxDataPolicies", logger.ErrField(err))
 			return
 		}
+
+		// check if exceeds max data policies
 		if n >= max {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(msgMaxDP))
 			api.Log.Info("attempt to create data-policy failed, maximum number reached")
 			return
 		}
 
 		// create data policy
-		sql = `INSERT INTO data_policies (descr, use_aggregation, retention, aggregation_retention, aggregation_interval)
-		VALUES ($1, $2, $3, $4, $5);`
-		_, err = api.PgConn.Exec(ctx, sql, dp.Descr, dp.UseAggregation, dp.Retention, dp.AggregationRetention, dp.AggregationInterval)
+		err = api.PgConn.DataPolicy.Create(ctx, dp)
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to create new data policy", logger.ErrField(err))
+			c.Status(http.StatusInternalServerError)
 			return
 		}
 		api.Log.Info("new data policy added")
-
 		c.Status(http.StatusOK)
 	}
 }
