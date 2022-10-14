@@ -8,10 +8,10 @@ var (
 	// Minimum log level to enable console logs in API Manager service. Default is info.
 	LogBroadcastLevelAPIManager = "info"
 
-	// Default master username. Default is "admin".
-	Username = "admin"
+	// Default master username. Default is "master".
+	Username = "master"
 	// Default master password (is strongly recommended to not use the default value). Default is "admin".
-	PW = "admin"
+	PW = "master"
 
 	// Max data policies. Default is "8".
 	MaxDataPolicies = "8"
