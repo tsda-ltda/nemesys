@@ -39,29 +39,17 @@ func PG() (initialized bool, err error) {
 	}
 
 	newConn, err := db.ConnectToPG()
-
-	// create users table
-	_, err = newConn.Exec(ctx, sqlCreateUsersTable)
 	if err != nil {
-		return false, fmt.Errorf("fail to create users table, err: %s", err)
+		return false, fmt.Errorf("fail to connect to db, err:%s", err)
 	}
+	defer newConn.Close(ctx)
 
-	// create teams table
-	_, err = newConn.Exec(ctx, sqlCreateTeamsTable)
-	if err != nil {
-		return false, fmt.Errorf("fail to create teams table, err: %s", err)
-	}
-
-	// create teams users realtion table
-	_, err = newConn.Exec(ctx, sqlCreateUsersTeamsTable)
-	if err != nil {
-		return false, fmt.Errorf("fail to create users teams relation table, err: %s", err)
-	}
-
-	// create data-policies table
-	_, err = newConn.Exec(ctx, sqlCreateDataPoliciesTable)
-	if err != nil {
-		return false, fmt.Errorf("fail to create data-policies table, err: %s", err)
+	// exec commands
+	for _, sql := range sqlCommands {
+		_, err = newConn.Exec(ctx, sql)
+		if err != nil {
+			return false, fmt.Errorf("fail to create table, err: %s", err)
+		}
 	}
 
 	return true, nil
