@@ -1,7 +1,6 @@
 package team
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -10,36 +9,37 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Deletes team from databse
+// Deletes a context.
 // Responses:
-//   - 404 If team not founded
-//   - 204 If succeeded
-func DeleteHandler(api *api.API) func(c *gin.Context) {
+//   - 404 If context not found.
+//   - 204 If succeeded.
+func DeleteContextHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get id
-		id, err := strconv.Atoi(c.Param("id"))
+		// get context id
+		rawId := c.Param("contextId")
+		id, err := strconv.Atoi(rawId)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		// delete team
-		e, err := api.PgConn.Teams.Delete(ctx, id)
+		// delete context
+		e, err := api.PgConn.Contexts.Delete(ctx, id)
 		if err != nil {
+			api.Log.Error("fail to delete context", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to delete team", logger.ErrField(err))
 			return
 		}
 
-		// check if team existed
-		if !e {
+		// check if context existed
+		if e {
 			c.Status(http.StatusNotFound)
 			return
 		}
-		api.Log.Debug("team deleted, id: " + fmt.Sprint(id))
 
+		api.Log.Debug("context deleted with success, id: " + rawId)
 		c.Status(http.StatusNoContent)
 	}
 }

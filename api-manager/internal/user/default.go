@@ -7,13 +7,12 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
 	"github.com/fernandotsda/nemesys/api-manager/internal/roles"
 	"github.com/fernandotsda/nemesys/shared/env"
+	"github.com/fernandotsda/nemesys/shared/models"
 )
 
 func CreateDefaultUser(ctx context.Context, api *api.API) error {
 	// check if user already exists
-	sql := `SELECT EXISTS(SELECT 1 FROM users WHERE username = $1)`
-	var e bool
-	err := api.PgConn.QueryRow(ctx, sql, env.Username).Scan(&e)
+	e, err := api.PgConn.Users.ExistsUsername(ctx, env.Username)
 	if err != nil {
 		return err
 	}
@@ -27,15 +26,14 @@ func CreateDefaultUser(ctx context.Context, api *api.API) error {
 		return err
 	}
 
-	// save user in database
-	sql = `INSERT INTO users (name, username, password, email, role) VALUES($1, $2, $3, $4, $5)`
-	_, err = api.PgConn.Exec(ctx, sql,
-		"Master",
-		env.Username,
-		pwHashed,
-		"master@email.com",
-		roles.Master,
-	)
+	// save user
+	err = api.PgConn.Users.Create(ctx, models.User{
+		Role:     int(roles.Master),
+		Name:     "Default Master",
+		Username: env.Username,
+		Password: pwHashed,
+		Email:    "master@master.com",
+	})
 	if err != nil {
 		return err
 	}

@@ -45,22 +45,14 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// update data policy
-		sql := `UPDATE data_policies SET (descr, retention, 
-		use_aggregation, aggregation_retention, aggregation_interval) = ($1, $2, $3, $4, $5) WHERE id = $6;`
-		t, err := api.PgConn.Exec(ctx, sql,
-			dp.Descr,
-			dp.Retention,
-			dp.UseAggregation,
-			dp.AggregationRetention,
-			dp.AggregationInterval,
-			id,
-		)
+		dp.Id = id
+		e, err := api.PgConn.DataPolicy.Update(ctx, dp)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to update data policy", logger.ErrField(err))
 			return
 		}
-		if t.RowsAffected() == 0 {
+		if !e {
 			c.Status(http.StatusNotFound)
 			return
 		}

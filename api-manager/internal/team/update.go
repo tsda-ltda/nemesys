@@ -8,15 +8,9 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
+	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 )
-
-// Team struct for CreateHandler json requests
-type _UpdateTeam struct {
-	Name  string `json:"name" validate:"required,max=50,min=2"`
-	Ident string `json:"ident" validate:"required,max=50,min=2"`
-	Descr string `json:"descr" validate:"max=255"`
-}
 
 // Updates a team on database.
 // Responses:
@@ -30,14 +24,14 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get team id
-		id, err := getId(api, c)
+		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
-			c.Status(http.StatusNotFound)
+			c.Status(http.StatusBadRequest)
 			return
 		}
 
 		// bind team
-		var team _UpdateTeam
+		var team models.Team
 		err = c.ShouldBind(&team)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -59,27 +53,20 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if ident is already in use
-		if team.Ident != c.Param("ident") {
-			var identInUse bool
-			sql := `SELECT EXISTS (SELECT 1 FROM teams WHERE ident = $1);`
-
-			// query row
-			err = api.PgConn.QueryRow(ctx, sql, team.Ident).Scan(&identInUse)
-			if err != nil {
-				c.Status(http.StatusInternalServerError)
-				api.Log.Error("fail to query team by ident", logger.ErrField(err))
-				return
-			}
-
-			if identInUse {
-				c.JSON(http.StatusBadRequest, tools.NewMsg("ident already in use"))
-				return
-			}
+		e, err := api.PgConn.Teams.IdentAvailableUpdate(ctx, id, team.Ident)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			api.Log.Error("fail to check if ident is available", logger.ErrField(err))
+			return
+		}
+		if e {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(msgIdentExists))
+			return
 		}
 
 		// update team in database
-		sql := `UPDATE teams SET (name, ident, descr) = ($1, $2, $3) WHERE id = $4`
-		f, err := api.PgConn.Exec(ctx, sql, team.Name, team.Ident, team.Descr, id)
+		team.Id = id
+		e, err = api.PgConn.Teams.Update(ctx, team)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to update team", logger.ErrField(err))
@@ -87,12 +74,12 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if team exists
-		if f.RowsAffected() == 0 {
+		if !e {
 			c.Status(http.StatusNotFound)
 			return
 		}
 
-		api.Log.Debug(fmt.Sprintf("team '%s' updated successfully", team.Ident))
+		api.Log.Debug("team updated successfully, id" + fmt.Sprint(id))
 
 		c.Status(http.StatusOK)
 	}

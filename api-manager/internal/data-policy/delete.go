@@ -27,8 +27,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// delete data policy
-		sql := `DELETE FROM data_policies WHERE id = $1`
-		t, err := api.PgConn.Exec(ctx, sql, id)
+		e, err := api.PgConn.DataPolicy.Delete(ctx, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to delete data policy", logger.ErrField(err))
@@ -36,12 +35,11 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if data policy exists
-		if t.RowsAffected() == 0 {
+		if !e {
 			c.Status(http.StatusNotFound)
 			return
 		}
 		api.Log.Info("data policy deleted, id: " + fmt.Sprint(id))
-
 		c.Status(http.StatusNoContent)
 	}
 }

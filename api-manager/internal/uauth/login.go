@@ -6,7 +6,6 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
-	"github.com/fernandotsda/nemesys/api-manager/internal/roles"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/logger"
@@ -14,8 +13,9 @@ import (
 )
 
 const SessionCookieName = "sess"
+const msgUsernamePWWrong = "Wrong username password."
 
-type _Login struct {
+type loginReq struct {
 	Username string `json:"username" validate:"required,min=2,max=50"`
 	Password string `json:"password" validate:"required,min=5,max=50"`
 }
@@ -29,7 +29,7 @@ type _Login struct {
 func LoginHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
-		var form _Login
+		var form loginReq
 
 		// bind login form
 		err := c.ShouldBind(&form)
@@ -45,34 +45,30 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// get hashed password
-		sql := `SELECT password, role, id FROM users WHERE username = $1`
-		rows, err := api.PgConn.Query(ctx, sql, form.Username)
+		// get login info
+		li, err := api.PgConn.Users.LoginInfo(ctx, form.Username)
 		if err != nil {
+			api.Log.Error("fail to get login info", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get user's password", logger.ErrField(err))
 			return
 		}
-		defer rows.Close()
 
-		// scan rows
-		var hashedPw string
-		var id int
-		var role roles.Role
-		for rows.Next() {
-			rows.Scan(&hashedPw, &role, &id)
+		// check if user exists
+		if !li.Exists {
+			c.JSON(http.StatusUnauthorized, tools.JSONMSG(msgUsernamePWWrong))
+			return
 		}
 
-		// check if user exists and password is correct
-		if rows.CommandTag().RowsAffected() == 0 || !auth.CheckHash(form.Password, hashedPw) {
-			c.JSON(http.StatusUnauthorized, tools.NewMsg("username or password is wrong"))
+		// check password
+		if !auth.CheckHash(form.Password, li.PW) {
+			c.JSON(http.StatusUnauthorized, tools.JSONMSG(msgUsernamePWWrong))
 			return
 		}
 
 		// create new session
 		token, err := api.Auth.NewSession(ctx, auth.SessionMeta{
-			UserId: id,
-			Role:   role,
+			UserId: li.Id,
+			Role:   uint8(li.Role),
 		})
 		if err != nil {
 			c.Status(http.StatusInternalServerError)

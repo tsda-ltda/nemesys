@@ -2,20 +2,15 @@ package team
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
+	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 )
 
-// Team struct for CreateHandler json requests.
-type _CreateTeam struct {
-	Name  string `json:"name" validate:"required,max=50,min=2"`
-	Ident string `json:"ident" validate:"required,max=50,min=2"`
-	Descr string `json:"descr" validate:"max=255"`
-}
+const msgIdentExists = "Identification already exists."
 
 // Creates a new team on databse.
 // Responses:
@@ -26,9 +21,9 @@ type _CreateTeam struct {
 func CreateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
-		var team _CreateTeam
 
 		// bind team
+		var team models.Team
 		err := c.ShouldBind(&team)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -42,34 +37,26 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// validate ident
-		_, err = strconv.Atoi(team.Ident)
-		if err == nil {
-			c.Status(http.StatusBadRequest)
-			return
-		}
-
-		// check if ident exists in database
-		var identInUse bool
-		sql := `SELECT EXISTS ( SELECT 1 FROM teams WHERE ident = $1 );`
-
-		// query row
-		err = api.PgConn.QueryRow(ctx, sql, team.Ident).Scan(&identInUse)
+		// get ident existence
+		e, err := api.PgConn.Teams.ExistsIdent(ctx, team.Ident)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to query postgres team ident", logger.ErrField(err))
+			api.Log.Error("fail to check if team ident exists", logger.ErrField(err))
 			return
 		}
 
-		// check if ident is in use
-		if identInUse {
-			c.JSON(http.StatusBadRequest, tools.NewMsg("ident already in use"))
+		// check if ident exists
+		if e {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(msgIdentExists))
 			return
 		}
 
 		// save team in database
-		sql = `INSERT INTO teams (name, descr, ident) VALUES($1, $2, $3)`
-		_, err = api.PgConn.Exec(ctx, sql, team.Name, team.Descr, team.Ident)
+		err = api.PgConn.Teams.Create(ctx, models.Team{
+			Name:  team.Name,
+			Ident: team.Ident,
+			Descr: team.Descr,
+		})
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to create team", logger.ErrField(err))

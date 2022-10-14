@@ -2,21 +2,13 @@ package team
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
-	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 )
-
-// Team struct for MGetHandler and UserTeams json responses
-type _SanitizedTeam struct {
-	Id    int    `json:"id"`
-	Name  string `json:"name"`
-	Ident string `json:"ident"`
-	Descr string `json:"descr"`
-}
 
 // Get team in database
 // Responses:
@@ -27,36 +19,22 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get team id
-		id, err := getId(api, c)
+		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
-			c.Status(http.StatusNotFound)
+			c.Status(http.StatusBadRequest)
 			return
 		}
 
 		// get team
-		var team models.Team
-		sql := `SELECT descr, name, ident FROM teams WHERE id = $1`
-		rows, err := api.PgConn.Query(ctx, sql, id)
+		e, team, err := api.PgConn.Teams.Get(ctx, id)
 		if err != nil {
+			api.Log.Debug("fail to get team", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
-			api.Log.Debug("fail to query team by id", logger.ErrField(err))
 			return
 		}
-		defer rows.Close()
-		// scan results
-		for rows.Next() {
-			rows.Scan(
-				&team.Descr,
-				&team.Name,
-				&team.Ident,
-			)
-		}
 
-		// set id
-		team.Id = id
-
-		// check if team doesn't exists
-		if rows.CommandTag().RowsAffected() == 0 {
+		// check if team  exists
+		if !e {
 			c.Status(http.StatusNotFound)
 			return
 		}
@@ -90,22 +68,12 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// search teams
-		sql := `SELECT id, name, descr, ident FROM teams LIMIT $1 OFFSET $2`
-		rows, err := api.PgConn.Query(ctx, sql, limit, offset)
+		// get teams
+		teams, err := api.PgConn.Teams.MGet(ctx, limit, offset)
 		if err != nil {
+			api.Log.Error("fail to get teams", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to query teams", logger.ErrField(err))
 			return
-		}
-		defer rows.Close()
-
-		// scan teams
-		teams := []_SanitizedTeam{}
-		for rows.Next() {
-			var t _SanitizedTeam
-			rows.Scan(&t.Id, &t.Name, &t.Descr, &t.Ident)
-			teams = append(teams, t)
 		}
 
 		c.JSON(http.StatusOK, teams)

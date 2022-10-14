@@ -22,32 +22,34 @@ func Set(api *api.API) {
 	r.POST("/logout", middleware.Protect(api, roles.Viewer), uauth.Logout(api))
 	r.POST("/users/:id/logout", middleware.Protect(api, roles.Admin), uauth.ForceLogout(api))
 
-	// users
-	users := r.Group("/users")
-	{
-		users.GET("/", middleware.Protect(api, roles.TeamsManager), user.MGetHandler(api))
-		users.POST("/", middleware.Protect(api, roles.Admin), user.CreateHandler(api))
-		users.GET("/:id", middleware.ProtectUser(api, roles.Admin), user.GetHandler(api))
-		users.PATCH("/:id", middleware.Protect(api, roles.Admin), user.UpdateHandler(api))
-		users.DELETE("/:id", middleware.Protect(api, roles.Admin), user.DeleteHandler(api))
-	}
-
 	// teams
 	teams := r.Group("/teams", middleware.Protect(api, roles.Viewer))
 	{
 		teams.GET("/", team.UserTeamsHandler(api))
 	}
 
+	// users config
+	usersConfig := r.Group("/config/users")
+	{
+		usersConfig.GET("/", middleware.Protect(api, roles.TeamsManager), user.MGetHandler(api))
+		usersConfig.GET("/:id", middleware.ProtectUser(api, roles.Admin), user.GetHandler(api))
+		usersConfig.POST("/", middleware.Protect(api, roles.Admin), user.CreateHandler(api))
+		usersConfig.PATCH("/:id", middleware.Protect(api, roles.Admin), user.UpdateHandler(api))
+		usersConfig.DELETE("/:id", middleware.Protect(api, roles.Admin), user.DeleteHandler(api))
+	}
+
 	// teams config
 	teamConfig := r.Group("/config/teams", middleware.Protect(api, roles.TeamsManager))
 	{
 		teamConfig.GET("/", team.MGetHandler(api))
+		teamConfig.GET("/:id", team.GetHandler(api))
 		teamConfig.POST("/", team.CreateHandler(api))
-		teamConfig.PATCH("/:ident", team.UpdateHandler(api))
-		teamConfig.GET("/:ident", team.GetHandler(api))
-		teamConfig.DELETE("/:ident", team.DeleteHandler(api))
-		teamConfig.POST("/:ident/users", team.AddUserHandler(api))
-		teamConfig.DELETE("/:ident/users/:userId", team.RemoveUserHandler(api))
+		teamConfig.POST("/:id/users", team.AddUserHandler(api))
+		teamConfig.POST("/:id/contexts", team.CreateContextHandler(api))
+		teamConfig.PATCH("/:id", team.UpdateHandler(api))
+		teamConfig.DELETE("/:id", team.DeleteHandler(api))
+		teamConfig.DELETE("/:id/users/:userId", team.RemoveUserHandler(api))
+		teamConfig.DELETE("/:id/contexts/:contextId", team.DeleteContextHandler(api))
 	}
 
 	// data-policies
@@ -55,8 +57,7 @@ func Set(api *api.API) {
 	{
 		dp.GET("/", datapolicy.MGetHandler(api))
 		dp.POST("/", datapolicy.CreateHandler(api))
-		dp.DELETE("/:id", datapolicy.DeleteHandler(api))
 		dp.PATCH("/:id", datapolicy.UpdateHandler(api))
+		dp.DELETE("/:id", datapolicy.DeleteHandler(api))
 	}
-
 }

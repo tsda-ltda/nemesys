@@ -7,18 +7,9 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
+	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 )
-
-// User struct for CreateHandler json responses.
-type _CreateUser struct {
-	Id       int    `json:"id" validate:"-"`
-	Role     int    `json:"role" validate:"required,min=1,max=4"`
-	Name     string `json:"name" validate:"required,min=2,max=50"`
-	Username string `json:"username" validate:"required,min=3,max=50"`
-	Password string `json:"password" validate:"required,min=5,max=50"`
-	Email    string `json:"email" validate:"required,email"`
-}
 
 // Creates a new user on database.
 // Responses:
@@ -30,9 +21,9 @@ type _CreateUser struct {
 func CreateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
-		var user _CreateUser
 
 		// bind user
+		var user models.User
 		err := c.ShouldBind(&user)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -46,32 +37,23 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// check if username and email exists in database
-		var usernameInUse, emailInUse bool
-		sql := `SELECT EXISTS (
-				SELECT 1 FROM users WHERE username = $1
-			) as EX1, EXISTS (
-				SELECT 1 FROM users WHERE email = $2
-			) as EX2;
-		`
-
-		// query row
-		err = api.PgConn.QueryRow(ctx, sql, user.Username, user.Email).Scan(&usernameInUse, &emailInUse)
+		// check if username and email exists
+		ue, ee, err := api.PgConn.Users.ExistsUsernameEmail(ctx, user.Username, user.Email)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check username and email on postgres", logger.ErrField(err))
+			api.Log.Error("fail to check if username and email exists", logger.ErrField(err))
 			return
 		}
 
 		// check if username is in use
-		if usernameInUse {
-			c.JSON(http.StatusBadRequest, tools.NewMsg("username already in use"))
+		if ue {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG("username already in use"))
 			return
 		}
 
 		// check if email is in use
-		if emailInUse {
-			c.JSON(http.StatusBadRequest, tools.NewMsg("email already in use"))
+		if ee {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG("email already in use"))
 			return
 		}
 
@@ -84,15 +66,13 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// save user in database
-		sql = `INSERT INTO users (name, username, password, email, role)
-		VALUES($1, $2, $3, $4, $5)`
-		_, err = api.PgConn.Exec(ctx, sql,
-			user.Name,
-			user.Username,
-			pwHashed,
-			user.Email,
-			user.Role,
-		)
+		err = api.PgConn.Users.Create(ctx, models.User{
+			Role:     user.Role,
+			Name:     user.Name,
+			Username: user.Username,
+			Password: pwHashed,
+			Email:    user.Email,
+		})
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to create user", logger.ErrField(err))

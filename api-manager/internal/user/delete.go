@@ -19,20 +19,21 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get id from param
+		// get id
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		flag, err := api.PgConn.Exec(ctx, "DELETE FROM users WHERE id = $1", id)
+		// deltete user
+		e, err := api.PgConn.Users.Delete(ctx, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to delete user", logger.ErrField(err))
 			return
 		}
-		if flag.RowsAffected() == 0 {
+		if !e {
 			c.Status(http.StatusNotFound)
 			return
 		}

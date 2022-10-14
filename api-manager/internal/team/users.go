@@ -1,20 +1,15 @@
 package team
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
+	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 )
-
-// UserId struct for AddUserHandler json requests.
-type _UserId struct {
-	UserId int `json:"user-id" validate:"required"`
-}
 
 // Add a user to team.
 // Responses:
@@ -28,14 +23,14 @@ func AddUserHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get team id
-		teamId, err := getId(api, c)
+		teamId, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
 		// get user id
-		var userId _UserId
+		var userId models.AddMemberReq
 		err = c.ShouldBind(&userId)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -49,27 +44,31 @@ func AddUserHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// query realation existence
-		var e bool
-		sql := `SELECT EXISTS (SELECT 1 FROM users_teams WHERE userId = $1 AND teamId = $2)`
-		err = api.PgConn.QueryRow(ctx, sql, userId.UserId, teamId).Scan(&e)
+		// get realation, user and team existence
+		re, ue, te, err := api.PgConn.Teams.ExistsRelUserTeam(ctx, userId.UserId, teamId)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to query users_teams", logger.ErrField(err))
+			api.Log.Error("fail to get realation, user and team existence", logger.ErrField(err))
 			return
 		}
 
 		// check if realation already exists
-		if e {
+		if re {
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		// add user
-		sql = `INSERT INTO users_teams (userid, teamid) VALUES ($1,$2)`
-		_, err = api.PgConn.Exec(ctx, sql, userId.UserId, teamId)
+		// check if team or user doesn't exists
+		if !te || !ue {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		// add user to the team
+		err = api.PgConn.Teams.AddMember(ctx, userId.UserId, teamId)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			api.Log.Error("fail to add member to team", logger.ErrField(err))
+			c.Status(http.StatusInternalServerError)
 			return
 		}
 
@@ -87,35 +86,37 @@ func RemoveUserHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
+		rawTeamId := c.Param("id")
+		rawUserId := c.Param("userId")
+
 		// get team teamId
-		teamId, err := getId(api, c)
+		teamId, err := strconv.Atoi(rawTeamId)
 		if err != nil {
 			c.Status(http.StatusNotFound)
 			return
 		}
 
 		// get user id
-		userId, err := strconv.Atoi(c.Param("userId"))
+		userId, err := strconv.Atoi(rawUserId)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
 		// remove user from team
-		sql := `DELETE FROM users_teams WHERE userId = $1 AND teamId = $2`
-		t, err := api.PgConn.Exec(ctx, sql, userId, teamId)
+		e, err := api.PgConn.Teams.RemMember(ctx, userId, teamId)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
 
 		// check if relation exists
-		if t.RowsAffected() == 0 {
+		if !e {
 			c.Status(http.StatusNotFound)
 			return
 		}
 
-		api.Log.Debug(fmt.Sprintf("userid '%d' removed from team '%s'", userId, c.Param(":ident")))
+		api.Log.Debug("user " + rawUserId + " removed from team " + rawTeamId)
 
 		c.Status(http.StatusNoContent)
 	}
@@ -154,24 +155,13 @@ func UserTeamsHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// query teams
-		sql := `SELECT id, name, ident, descr FROM users_teams ut 
-		LEFT JOIN teams t ON ut.teamId = t.id WHERE ut.userid = $1 LIMIT $2 OFFSET $3;`
-		rows, err := api.PgConn.Query(ctx, sql, meta.UserId, limit, offset)
+		// get user teams
+		teams, err := api.PgConn.Users.Teams(ctx, meta.UserId, limit, offset)
 		if err != nil {
+			api.Log.Error("fail to get user's teams", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to query user's teams", logger.ErrField(err))
 			return
 		}
-
-		// scan rows
-		var teams []_SanitizedTeam
-		for rows.Next() {
-			var t _SanitizedTeam
-			rows.Scan(&t.Id, &t.Name, &t.Ident, &t.Descr)
-			teams = append(teams, t)
-		}
-		rows.Close()
 
 		c.JSON(http.StatusOK, teams)
 	}

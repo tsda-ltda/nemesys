@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
-	"github.com/fernandotsda/nemesys/api-manager/internal/roles"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/gin-gonic/gin"
@@ -60,49 +59,41 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// get userId
-		userId, err := strconv.Atoi(c.Param("id"))
+		// get user id
+		rawId := c.Param("id")
+		id, err := strconv.Atoi(rawId)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		// get target user's role
-		sql := `SELECT role FROM users WHERE id = $1`
-		rows, err := api.PgConn.Query(ctx, sql, userId)
+		// get user role
+		e, role, err := api.PgConn.Users.GetRole(ctx, id)
 		if err != nil {
+			api.Log.Error("fail to get user role", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to query user's role", logger.ErrField(err))
 			return
 		}
-		defer rows.Close()
 
-		// scan role
-		var userRole roles.Role
-		for rows.Next() {
-			rows.Scan(&userRole)
-		}
-
-		// check if user does not exists
-		if rows.CommandTag().RowsAffected() == 0 {
-			c.Status(http.StatusBadRequest)
+		// check if user exists
+		if !e {
+			c.Status(http.StatusNotFound)
 			return
 		}
 
 		// check if target's role is superior
-		if userRole > meta.Role {
+		if uint8(role) > meta.Role {
 			c.Status(http.StatusForbidden)
 			return
 		}
 
 		// remove session
-		err = api.Auth.RemoveSession(ctx, userId)
+		err = api.Auth.RemoveSession(ctx, id)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
-		api.Log.Debug(fmt.Sprintf("user '%d' forcibly logout with success", userId))
-
+		api.Log.Debug("user forcibly logout with success, id: " + rawId)
 		c.Status(http.StatusOK)
 	}
 }
