@@ -8,3 +8,17 @@ type User struct {
 	Password string `json:"password" validate:"required,min=5,max=50"`
 	Email    string `json:"email" validate:"required,email"`
 }
+
+type UserSimplified struct {
+	Id       int    `json:"id" validate:"-"`
+	Username string `json:"username" validate:"required,min=3,max=50"`
+	Name     string `json:"name" validate:"required,min=2,max=50"`
+}
+
+type UserWithoutPW struct {
+	Id       int    `json:"id" validate:"-"`
+	Role     int    `json:"role" validate:"required"`
+	Name     string `json:"name" validate:"required,min=2,max=50"`
+	Username string `json:"username" validate:"required,min=3,max=50"`
+	Email    string `json:"email" validate:"required,email"`
+}
