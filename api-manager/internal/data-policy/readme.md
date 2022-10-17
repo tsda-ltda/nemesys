@@ -1,6 +1,6 @@
 # Data policies Config routes
 
-All routes that interact directly with data policies configuration are here `/config/data-policies`.
+All routes that interact directly with data policies configuration are under `/config/data-policies`.
 
 ## Create
 
