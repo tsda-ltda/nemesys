@@ -1,6 +1,6 @@
 # Users routes
 
-All routes that interact directly with users are grouped together under `\users`.
+All routes that interact directly with users configuration are grouped together under `/config/users`.
 
 ## Create
 
@@ -9,7 +9,7 @@ Creates a new user.
 ### Details
 
 - **Role**: Admin
-- **Route URL**: `POST` `/users`
+- **Route URL**: `POST` `/config/users`
 - **Parameters**: No parameters.
 - **Body**:
 
@@ -38,7 +38,7 @@ Updates a user by id.
 ### Details
 
 - **Role**: Admin
-- **Route URL**: `PATCH` `/users/:id`
+- **Route URL**: `PATCH` `/config/users/:id`
 - **Parameters**: No parameters.
 - **Body**:
 
@@ -68,7 +68,7 @@ Deletes a user by id.
 ### Details
 
 - **Role**: Admin
-- **Route URL**: `DELETE` `/users/:id`
+- **Route URL**: `DELETE` `/config/users/:id`
 - **Parameters**: No parameters.
 - **Body**: No body.
 - **Responses**:
@@ -83,7 +83,7 @@ Get a list of users.
 ### Details
 
 - **Role**: Manager
-- **Route URL**: `GET` `/users`
+- **Route URL**: `GET` `/config/users`
 - **Parameters**:
   - "limit" Limit of users returned. Default is 30, max is 30, min is 0.
   - "offset" Offset for searching. Default is 0, min is 0.
@@ -105,8 +105,8 @@ Get a user by id.
 
 ### Details
 
-- **Role**: Admin (or Onwer)
-- **Route URL**: `GET` `/users/:id/users`
+- **Role**: Admin or Onwer
+- **Route URL**: `GET` `/config/users/:id`
 - **Parameters**: No parameters.
 - **Body**: No body.
 - **Responses**:
@@ -119,6 +119,7 @@ Get a user by id.
   "id": "number",
   "username": "string",
   "name": "string",
-  "role": "number"
+  "role": "number",
+  "email": "string"
 }
 ```
