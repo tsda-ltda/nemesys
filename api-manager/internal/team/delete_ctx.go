@@ -34,7 +34,7 @@ func DeleteContextHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if context existed
-		if e {
+		if !e {
 			c.Status(http.StatusNotFound)
 			return
 		}

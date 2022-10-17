@@ -35,7 +35,7 @@ Updates a team by id or ident.
 ### Details
 
 - **Role**: Manager
-- **Route URL**: `PATCH` `/config/teams/:(ident or id)`
+- **Route URL**: `PATCH` `/config/teams/:id`
 - **Parameters**: No parameters.
 - **Body**:
 
@@ -62,7 +62,7 @@ Deletes a team by id or ident.
 ### Details
 
 - **Role**: Manager
-- **Route URL**: `DELETE` `/config/teams/:(ident or id)`
+- **Route URL**: `DELETE` `/config/teams/:id`
 - **Parameters**: No parameters.
 - **Body**: No body.
 - **Responses**:
@@ -100,7 +100,7 @@ Get a team by id or ident.
 ### Details
 
 - **Role**: Manager
-- **Route URL**: `GET` `/config/teams/:(ident or id)`
+- **Route URL**: `GET` `/config/teams/:id`
 - **Parameters**: No parameters.
 - **Body**: No body.
 - **Responses**:
@@ -116,20 +116,20 @@ Get a team by id or ident.
 }
 ```
 
-## Add user
+## Add member
 
-Add a user to the team.
+Add a member to the team.
 
 ### Details
 
 - **Role**: Manager
-- **Route URL**: `POST` `/config/teams/:(ident or id)/users`
+- **Route URL**: `POST` `/config/teams/:id/members`
 - **Parameters**: No parameters.
 - **Body**:
 
 ```js
 {
-  "users-ids": "number"
+  "users-id": "number"
 }
 ```
 
@@ -140,14 +140,14 @@ Add a user to the team.
   - 404 If team not found.
   - 200 If succeeded.
 
-## Remove user
+## Remove member
 
-Remove a user from the team.
+Remove a member from the team.
 
 ### Details
 
 - **Role**: Manager
-- **Route URL**: `DEL` `/config/teams/:(ident or id)/users/:userId`
+- **Route URL**: `DEL` `/config/teams/:id/members/:userId`
 - **Parameters**: No parameters.
 - **Body**: No body.
 - **Responses**:
@@ -155,7 +155,99 @@ Remove a user from the team.
   - 404 If team not found or user was not a member.
   - 204 If succeeded.
 
-## Get user teams
+## Get members
+
+Get all members.
+
+### Details
+
+- **Role**: Manager
+- **Route URL**: `GET` `/config/teams/:id/members`
+- **Parameters**:
+  - "limit" Limit of teams returned. Default is 30, max is 30, min is 0.
+  - "offset" Offset for searching. Default is 0, min is 0.
+- **Body**: No body.
+- **Responses**:
+  - 400 If invalid team id.
+  - 404 If team not found.
+  - 200 If succeeded with body containing it's data in the format:
+
+```js
+  {
+    "id": "number",
+    "name": "string",
+    "username": "string"
+  }[]
+```
+
+## Add context
+
+Add a context to the team.
+
+### Details
+
+- **Role**: Manager
+- **Route URL**: `POST` `/config/teams/:id/contexts`
+- **Parameters**: No parameters.
+- **Body**:
+
+```js
+{
+  "name": "string",
+  "ident": "string",
+  "descr": "string"
+}
+```
+
+- **Responses**:
+  - 400 If invalid body.
+  - 400 If invalid body fields.
+  - 400 If ident already exists.
+  - 404 If team not found.
+  - 200 If succeeded.
+
+## Remove Context
+
+Remove a context from the team.
+
+### Details
+
+- **Role**: Manager
+- **Route URL**: `DEL` `/config/teams/:id/contexts/:contextId`
+- **Parameters**: No parameters.
+- **Body**: No body.
+- **Responses**:
+  - 400 If invalid team or context id.
+  - 404 If team or context not found.
+  - 204 If succeeded.
+
+## Get contexts
+
+Get all team's contexts.
+
+### Details
+
+- **Role**: Manager
+- **Route URL**: `GET` `/config/teams/:id/contexts`
+- **Parameters**:
+  - "limit" Limit of teams returned. Default is 30, max is 30, min is 0.
+  - "offset" Offset for searching. Default is 0, min is 0.
+- **Body**: No body.
+- **Responses**:
+  - 400 If invalid team id.
+  - 404 If team not found.
+  - 200 If succeeded with body containing it's data in the format:
+
+```js
+  {
+    "id": "number",
+    "name": "string",
+    "ident": "string",
+    "descr": "string"
+  }[]
+```
+
+## Get user's teams
 
 Return all teams that the user is member.
 

@@ -24,7 +24,7 @@ func CreateContextHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get team id
-		teamId, err := strconv.Atoi(c.Param("teamId"))
+		teamId, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
@@ -55,7 +55,7 @@ func CreateContextHandler(api *api.API) func(c *gin.Context) {
 
 		// check if ident exists
 		if e {
-			c.JSON(http.StatusBadGateway, tools.JSONMSG(msgContextIdentExists))
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(msgContextIdentExists))
 			return
 		}
 

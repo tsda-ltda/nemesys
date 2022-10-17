@@ -11,14 +11,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Add a user to team.
+// Add a member.
 // Responses:
 //   - 400 If invalid body.
-//   - 400 If invalid user id.
+//   - 400 If invalid user or team id.
 //   - 400 If user is already a member.
 //   - 404 If team does not exists.
 //   - 200 If succeeded.
-func AddUserHandler(api *api.API) func(c *gin.Context) {
+func AddMemberHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
@@ -76,13 +76,13 @@ func AddUserHandler(api *api.API) func(c *gin.Context) {
 	}
 }
 
-// Remove a user from team.
+// Remove a member.
 // Responses:
-//   - 400 If invalid user id.
+//   - 400 If invalid user or team id.
 //   - 400 If user is already a member.
 //   - 404 If relation does not exists.
 //   - 204 If succeeded.
-func RemoveUserHandler(api *api.API) func(c *gin.Context) {
+func RemoveMemberHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
@@ -107,6 +107,7 @@ func RemoveUserHandler(api *api.API) func(c *gin.Context) {
 		e, err := api.PgConn.Teams.RemMember(ctx, userId, teamId)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
+			api.Log.Error("fail to remove member", logger.ErrField(err))
 			return
 		}
 
@@ -122,17 +123,24 @@ func RemoveUserHandler(api *api.API) func(c *gin.Context) {
 	}
 }
 
-// Get user's teams.
+// Remove a member.
 // Params:
 //   - "limit" Limit of teams returned. Default is 30, max is 30, min is 0.
 //   - "offset" Offset for searching. Default is 0, min is 0.
 //
 // Responses:
-//   - 400 If invalid params.
-//   - 200 If succeeded.
-func UserTeamsHandler(api *api.API) func(c *gin.Context) {
+//   - 400 If invalid user or team id.
+//   - 204 If succeeded.
+func MGetMembersHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
+
+		// get team id
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
 
 		// db query params
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
@@ -147,22 +155,14 @@ func UserTeamsHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// get user session metadata
-		meta, err := tools.GetSessionMeta(c)
+		// get members
+		m, err := api.PgConn.Teams.MGetMembers(ctx, id, limit, offset)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to read session metadata", logger.ErrField(err))
+			api.Log.Error("fail to get team members", logger.ErrField(err))
 			return
 		}
 
-		// get user teams
-		teams, err := api.PgConn.Users.Teams(ctx, meta.UserId, limit, offset)
-		if err != nil {
-			api.Log.Error("fail to get user's teams", logger.ErrField(err))
-			c.Status(http.StatusInternalServerError)
-			return
-		}
-
-		c.JSON(http.StatusOK, teams)
+		c.JSON(http.StatusOK, m)
 	}
 }
