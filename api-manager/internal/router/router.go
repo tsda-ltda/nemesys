@@ -43,12 +43,14 @@ func Set(api *api.API) {
 	{
 		teamConfig.GET("/", team.MGetHandler(api))
 		teamConfig.GET("/:id", team.GetHandler(api))
+		teamConfig.GET("/:id/members", team.MGetMembersHandler(api))
+		teamConfig.GET("/:id/contexts", team.MGetContextHandler(api))
 		teamConfig.POST("/", team.CreateHandler(api))
-		teamConfig.POST("/:id/users", team.AddUserHandler(api))
+		teamConfig.POST("/:id/members", team.AddMemberHandler(api))
 		teamConfig.POST("/:id/contexts", team.CreateContextHandler(api))
 		teamConfig.PATCH("/:id", team.UpdateHandler(api))
 		teamConfig.DELETE("/:id", team.DeleteHandler(api))
-		teamConfig.DELETE("/:id/users/:userId", team.RemoveUserHandler(api))
+		teamConfig.DELETE("/:id/members/:userId", team.RemoveMemberHandler(api))
 		teamConfig.DELETE("/:id/contexts/:contextId", team.DeleteContextHandler(api))
 	}
 
