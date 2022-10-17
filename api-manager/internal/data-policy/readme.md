@@ -35,7 +35,7 @@ Updates a data policy by id.
 
 ### Details
 
-- **Role**: Admin
+- **Role**: Master
 - **Route URL**: `PATCH` `/config/data-policies/:id`
 - **Parameters**: No parameters.
 - **Body**:
