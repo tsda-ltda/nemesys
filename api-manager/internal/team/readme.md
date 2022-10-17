@@ -30,7 +30,7 @@ Creates a new team.
 
 ## Update
 
-Updates a team by id or ident.
+Updates a team by id.
 
 ### Details
 
@@ -57,7 +57,7 @@ Updates a team by id or ident.
 
 ## Delete
 
-Deletes a team by id or ident.
+Deletes a team by id.
 
 ### Details
 
@@ -95,7 +95,7 @@ Get a list of teams.
 
 ## Get team
 
-Get a team by id or ident.
+Get a team by id.
 
 ### Details
 
