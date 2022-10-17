@@ -21,8 +21,12 @@ const (
 	sqlTeamsIdentAvailableUpdate = `SELECT EXISTS (SELECT 1 FROM teams WHERE id != $1 AND ident = $2);`
 	sqlTeamsUpdate               = `UPDATE teams SET (name, ident, descr) = ($1, $2, $3) WHERE id = $4;`
 	sqlTeamsAddMember            = `INSERT INTO users_teams (userid, teamid) VALUES ($1, $2);`
-	sqlTeamsRemMember            = `DELETE FROM users_teams WHERE user_id = $1 AND team_id = $2;`
-	sqlTeamsExistsRelUserTeam    = `SELECT 
+	sqlTeamsRemMember            = `DELETE FROM users_teams WHERE userId = $1 AND teamId = $2;`
+	sqlTeamsMGetMembers          = `SELECT u.id, u.name, u.username 
+		FROM users u 
+		LEFT JOIN users_teams ut ON ut.teamId = $1
+		LIMIT $2 OFFSET $3;`
+	sqlTeamsExistsRelUserTeam = `SELECT 
 		EXISTS(SELECT 1 FROM users_teams WHERE userId = $1 AND teamId = $2), 
 		EXISTS(SELECT 1 FROM users WHERE id=$1), 
 		EXISTS(SELECT 1 FROM teams WHERE id=$2);`
@@ -130,4 +134,24 @@ func (c *Teams) AddMember(ctx context.Context, userId int, teamId int) error {
 func (c *Teams) RemMember(ctx context.Context, userId int, teamId int) (e bool, err error) {
 	t, err := c.Exec(ctx, sqlTeamsRemMember, userId, teamId)
 	return t.RowsAffected() != 0, err
+}
+
+// MGetMembers returns all members of a team with a limit and offset.
+// Returns an error if fails to get.
+func (c *Teams) MGetMembers(ctx context.Context, teamId int, limit int, offset int) (m []models.UserSimplified, err error) {
+	m = []models.UserSimplified{}
+	rows, err := c.Query(ctx, sqlTeamsMGetMembers, teamId, limit, offset)
+	if err != nil {
+		return m, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var u models.UserSimplified
+		err = rows.Scan(&u.Id, &u.Name, &u.Username)
+		if err != nil {
+			return m, err
+		}
+		m = append(m, u)
+	}
+	return m, nil
 }
