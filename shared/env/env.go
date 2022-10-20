@@ -8,6 +8,11 @@ var (
 	// Minimum log level to enable console logs in API Manager service. Default is info.
 	LogBroadcastLevelAPIManager = "info"
 
+	// Minimum log level to enable console logs in API Manager service. Default is debug.
+	LogConsoleLevelSNMP = "debug"
+	// Minimum log level to enable console logs in API Manager service. Default is info.
+	LogBroadcastLevelSNMP = "info"
+
 	// Default master username. Default is "master".
 	Username = "master"
 	// Default master password (is strongly recommended to not use the default value). Default is "admin".

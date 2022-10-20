@@ -40,6 +40,9 @@ func Init() {
 	set("LOG_CONSOLE_LEVEL_API_MANAGER", &LogConsoleLevelAPIManager)
 	set("LOG_BROADCAST_LEVEL_API_MANAGER", &LogBroadcastLevelAPIManager)
 
+	set("LOG_CONSOLE_LEVEL_SNMP", &LogConsoleLevelSNMP)
+	set("LOG_BROADCAST_LEVEL_SNMP", &LogBroadcastLevelSNMP)
+
 	set("USERNAME", &Username)
 	set("PASSWORD", &PW)
 
