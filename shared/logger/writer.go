@@ -3,8 +3,8 @@ package logger
 import (
 	"context"
 
+	_amqp "github.com/fernandotsda/nemesys/shared/amqp"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/vmihailenco/msgpack/v5"
 )
 
 type AMQPLoggerWriter struct {
@@ -12,8 +12,8 @@ type AMQPLoggerWriter struct {
 }
 
 func (w *AMQPLoggerWriter) Write(p []byte) (n int, err error) {
-	// marshal [][]byte
-	b, err := msgpack.Marshal(p)
+	// econde bytes
+	b, err := _amqp.Encode(p)
 	if err != nil {
 		return 0, err
 	}
