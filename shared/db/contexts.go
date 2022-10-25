@@ -71,6 +71,7 @@ func (c *Contexts) Get(ctx context.Context, id int) (e bool, context models.Cont
 	if err != nil {
 		return false, context, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(&context.Ident, &context.Descr, &context.Name, &context.TeamId)
 		if err != nil {

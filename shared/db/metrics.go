@@ -129,6 +129,7 @@ func (c *Metrics) GetRTSConfig(ctx context.Context, id int) (e bool, info models
 	if err != nil {
 		return false, info, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(&info.PullingInterval, &info.PullingTimes, &info.CacheDuration)
 		if err != nil {
