@@ -3,30 +3,27 @@ package models
 import (
 	"errors"
 	"time"
-
-	"github.com/fernandotsda/nemesys/shared/amqp"
-	"github.com/vmihailenco/msgpack/v5"
 )
 
-type AMQPMessage struct {
-	// Type is the message type.
-	Type amqp.MessageType `msgpack:"type"`
-	// Metadata is a raw data sent as metadata.
-	Metadata msgpack.RawMessage `msgpack:"metadata"`
-	// Data is the message data.
-	Data msgpack.RawMessage `msgpack:"data"`
+type AMQPCorrelated[T any] struct {
+	CorrelationId string
+	RoutingKey    string
+	Data          T
 }
 
 type AMQPPlumber struct {
-	Channels map[string]chan AMQPMessage
+	Channels map[string]chan []byte
 }
 
-// GetWithTimeout will listen to the channel until it timeouts. Returns an error if timeouted.
-func (p *AMQPPlumber) GetWithTimeout(channelKey string, timeout time.Duration) (AMQPMessage, error) {
+// ListenWithTimeout will create and listen to the a plumber channel. Returns an error if timeouted.
+func (p *AMQPPlumber) ListenWithTimeout(channelKey string, timeout time.Duration) ([]byte, error) {
+	p.Channels[channelKey] = make(chan []byte)
+	defer close(p.Channels[channelKey])
+	defer delete(p.Channels, channelKey)
 	select {
 	case res := <-p.Channels[channelKey]:
 		return res, nil
 	case <-time.After(timeout):
-		return AMQPMessage{}, errors.New("pipe timeout")
+		return nil, errors.New("pipe timeout")
 	}
 }
