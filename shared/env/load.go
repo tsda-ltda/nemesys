@@ -43,8 +43,11 @@ func Init() {
 	set("LOG_CONSOLE_LEVEL_SNMP", &LogConsoleLevelSNMP)
 	set("LOG_BROADCAST_LEVEL_SNMP", &LogBroadcastLevelSNMP)
 
-	set("USERNAME", &Username)
-	set("PASSWORD", &PW)
+	set("LOG_CONSOLE_LEVEL_RTS", &LogConsoleLevelRTS)
+	set("LOG_BROADCAST_LEVEL_RTS", &LogBroadcastLevelRTS)
+
+	set("DEFAULT_USERNAME", &DefaultUsername)
+	set("DEFAULT_PASSWORD", &DefaultPassword)
 
 	set("MAX_DATA_POLICIES", &MaxDataPolicies)
 
@@ -63,6 +66,11 @@ func Init() {
 	set("RDB_AUTH_PORT", &RDBAuthPort)
 	set("RDB_AUTH_DB", &RDBAuthDB)
 	set("RDB_AUTH_PW", &RDBAuthPW)
+
+	set("RDB_RTS_HOST", &RDBRTSHost)
+	set("RDB_RTS_PORT", &RDBRTSPort)
+	set("RDB_RTS_DB", &RDBRTSDB)
+	set("RDB_RTS_PW", &RDBRTSPW)
 
 	set("API_MANAGER_HOST", &APIManagerHost)
 	set("API_MANAGER_PORT", &APIManagerPort)

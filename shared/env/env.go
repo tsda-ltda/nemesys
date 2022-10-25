@@ -8,15 +8,20 @@ var (
 	// Minimum log level to enable console logs in API Manager service. Default is info.
 	LogBroadcastLevelAPIManager = "info"
 
-	// Minimum log level to enable console logs in API Manager service. Default is debug.
+	// Minimum log level to enable console logs in SNMP service. Default is debug.
 	LogConsoleLevelSNMP = "debug"
-	// Minimum log level to enable console logs in API Manager service. Default is info.
+	// Minimum log level to enable console logs in SNMP service. Default is info.
 	LogBroadcastLevelSNMP = "info"
 
+	// Minimum log level to enable console logs in real time service. Default is debug.
+	LogConsoleLevelRTS = "debug"
+	// Minimum log level to enable console logs in real time service. Default is info.
+	LogBroadcastLevelRTS = "info"
+
 	// Default master username. Default is "master".
-	Username = "master"
+	DefaultUsername = "master"
 	// Default master password (is strongly recommended to not use the default value). Default is "admin".
-	PW = "master"
+	DefaultPassword = "master"
 
 	// Max data policies. Default is "8".
 	MaxDataPolicies = "8"
@@ -49,6 +54,15 @@ var (
 	RDBAuthDB = "0"
 	// Redis for authentication password. Default is "".
 	RDBAuthPW = ""
+
+	// Redis for real time service host. Default is "localhost".
+	RDBRTSHost = "localhost"
+	// Redis for real time service host. Default is "6379".
+	RDBRTSPort = "6379"
+	// Redis for real time service database. Default is "1".
+	RDBRTSDB = "1"
+	// Redis for real time service password. Default is "".
+	RDBRTSPW = ""
 
 	// API Manager host. Default is "localhost".
 	APIManagerHost = "localhost"
