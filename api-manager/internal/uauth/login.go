@@ -12,9 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const SessionCookieName = "sess"
-const msgUsernamePWWrong = "Wrong username password."
-
 type loginReq struct {
 	Username string `json:"username" validate:"required,min=2,max=50"`
 	Password string `json:"password" validate:"required,min=5,max=50"`
@@ -55,13 +52,13 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 
 		// check if user exists
 		if !li.Exists {
-			c.JSON(http.StatusUnauthorized, tools.JSONMSG(msgUsernamePWWrong))
+			c.JSON(http.StatusUnauthorized, tools.JSONMSG(tools.MsgWrongUsernameOrPW))
 			return
 		}
 
 		// check password
 		if !auth.CheckHash(form.Password, li.PW) {
-			c.JSON(http.StatusUnauthorized, tools.JSONMSG(msgUsernamePWWrong))
+			c.JSON(http.StatusUnauthorized, tools.JSONMSG(tools.MsgWrongUsernameOrPW))
 			return
 		}
 
@@ -78,7 +75,7 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 
 		// save session token in cookie
 		ttl, _ := strconv.Atoi(env.UserSessionTTL)
-		c.SetCookie(SessionCookieName, token, ttl, "/", env.APIManagerHost, false, true)
+		c.SetCookie(auth.SessionCookieName, token, ttl, "/", env.APIManagerHost, false, true)
 
 		c.Status(http.StatusOK)
 	}

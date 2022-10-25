@@ -47,13 +47,13 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		// check if username is in use
 		if ue {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG("username already in use"))
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgUsernameExists))
 			return
 		}
 
 		// check if email is in use
 		if ee {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG("email already in use"))
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgUsernameExists))
 			return
 		}
 

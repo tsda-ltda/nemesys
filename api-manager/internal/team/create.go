@@ -10,8 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const msgIdentExists = "Identification already exists."
-
 // Creates a new team on databse.
 // Responses:
 //   - 400 If invalid body.
@@ -47,7 +45,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		// check if ident exists
 		if e {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(msgIdentExists))
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}
 

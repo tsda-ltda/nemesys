@@ -60,7 +60,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if e {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(msgIdentExists))
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}
 

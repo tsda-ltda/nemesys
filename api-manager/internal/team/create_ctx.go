@@ -11,8 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const msgContextIdentExists = "Ident already exists."
-
 // Creates a new context.
 // Responses:
 //   - 400 If invalid body.
@@ -46,16 +44,22 @@ func CreateContextHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// get ident existence
-		e, err := api.PgConn.Contexts.ExistsIdent(ctx, context.Ident)
+		te, ie, err := api.PgConn.Contexts.ExistsTeamAndIdent(ctx, teamId, context.Ident)
 		if err != nil {
 			api.Log.Error("fail to get context existence", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
 
+		// check if team exists
+		if !te {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
 		// check if ident exists
-		if e {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(msgContextIdentExists))
+		if ie {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}
 

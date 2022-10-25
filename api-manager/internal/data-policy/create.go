@@ -12,8 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const msgMaxDP = "Max number of data policies reached."
-
 // Creates a new data policy.
 // Responses:
 //   - 400 If invalid body.
@@ -57,8 +55,8 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		// check if exceeds max data policies
 		if n >= max {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(msgMaxDP))
-			api.Log.Info("attempt to create data-policy failed, maximum number reached")
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgMaxDataPolicy))
+			api.Log.Warn("attempt to create data-policy failed, maximum number reached")
 			return
 		}
 
@@ -69,7 +67,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		api.Log.Info("new data policy added")
+		api.Log.Info("data policy created")
 		c.Status(http.StatusOK)
 	}
 }
