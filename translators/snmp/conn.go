@@ -1,15 +1,18 @@
 package snmp
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/fernandotsda/nemesys/shared/models"
 	g "github.com/gosnmp/gosnmp"
 )
 
 // Conn is the SNMP connection representation.
 type Conn struct {
+	// Id is the connection id.
+	Id int
 	// TTL is the connection time to live.
 	TTL time.Duration
 	// Agent is the GoSNMP configuratation and connection.
@@ -22,26 +25,38 @@ type Conn struct {
 	OnClose func(c *Conn)
 }
 
-// RegisterConn register a connection in SNMPService to be used later.
-func (s *SNMPService) RegisterConn(conf models.SNMPAgentConfig) error {
+// RegisterConn register a connection.
+func (s *SNMPService) RegisterAgent(ctx context.Context, containerId int) error {
+	// get agent configuration
+	e, conf, err := s.pgConn.SNMPContainers.Get(ctx, containerId)
+	if err != nil {
+		return err
+	}
+
+	// check if exists
+	if !e {
+		return errors.New("snmp container not found")
+	}
+
 	c := &Conn{
 		Agent: &g.GoSNMP{
-			Target:    conf.Target,
-			Port:      conf.Port,
-			Community: conf.Community,
-			Transport: conf.Transport,
-			MaxOids:   conf.MaxOidsPerReq,
-			Timeout:   conf.Timeout,
-			Retries:   conf.Retries,
-			Version:   g.SnmpVersion(conf.Version),
-			MsgFlags:  g.SnmpV3MsgFlags(conf.MsgFlags),
+			Target:             conf.Target,
+			Port:               conf.Port,
+			Community:          conf.Community,
+			Transport:          conf.Transport,
+			MaxOids:            conf.MaxOids,
+			Timeout:            time.Millisecond * time.Duration(conf.Timeout),
+			Retries:            conf.Retries,
+			Version:            g.SnmpVersion(conf.Version),
+			MsgFlags:           g.SnmpV3MsgFlags(conf.MsgFlags),
+			ExponentialTimeout: false,
 		},
-		TTL:    conf.TTL,
+		TTL:    time.Millisecond * time.Duration(conf.CacheDuration),
 		Closed: make(chan any),
 	}
 
-	// connect
-	err := c.Agent.Connect()
+	// connect to agent
+	err = c.Agent.Connect()
 	if err != nil {
 		return err
 	}
@@ -50,12 +65,12 @@ func (s *SNMPService) RegisterConn(conf models.SNMPAgentConfig) error {
 	go c.RunTTL()
 	c.OnClose = func(c *Conn) {
 		// remove connection
-		s.conns[connKey(conf.Target, conf.Port)] = nil
-		s.Log.Debug(fmt.Sprintf("conn removed, addr: %s:%d", conf.Target, conf.Port))
+		s.conns[c.Id] = nil
+		s.Log.Debug("conn removed, addr: " + fmt.Sprint(c.Id))
 	}
 
 	// save connection
-	s.conns[connKey(conf.Target, conf.Port)] = c
+	s.conns[containerId] = c
 	return nil
 }
 

@@ -3,11 +3,11 @@ package snmp
 import (
 	"math"
 
-	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/gosnmp/gosnmp"
 )
 
 // Get fetch the OIDs's values. Returns an error only if an error is returned fo the SNMP Get request.
-func (s *SNMPService) Get(c *Conn, oids []string) (res []models.SNMPGetMetricResult, err error) {
+func (s *SNMPService) Get(c *Conn, oids []string) (res []gosnmp.SnmpPDU, err error) {
 	// get agent
 	a := c.Agent
 
@@ -19,7 +19,7 @@ func (s *SNMPService) Get(c *Conn, oids []string) (res []models.SNMPGetMetricRes
 		oidsBuff = make([]string, len(oids))
 	}
 
-	res = []models.SNMPGetMetricResult{}
+	res = []gosnmp.SnmpPDU{}
 
 	var i int
 	for k := 0; k < int(math.Ceil(float64(len(oids))/float64(a.MaxOids))); k++ {
@@ -43,12 +43,7 @@ func (s *SNMPService) Get(c *Conn, oids []string) (res []models.SNMPGetMetricRes
 		}
 
 		// save response
-		temp := make([]models.SNMPGetMetricResult, len(_res.Variables))
-		for i, v := range _res.Variables {
-			temp[i].OID = v.Name
-			temp[i].Value = v.Value
-		}
-		res = append(res, temp...)
+		res = append(res, _res.Variables...)
 	}
 	return res, err
 }

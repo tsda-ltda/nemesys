@@ -1,21 +1,37 @@
 package snmp
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
+	"github.com/fernandotsda/nemesys/shared/db"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/logger"
+	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/rabbitmq/amqp091-go"
 )
 
 type SNMPService struct {
-	Log     *logger.Logger
-	amqp    *amqp091.Connection
-	conns   map[string]*Conn
-	Done    chan any
-	dataReq chan DataReq
+	// Log is the logger handler.
+	Log *logger.Logger
+
+	// amqp is the amqp connection.
+	amqp *amqp091.Connection
+
+	// pgConn is the postgresql connection.
+	pgConn *db.PgConn
+
+	// conns is a cache map of container id and snmp agent configuration and connection.
+	conns map[int]*Conn
+
+	// metrics is a cache map of metric id and metric.
+	metrics map[int]*Metric
+
+	// Done is the channel to quit.
+	Done chan any
+
+	// singleDataReq is the channel for new data requests.
+	singleDataReq chan models.AMQPCorrelated[SingleDataReq]
 }
 
 // New returns a configurated SNMPService instance.
@@ -26,8 +42,8 @@ func New() *SNMPService {
 		log.Fatalf("fail to connect to amqp server, err: %s", err)
 	}
 
-	// create logger
-	logger, err := logger.New(conn, logger.Config{
+	// create _logger
+	_logger, err := logger.New(conn, logger.Config{
 		Service:        "snmp",
 		ConsoleLevel:   logger.ParseLevelEnv(env.LogConsoleLevelSNMP),
 		BroadcastLevel: logger.ParseLevelEnv(env.LogBroadcastLevelSNMP),
@@ -36,30 +52,28 @@ func New() *SNMPService {
 		log.Fatalf("fail to create logger, err: %s", err)
 	}
 
-	return &SNMPService{
-		conns:   make(map[string]*Conn, 100),
-		dataReq: make(chan DataReq),
-		amqp:    conn,
-		Log:     logger,
+	// connect to postgresql
+	pgConn, err := db.ConnectToPG()
+	if err != nil {
+		_logger.Fatal("fail to connect to posgresql", logger.ErrField(err))
 	}
-}
 
-// connKey returns a key string for SNMPService.conns.
-func connKey(target string, port uint16) string {
-	return target + ":" + fmt.Sprint(port)
+	return &SNMPService{
+		conns:         make(map[int]*Conn, 100),
+		metrics:       make(map[int]*Metric),
+		singleDataReq: make(chan models.AMQPCorrelated[SingleDataReq]),
+		Done:          make(chan any),
+		amqp:          conn,
+		pgConn:        pgConn,
+		Log:           _logger,
+	}
 }
 
 // Run sets up all receivers and producers.
 func (s *SNMPService) Run() {
 	go s.dataProducer()
-	go s.getReceiver()
-	go s.registerConnReceiver()
+	go s.getListener()
 	s.Log.Info("service running with success")
-}
-
-// GetConn get a SNMP agent connection.
-func (s *SNMPService) GetConn(target string, port uint16) *Conn {
-	return s.conns[connKey(target, port)]
 }
 
 // Close all connections.
