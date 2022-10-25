@@ -31,15 +31,15 @@ const (
 	sqlUsersDelete         = `DELETE FROM users WHERE id=$1;`
 	sqlUsersMGetSimplified = `SELECT id, username, name FROM users LIMIT $1 OFFSET $2;`
 	sqlUsersGetWithoutPW   = `SELECT username, name, email, role FROM users WHERE id = $1;`
-	sqlUsersLoginInfo      = `SELECT id, role, password FROM users WHERE id = $1;`
+	sqlUsersLoginInfo      = `SELECT id, role, password FROM users WHERE username = $1;`
 	sqlUsersGetRole        = `SELECT role FROM users WHERE id = $1;`
 
 	sqlUsersUsernameEmailAvailableUpdate = `SELECT 
 		EXISTS (SELECT 1 FROM users WHERE  id != $1 AND username = $2),
 		EXISTS (SELECT 1 FROM users WHERE id != $1 AND username = $3);`
 	sqlUsersTeams = `SELECT id, name, ident, descr FROM teams t 
-		LEFT JOIN users_teams ut ON ut.teamId = t.id 
-		WHERE ut.userid = $1 LIMIT $2 OFFSET $3;`
+		LEFT JOIN users_teams ut ON ut.team_id = t.id 
+		WHERE ut.user_id = $1 LIMIT $2 OFFSET $3;`
 )
 
 // Exists return the existence of user. Returns an error if fails to check.
@@ -154,8 +154,8 @@ func (c *Users) LoginInfo(ctx context.Context, username string) (li LoginInfo, e
 		if err != nil {
 			return li, err
 		}
+		li.Exists = true
 	}
-	li.Exists = rows.CommandTag().RowsAffected() != 0
 	return li, nil
 }
 

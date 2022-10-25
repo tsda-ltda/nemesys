@@ -20,14 +20,14 @@ const (
 	sqlTeamsMGet                 = `SELECT id, name, descr, ident FROM teams LIMIT $1 OFFSET $2;`
 	sqlTeamsIdentAvailableUpdate = `SELECT EXISTS (SELECT 1 FROM teams WHERE id != $1 AND ident = $2);`
 	sqlTeamsUpdate               = `UPDATE teams SET (name, ident, descr) = ($1, $2, $3) WHERE id = $4;`
-	sqlTeamsAddMember            = `INSERT INTO users_teams (userid, teamid) VALUES ($1, $2);`
-	sqlTeamsRemMember            = `DELETE FROM users_teams WHERE userId = $1 AND teamId = $2;`
+	sqlTeamsAddMember            = `INSERT INTO users_teams (user_id, team_id) VALUES ($1, $2);`
+	sqlTeamsRemMember            = `DELETE FROM users_teams WHERE user_id = $1 AND team_id = $2;`
 	sqlTeamsMGetMembers          = `SELECT u.id, u.name, u.username 
 		FROM users u 
-		LEFT JOIN users_teams ut ON ut.teamId = $1
+		LEFT JOIN users_teams ut ON ut.team_id = $1
 		LIMIT $2 OFFSET $3;`
 	sqlTeamsExistsRelUserTeam = `SELECT 
-		EXISTS(SELECT 1 FROM users_teams WHERE userId = $1 AND teamId = $2), 
+		EXISTS(SELECT 1 FROM users_teams WHERE user_id = $1 AND team_id = $2), 
 		EXISTS(SELECT 1 FROM users WHERE id=$1), 
 		EXISTS(SELECT 1 FROM teams WHERE id=$2);`
 )

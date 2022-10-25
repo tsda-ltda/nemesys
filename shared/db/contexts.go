@@ -12,18 +12,20 @@ type Contexts struct {
 }
 
 const (
-	sqlContextsExistsIdent = `SELECT EXISTS (SELECT 1 FROM contexts WHERE ident = $1);`
-	sqlContextsCreate      = `INSERT INTO contexts (ident, descr, name, teamId) VALUES($1, $2, $3, $4);`
-	sqlContextsDelete      = `DELETE FROM contexts WHERE id = $1;`
-	sqlContextsMGet        = `SELECT id, ident, descr, name FROM contexts WHERE teamId = $1 LIMIT $2 OFFSET $3;`
-	sqlContextsGet         = `SELECT ident, descr, name, teamId FROM contexts WHERE id = $1;`
+	sqlContextsExistsTeamAndIdent = `SELECT 
+		EXISTS (SELECT 1 FROM teams WHERE id = $1), 
+		EXISTS (SELECT 1 FROM contexts WHERE ident = $2);`
+	sqlContextsCreate = `INSERT INTO contexts (ident, descr, name, team_id) VALUES($1, $2, $3, $4);`
+	sqlContextsDelete = `DELETE FROM contexts WHERE id = $1;`
+	sqlContextsMGet   = `SELECT id, ident, descr, name FROM contexts WHERE team_id = $1 LIMIT $2 OFFSET $3;`
+	sqlContextsGet    = `SELECT ident, descr, name, team_id FROM contexts WHERE id = $1;`
 )
 
 // ExstsIdent returns the existence of a context's ident.
 // Returns an error if fails to check.
-func (c *Contexts) ExistsIdent(ctx context.Context, ident string) (e bool, err error) {
-	err = c.QueryRow(ctx, sqlContextsExistsIdent, ident).Scan(&e)
-	return e, err
+func (c *Contexts) ExistsTeamAndIdent(ctx context.Context, teamId int, ident string) (te bool, ie bool, err error) {
+	err = c.QueryRow(ctx, sqlContextsExistsTeamAndIdent, teamId, ident).Scan(&te, &ie)
+	return te, ie, err
 }
 
 // Create creates a context. Returns an error if fails to create.
