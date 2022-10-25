@@ -1,8 +1,11 @@
 package amqp
 
 const (
-	QueueSNMPConnRegistRequired = "services.snmp.conn_regist_required"
-	ExchangeSNMPGet             = "services.snmp.get"
-	ExchangeSNMPData            = "services.snmp.data"
-	ExchangeSNMPConnRegister    = "services.snmp.conn_regist"
+	QueueRTSGetData  = "services.rts.get_metric_data"
+	QueueSNMPGetData = "services.snmp.get_metric_data"
+
+	ExchangeGetMetricData = "services.get_metric_data"
+	ExchangeMetricData    = "services.metric_data"
+	ExchangeRTSGet        = "services.rts.get_metric_data"
+	ExchangeRTSData       = "services.rts.metric_data"
 )
