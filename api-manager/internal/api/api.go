@@ -33,20 +33,20 @@ type API struct {
 }
 
 // Create a new API instance.
-func New(loggger *logger.Logger) (*API, error) {
+func New(log *logger.Logger) (*API, error) {
 	// connect to postgresql
 	pgConn, err := db.ConnectToPG()
 	if err != nil {
 		return nil, err
 	}
-	loggger.Info("connected to postgresql")
+	log.Info("connected to postgresql")
 
 	// connect to redis auth
 	rdbAuth, err := db.RDBAuthConnect()
 	if err != nil {
 		return nil, err
 	}
-	loggger.Info("connected to redis")
+	log.Info("connected to redis")
 
 	// create authentication handler
 	auth, err := auth.New(rdbAuth)
@@ -66,7 +66,7 @@ func New(loggger *logger.Logger) (*API, error) {
 		Router:   r,
 		Auth:     auth,
 		Validate: validate,
-		Log:      loggger,
+		Log:      log,
 	}, nil
 }
 
