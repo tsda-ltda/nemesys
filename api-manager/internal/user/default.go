@@ -12,7 +12,7 @@ import (
 
 func CreateDefaultUser(ctx context.Context, api *api.API) error {
 	// check if user already exists
-	e, err := api.PgConn.Users.ExistsUsername(ctx, env.Username)
+	e, err := api.PgConn.Users.ExistsUsername(ctx, env.DefaultUsername)
 	if err != nil {
 		return err
 	}
@@ -21,16 +21,16 @@ func CreateDefaultUser(ctx context.Context, api *api.API) error {
 	}
 
 	// hash password
-	pwHashed, err := auth.Hash(env.PW, api.UserPWBcryptCost)
+	pwHashed, err := auth.Hash(env.DefaultPassword, api.UserPWBcryptCost)
 	if err != nil {
 		return err
 	}
 
 	// save user
 	err = api.PgConn.Users.Create(ctx, models.User{
-		Role:     int(roles.Master),
+		Role:     roles.Master,
 		Name:     "Default Master",
-		Username: env.Username,
+		Username: env.DefaultUsername,
 		Password: pwHashed,
 		Email:    "master@master.com",
 	})
