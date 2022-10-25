@@ -48,7 +48,7 @@ func PG() (initialized bool, err error) {
 	for _, sql := range sqlCommands {
 		_, err = newConn.Exec(ctx, sql)
 		if err != nil {
-			return false, fmt.Errorf("fail to create table, err: %s", err)
+			return false, fmt.Errorf("fail to exec command: \"%s\", err: %s", sql, err)
 		}
 	}
 

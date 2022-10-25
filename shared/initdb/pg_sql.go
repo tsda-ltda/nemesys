@@ -3,7 +3,7 @@ package initdb
 var sqlCommands []string = []string{
 	// Users table
 	`CREATE TABLE users (
-		id serial4 PRIMARY KEY,
+		id SERIAL4 PRIMARY KEY,
 		name VARCHAR (50) NOT NULL,
 		username VARCHAR (50) UNIQUE NOT NULL,
 		password VARCHAR (255) NOT NULL,
@@ -13,50 +13,120 @@ var sqlCommands []string = []string{
 
 	// Teams table
 	`CREATE TABLE teams (
-		id serial4 PRIMARY KEY,
+		id SERIAL4 PRIMARY KEY,
 		name VARCHAR (50) NOT NULL,
 		ident VARCHAR (50) UNIQUE NOT NULL,
 		descr VARCHAR (255) NOT NULL
-	);`,
+		);`,
 
 	// Users teams table
 	`CREATE TABLE users_teams (
-		userId int,
-		teamId int,
-		CONSTRAINT fk_userId
-			FOREIGN KEY(userId)
+			user_id INT4,
+		team_id INT4,
+		CONSTRAINT fk_user_id
+		FOREIGN KEY(user_id)
 				REFERENCES users(id)
 				ON DELETE CASCADE,
-		CONSTRAINT fk_teamId
-			FOREIGN KEY(teamId)
+		CONSTRAINT fk_team_id
+			FOREIGN KEY(team_id)
 				REFERENCES teams(id)
 				ON DELETE CASCADE
-	);`,
+				);`,
 
 	// Data policy table
 	`CREATE TABLE data_policies (
-		id serial4  PRIMARY KEY,
+		id SERIAL2  PRIMARY KEY,
 		descr VARCHAR (255) NOT NULL,
-		use_aggregation bool NOT NULL,
-		retention int NOT NULL,
-		aggregation_retention int NOT NULL,
-		aggregation_interval int NOT NULL
-	);`,
+		use_aggregation BOOL NOT NULL,
+		retention INT4 NOT NULL,
+		aggregation_retention INT4 NOT NULL,
+		aggregation_interval INT4 NOT NULL
+		);`,
 
 	// Context table
 	`CREATE TABLE contexts (
-		id serial4  PRIMARY KEY,
-		teamId INTEGER NOT NULL,
+		id SERIAL4 PRIMARY KEY,
+		team_id INT4 NOT NULL,
 		descr VARCHAR (255) NOT NULL,
 		ident VARCHAR (50) NOT NULL,
 		name VARCHAR (50) NOT NULL,
-		CONSTRAINT fk_teamId
-			FOREIGN KEY(teamId)
+		CONSTRAINT fk_team_id
+			FOREIGN KEY(team_id)
 				REFERENCES teams(id)
 				ON DELETE CASCADE
 		
 	);`,
 
 	// Create context index
-	`CREATE INDEX team_ident_index ON contexts (ident, teamId);`,
+	`CREATE INDEX context_team_ident_index ON contexts (ident, team_id);`,
+
+	// Containers table
+	`CREATE TABLE containers (
+		id SERIAL4 PRIMARY KEY,
+		name VARCHAR (50) NOT NULL,
+		ident VARCHAR (50) UNIQUE NOT NULL,
+		descr VARCHAR (255) NOT NULL,
+		type INT2 NOT NULL
+	);`,
+
+	// Create container index
+	`CREATE INDEX container_type_index ON containers (type);`,
+
+	// Metrics table
+	`CREATE TABLE metrics (
+		id SERIAL8 PRIMARY KEY,
+		container_id INT4 NOT NULL,
+		container_type INT2 NOT NULL,
+		name VARCHAR (50) NOT NULL,
+		ident VARCHAR (50) NOT NULL,
+		descr VARCHAR (255) NOT NULL,
+		data_policy_id INT4 NOT NULL,
+		rts_pulling_interval INT4 NOT NULL,
+		rts_pulling_times INT2 NOT NULL,
+		rts_cache_duration INT8 NOT NULL,
+		CONSTRAINT fk_container_id
+			FOREIGN KEY(container_id)
+				REFERENCES containers(id)
+				ON DELETE CASCADE
+	);`,
+
+	// Create metric index
+	`CREATE INDEX metrics_container_id_index ON metrics (container_id);`,
+	`CREATE UNIQUE INDEX metrics_container_id_ident_index ON metrics (container_id, ident);`,
+	`CREATE INDEX metrics_container_type_index ON metrics (container_type);`,
+
+	// SNMP Container table
+	`CREATE TABLE snmp_containers (
+		container_id INT4 UNIQUE NOT NULL,
+		target VARCHAR (15) NOT NULL,
+		port INT4 NOT NULL,
+		cache_duration INT8 NOT NULL,
+		transport VARCHAR (3) NOT NULL,
+		community VARCHAR (50) NOT NULL,
+		retries INT2 NOT NULL,
+		msg_flag INT2 NOT NULL,
+		version INT2 NOT NULL,
+		max_oids INT4 NOT NULL,
+		timeout INT4 NOT NULL,
+		CONSTRAINT fk_container_id
+			FOREIGN KEY(container_id)
+				REFERENCES containers(id)
+				ON DELETE CASCADE
+	);`,
+
+	// Create SNMP container index on container id
+	`CREATE INDEX snmp_containers_container_id_index ON snmp_containers (container_id);`,
+
+	// Create unique SNMP container index on target and port
+	`CREATE UNIQUE INDEX snmp_containers_target_port_index ON snmp_containers (target, port);`,
+
+	// SNMP metrics table
+	`CREATE TABLE snmp_metrics (
+		metric_id INT8 UNIQUE NOT NULL,
+		oid VARCHAR (128) NOT NULL,
+		CONSTRAINT fk_metric_id
+			FOREIGN KEY(metric_id)
+				REFERENCES metrics(id)
+				ON DELETE CASCADE
+	);`,
 }
