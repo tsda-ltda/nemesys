@@ -39,7 +39,7 @@ func DeleteContextHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		api.Log.Debug("context deleted with success, id: " + rawId)
+		api.Log.Debug("context deleted, id: " + rawId)
 		c.Status(http.StatusNoContent)
 	}
 }

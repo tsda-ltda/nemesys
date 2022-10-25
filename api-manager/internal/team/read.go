@@ -28,7 +28,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		// get team
 		e, team, err := api.PgConn.Teams.Get(ctx, id)
 		if err != nil {
-			api.Log.Debug("fail to get team", logger.ErrField(err))
+			api.Log.Error("fail to get team", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -43,7 +43,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 	}
 }
 
-// Get multi teams on databse
+// Get multi teams on database
 // Params:
 //   - "limit" Limit of teams returned. Default is 30, max is 30, min is 0.
 //   - "offset" Offset for searching. Default is 0, min is 0.
