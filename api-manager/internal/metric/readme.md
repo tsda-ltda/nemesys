@@ -11,7 +11,7 @@ Get all SNMP metrics.
 - **Role**: Admin
 - **Route URL**: `GET` `/config/metrics/snmp`
 - **Parameters**:
-  - "limit" Limit of users returned. Default is 30, max is 30, min is 0.
+  - "limit" Limit of metrics returned. Default is 30, max is 30, min is 0.
   - "offset" Offset for searching. Default is 0, min is 0.
 - **Body**: No body.
 - **Responses**:
