@@ -2,6 +2,31 @@
 
 All routes that interact directly with data policies configuration are under `/config/data-policies`.
 
+## Get all
+
+Get all data policies.
+
+### Details
+
+- **Role**: Master
+- **Route URL**: `GET` `/config/data-policies`
+- **Parameters**: No parameters.
+- **Body**: No body.
+- **Responses**:
+
+  - 200 If succeeded. With body containing it's data in the format:
+
+  ```js
+  {
+    "id": "number",
+    "descr": "string",
+    "use-aggregation": "boolean",
+    "retention": "number",
+    "aggregation-retention": "number",
+    "aggregation-interval": "number"
+  }[]
+  ```
+
 ## Create
 
 Creates a data policy.

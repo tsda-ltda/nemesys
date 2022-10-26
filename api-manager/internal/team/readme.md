@@ -1,4 +1,4 @@
-# Teams Config routes
+# Teams and Contexts Config routes
 
 All routes that interact directly with teams configuration and visualization are here.
 
@@ -24,7 +24,6 @@ Creates a new team.
 - **Responses**:
   - 400 If invalid body.
   - 400 If json fields are invalid.
-  - 400 If ident can be parsed to number.
   - 400 If ident is already in use.
   - 200 If succeeded.
 
@@ -51,7 +50,6 @@ Updates a team by id.
   - 400 If invalid body.
   - 400 If json fields are invalid.
   - 400 If ident in use.
-  - 400 If ident can be parsed to number.
   - 404 If team not found.
   - 200 If succeeded.
 
@@ -129,7 +127,7 @@ Add a member to the team.
 
 ```js
 {
-  "users-id": "number"
+  "user-id": "number"
 }
 ```
 
@@ -187,7 +185,7 @@ Add a context to the team.
 ### Details
 
 - **Role**: Manager
-- **Route URL**: `POST` `/config/teams/:id/contexts`
+- **Route URL**: `POST` `/config/teams/:id/ctxs`
 - **Parameters**: No parameters.
 - **Body**:
 
@@ -213,7 +211,7 @@ Remove a context from the team.
 ### Details
 
 - **Role**: Manager
-- **Route URL**: `DEL` `/config/teams/:id/contexts/:contextId`
+- **Route URL**: `DEL` `/config/teams/:id/ctxs/:ctxId`
 - **Parameters**: No parameters.
 - **Body**: No body.
 - **Responses**:
@@ -228,7 +226,7 @@ Get all team's contexts.
 ### Details
 
 - **Role**: Manager
-- **Route URL**: `GET` `/config/teams/:id/contexts`
+- **Route URL**: `GET` `/config/teams/:id/ctxs`
 - **Parameters**:
   - "limit" Limit of teams returned. Default is 30, max is 30, min is 0.
   - "offset" Offset for searching. Default is 0, min is 0.

@@ -23,7 +23,7 @@ Login into an user account.
 - **Responses**:
   - 400 If invalid body.
   - 400 If json fields are invalid.
-  - 401 If email or password are wrong.
+  - 401 If email is password are wrong.
   - 200 If succeeded.
 
 ## Logout
@@ -52,5 +52,5 @@ Force a user to logout.
 - **Body**: No body.
 - **Responses**:
   - 400 If no session was running.
-  - 403 If user role is superior to request session role.
+  - 403 If target's role is superior then the user who resquested.
   - 200 If succeeded.

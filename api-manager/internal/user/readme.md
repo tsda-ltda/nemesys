@@ -24,11 +24,9 @@ Creates a new user.
 ```
 
 - **Responses**:
-  - 400 If invalid id.
   - 400 If invalid body.
   - 400 If json fields are invalid.
-  - 400 If username is already in use.
-  - 400 If email is already in use.
+  - 400 If username or email is already in use.
   - 200 If succeeded.
 
 ## Update
@@ -56,8 +54,7 @@ Updates a user by id.
   - 400 If invalid id.
   - 400 If invalid body.
   - 400 If json fields are invalid.
-  - 400 If username is already in use.
-  - 400 If email is already in use.
+  - 400 If username or email is already in use.
   - 404 If user not found.
   - 200 If succeeded.
 

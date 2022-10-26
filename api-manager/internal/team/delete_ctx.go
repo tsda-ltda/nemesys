@@ -18,7 +18,7 @@ func DeleteContextHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get context id
-		rawId := c.Param("contextId")
+		rawId := c.Param("ctxId")
 		id, err := strconv.Atoi(rawId)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
