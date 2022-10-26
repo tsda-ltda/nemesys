@@ -12,7 +12,6 @@ import (
 
 // Get a SNMP container.
 // Responses:
-//   - 400 If invalid params.
 //   - 404 If not found.
 //   - 200 If succeeded.
 func GetSNMPHandler(api *api.API) func(c *gin.Context) {
