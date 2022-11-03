@@ -56,13 +56,13 @@ var (
 	RDBAuthPW = ""
 
 	// Redis for real time service host. Default is "localhost".
-	RDBRTSHost = "localhost"
+	RDBCacheHost = "localhost"
 	// Redis for real time service host. Default is "6379".
-	RDBRTSPort = "6379"
+	RDBCachePort = "6379"
 	// Redis for real time service database. Default is "1".
-	RDBRTSDB = "1"
+	RDBCacheDB = "1"
 	// Redis for real time service password. Default is "".
-	RDBRTSPW = ""
+	RDBCachePW = ""
 
 	// API Manager host. Default is "localhost".
 	APIManagerHost = "localhost"

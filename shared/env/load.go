@@ -67,10 +67,10 @@ func Init() {
 	set("RDB_AUTH_DB", &RDBAuthDB)
 	set("RDB_AUTH_PW", &RDBAuthPW)
 
-	set("RDB_RTS_HOST", &RDBRTSHost)
-	set("RDB_RTS_PORT", &RDBRTSPort)
-	set("RDB_RTS_DB", &RDBRTSDB)
-	set("RDB_RTS_PW", &RDBRTSPW)
+	set("RDB_CACHE_HOST", &RDBCacheHost)
+	set("RDB_CACHE_PORT", &RDBCachePort)
+	set("RDB_CACHE_DB", &RDBCacheDB)
+	set("RDB_CACHE_PW", &RDBCachePW)
 
 	set("API_MANAGER_HOST", &APIManagerHost)
 	set("API_MANAGER_PORT", &APIManagerPort)
