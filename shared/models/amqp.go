@@ -3,27 +3,44 @@ package models
 import (
 	"errors"
 	"time"
+
+	amqp091 "github.com/rabbitmq/amqp091-go"
 )
 
 type AMQPCorrelated[T any] struct {
 	CorrelationId string
 	RoutingKey    string
-	Data          T
+	Info          T
+}
+
+func NewAMQPPlumber() *AMQPPlumber {
+	return &AMQPPlumber{
+		channels: map[string]chan amqp091.Delivery{},
+	}
 }
 
 type AMQPPlumber struct {
-	Channels map[string]chan []byte
+	channels map[string]chan amqp091.Delivery
 }
 
-// ListenWithTimeout will create and listen to the a plumber channel. Returns an error if timeouted.
-func (p *AMQPPlumber) ListenWithTimeout(channelKey string, timeout time.Duration) ([]byte, error) {
-	p.Channels[channelKey] = make(chan []byte)
-	defer close(p.Channels[channelKey])
-	defer delete(p.Channels, channelKey)
+// Send sends data to listener if exists.
+func (p *AMQPPlumber) Send(delivery amqp091.Delivery) {
+	ch, ok := p.channels[delivery.CorrelationId]
+	if !ok {
+		return
+	}
+	ch <- delivery
+}
+
+// Listen creates and listen to a response.
+func (p *AMQPPlumber) Listen(key string, timeout time.Duration) (amqp091.Delivery, error) {
+	p.channels[key] = make(chan amqp091.Delivery)
+	defer close(p.channels[key])
+	defer delete(p.channels, key)
 	select {
-	case res := <-p.Channels[channelKey]:
+	case res := <-p.channels[key]:
 		return res, nil
 	case <-time.After(timeout):
-		return nil, errors.New("pipe timeout")
+		return amqp091.Delivery{}, errors.New("response timeouted")
 	}
 }

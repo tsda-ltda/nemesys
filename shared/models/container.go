@@ -11,7 +11,7 @@ type Container[T any] struct {
 
 type BaseContainer struct {
 	// Id is the unique identifier.
-	Id int `json:"id" validate:"-"`
+	Id int32 `json:"id" validate:"-"`
 	// Name is the container name.
 	Name string `json:"name" validate:"required,max=50"`
 	// Ident is the cotnainer string identifier.

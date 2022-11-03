@@ -2,7 +2,7 @@ package models
 
 type User struct {
 	// Id is the user identifier.
-	Id int `json:"id" validate:"-"`
+	Id int32 `json:"id" validate:"-"`
 	// Role is the user role.
 	Role uint8 `json:"role" validate:"required"`
 	// Name is the user name.
@@ -17,7 +17,7 @@ type User struct {
 
 type UserSimplified struct {
 	// Id is the user identifier.
-	Id int `json:"id" validate:"-"`
+	Id int32 `json:"id" validate:"-"`
 	// Username is the user's username.
 	Username string `json:"username" validate:"required,min=3,max=50"`
 	// Name is the user name.
@@ -26,9 +26,9 @@ type UserSimplified struct {
 
 type UserWithoutPW struct {
 	// Id is the user identifier.
-	Id int `json:"id" validate:"-"`
+	Id int32 `json:"id" validate:"-"`
 	// Role is the user role.
-	Role int `json:"role" validate:"required"`
+	Role uint8 `json:"role" validate:"required"`
 	// Name is the user name.
 	Name string `json:"name" validate:"required,min=2,max=50"`
 	// Username is the user's username.

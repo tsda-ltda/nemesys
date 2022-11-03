@@ -13,9 +13,9 @@ type Metric[T any] struct {
 
 type BaseMetricSimplified struct {
 	// Id is the metric unique identifier.
-	Id int `json:"id" validate:"-"`
+	Id int64 `json:"id" validate:"-"`
 	// ContainerId is the metric container identifier.
-	ContainerId int `json:"container-id" validate:"required"`
+	ContainerId int32 `json:"container-id" validate:"required"`
 	// ContainerType is the metric container type.
 	ContainerType types.ContainerType `json:"container-type" validate:"-"`
 	// Name is the metric name.
@@ -28,11 +28,13 @@ type BaseMetricSimplified struct {
 
 type BaseMetric struct {
 	// Id is the metric unique identifier.
-	Id int `json:"id" validate:"-"`
+	Id int64 `json:"id" validate:"-"`
 	// ContainerId is the metric container identifier.
-	ContainerId int `json:"container-id" validate:"required"`
+	ContainerId int32 `json:"container-id" validate:"-"`
 	// ContainerType is the metric container type.
 	ContainerType types.ContainerType `json:"container-type" validate:"-"`
+	// Type is the metric type.
+	Type types.MetricType `json:"type" validate:"required"`
 	// Name is the metric name.
 	Name string `json:"name" validate:"required,max=50"`
 	// Ident is the metric string identification.
@@ -40,29 +42,33 @@ type BaseMetric struct {
 	// Descr is the metric description.
 	Descr string `json:"descr" validate:"required,max=255"`
 	// DataPolicyId is the metric data policy identifier.
-	DataPolicyId int `json:"data-policy-id" validate:"required"`
+	DataPolicyId int16 `json:"data-policy-id" validate:"required"`
 	// RTSPullingInterval is the interval in miliseconds between each pull. Max is one hour.
-	RTSPullingInterval int `json:"rts-pulling-interval" validate:"required,max=3600000"`
+	RTSPullingInterval int32 `json:"rts-pulling-interval" validate:"required,max=3600000"`
 	// RTSPullingTimes is how many times will pull the data.
 	RTSPullingTimes int16 `json:"rts-pulling-times" validate:"max=1000000"`
 	// RTSCacheDuration is the data duration in miliseconds on RTS cache. Max is one hour.
-	RTSCacheDuration int `json:"rts-cache-duration" validate:"max=3600000"`
+	RTSCacheDuration int32 `json:"rts-cache-duration" validate:"max=3600000"`
 }
 
-type MetricRawData struct {
+type MetricDataResponse struct {
 	// ContainerId is the metric's container identifier.
-	ContainerId int
+	ContainerId int32
 	// MetricId is the metric identifier.
-	MetricId int
-	// Data is the metric data as bytes.
-	Data []byte
+	MetricId int64
+	// Value is the metric data as bytes.
+	Value any
 	// Type is the data type.
 	Type types.MetricType
 }
 
-type GetMetricData struct {
+type MetricRequest struct {
 	// ContainerId is the metric's container identifier.
-	ContainerId int
+	ContainerId int32
+	// ContainerType is the metric's container type.
+	ContainerType types.ContainerType
 	// MetricId is the metric identifier.
-	MetricId int
+	MetricId int64
+	// MetricType is the metric type.
+	MetricType types.MetricType
 }
