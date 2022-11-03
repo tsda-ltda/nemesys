@@ -27,7 +27,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// deltete user
-		e, err := api.PgConn.Users.Delete(ctx, id)
+		e, err := api.PgConn.Users.Delete(ctx, int32(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to delete user", logger.ErrField(err))

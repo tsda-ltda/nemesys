@@ -1,7 +1,8 @@
-package team
+package user
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -17,9 +18,16 @@ import (
 // Responses:
 //   - 400 If invalid params.
 //   - 200 If succeeded.
-func UserTeamsHandler(api *api.API) func(c *gin.Context) {
+func TeamsHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
+
+		// user id
+		id, err := strconv.ParseInt(c.Param("id"), 10, 0)
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
 
 		// db query params
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
@@ -34,16 +42,8 @@ func UserTeamsHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// get user session metadata
-		meta, err := tools.GetSessionMeta(c)
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to read session metadata", logger.ErrField(err))
-			return
-		}
-
 		// get user teams
-		teams, err := api.PgConn.Users.Teams(ctx, meta.UserId, limit, offset)
+		teams, err := api.PgConn.Users.Teams(ctx, int32(id), limit, offset)
 		if err != nil {
 			api.Log.Error("fail to get user's teams", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)

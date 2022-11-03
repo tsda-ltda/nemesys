@@ -5,35 +5,50 @@ import (
 	"fmt"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
+	"github.com/fernandotsda/nemesys/shared/cache"
 	"github.com/fernandotsda/nemesys/shared/db"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/logger"
+	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/rabbitmq/amqp091-go"
 )
 
 type API struct {
-	// Postgresql connection
+	// Amqp is the amqp connection.
+	Amqp *amqp091.Connection
+
+	// Postgresql connection.
 	PgConn *db.PgConn
 
-	// Gin web fremework engine
+	// Cache is the cache handler.
+	Cache *cache.Cache
+
+	// Gin web fremework engine.
 	Router *gin.Engine
 
-	// Auth handler
+	// Auth handler.
 	Auth *auth.Auth
 
-	// Validator
+	// Validator.
 	Validate *validator.Validate
 
-	// User pw hash cost
+	// User pw hash cost.
 	UserPWBcryptCost int
 
-	// Logger
+	// RTSDataPlumber is th plumber for rts data request/response.
+	RTSDataPlumber *models.AMQPPlumber
+
+	// Logger is the internal logger.
 	Log *logger.Logger
+
+	// Closed is filled when application is closed.
+	Closed chan any
 }
 
 // Create a new API instance.
-func New(log *logger.Logger) (*API, error) {
+func New(conn *amqp091.Connection, log *logger.Logger) (*API, error) {
 	// connect to postgresql
 	pgConn, err := db.ConnectToPG()
 	if err != nil {
@@ -62,11 +77,14 @@ func New(log *logger.Logger) (*API, error) {
 	validate := validator.New()
 
 	return &API{
-		PgConn:   pgConn,
-		Router:   r,
-		Auth:     auth,
-		Validate: validate,
-		Log:      log,
+		Amqp:           conn,
+		PgConn:         pgConn,
+		Router:         r,
+		Auth:           auth,
+		Validate:       validate,
+		Log:            log,
+		Cache:          cache.New(log),
+		RTSDataPlumber: models.NewAMQPPlumber(),
 	}, nil
 }
 

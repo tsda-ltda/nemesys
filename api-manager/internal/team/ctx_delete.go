@@ -1,7 +1,6 @@
-package datapolicy
+package team
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -10,36 +9,37 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Deletes a data policy.
+// Deletes a context.
 // Responses:
-//   - 400 If invalid id.
-//   - 404 If data policy not found.
+//   - 404 If context not found.
 //   - 204 If succeeded.
-func DeleteHandler(api *api.API) func(c *gin.Context) {
+func DeleteContextHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get data policy id
-		id, err := strconv.Atoi(c.Param("id"))
+		// get context id
+		rawId := c.Param("ctxId")
+		id, err := strconv.Atoi(rawId)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		// delete data policy
-		e, err := api.PgConn.DataPolicy.Delete(ctx, int16(id))
+		// delete context
+		e, err := api.PgConn.Contexts.Delete(ctx, int32(id))
 		if err != nil {
+			api.Log.Error("fail to delete context", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to delete data policy", logger.ErrField(err))
 			return
 		}
 
-		// check if data policy exists
+		// check if context existed
 		if !e {
 			c.Status(http.StatusNotFound)
 			return
 		}
-		api.Log.Info("data policy deleted, id: " + fmt.Sprint(id))
+
+		api.Log.Debug("context deleted, id: " + rawId)
 		c.Status(http.StatusNoContent)
 	}
 }

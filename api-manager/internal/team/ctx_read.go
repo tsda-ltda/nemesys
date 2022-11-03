@@ -10,21 +10,54 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Get a context.
+// Responses:
+//   - 400 If invalid id.
+//   - 404 If id not found
+//   - 200 If succeeded.
+func GetContextHandler(api *api.API) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
+		// context id
+		contextId, err := strconv.Atoi(c.Param("contextId"))
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
+		// get contexts
+		e, context, err := api.PgConn.Contexts.Get(ctx, int32(contextId))
+		if err != nil {
+			api.Log.Error("fail to get contexts", logger.ErrField(err))
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		// check if not exists
+		if !e {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		c.JSON(http.StatusOK, context)
+	}
+}
+
 // Get all team's contexts.
 // Params:
 //   - "limit" Limit of teams returned. Default is 30, max is 30, min is 0.
 //   - "offset" Offset for searching. Default is 0, min is 0.
 //
 // Responses:
-//   - 400 If invalid id.
 //   - 400 If invalid params.
 //   - 200 If succeeded.
 func MGetContextHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get team id
-		id, err := strconv.Atoi(c.Param("id"))
+		// team id
+		teamId, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
@@ -44,7 +77,7 @@ func MGetContextHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// get contexts
-		ctxs, err := api.PgConn.Contexts.MGet(ctx, id, limit, offset)
+		ctxs, err := api.PgConn.Contexts.MGet(ctx, int32(teamId), limit, offset)
 		if err != nil {
 			api.Log.Error("fail to get contexts", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)

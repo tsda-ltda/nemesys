@@ -19,15 +19,15 @@ func GetSNMPHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get id
-		id, err := strconv.Atoi(c.Param("id"))
+		// metric id
+		metricId, err := strconv.ParseInt(c.Param("metricId"), 10, 0)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
 		// get container base information
-		e, base, err := api.PgConn.Metrics.Get(ctx, id)
+		e, base, err := api.PgConn.Metrics.Get(ctx, metricId)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get container", logger.ErrField(err))
@@ -41,7 +41,7 @@ func GetSNMPHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// get snmp container
-		e, snmp, err := api.PgConn.SNMPMetrics.Get(ctx, id)
+		e, snmp, err := api.PgConn.SNMPMetrics.Get(ctx, metricId)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get SNMP metric", logger.ErrField(err))

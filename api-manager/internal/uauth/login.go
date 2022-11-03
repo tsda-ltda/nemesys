@@ -64,7 +64,7 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 
 		// create new session
 		token, err := api.Auth.NewSession(ctx, auth.SessionMeta{
-			UserId: li.Id,
+			UserId: int32(li.Id),
 			Role:   uint8(li.Role),
 		})
 		if err != nil {

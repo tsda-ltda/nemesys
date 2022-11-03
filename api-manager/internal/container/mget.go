@@ -12,7 +12,7 @@ import (
 
 // Get multi base containers on database
 // Params:
-//   - "limit" Limit of teams returned. Default is 30, max is 30, min is 0.
+//   - "limit" Limit of containers returned. Default is 30, max is 30, min is 0.
 //   - "offset" Offset for searching. Default is 0, min is 0.
 //
 // Responses:

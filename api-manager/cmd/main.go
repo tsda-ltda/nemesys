@@ -46,7 +46,7 @@ func main() {
 	}
 
 	// create api
-	api, err := api.New(logger)
+	api, err := api.New(conn, logger)
 	if err != nil {
 		logger.Fatal("fail to create api", _logger.ErrField(err))
 	}

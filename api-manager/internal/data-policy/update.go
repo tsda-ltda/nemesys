@@ -45,7 +45,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// update data policy
-		dp.Id = id
+		dp.Id = int16(id)
 		e, err := api.PgConn.DataPolicy.Update(ctx, dp)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)

@@ -11,17 +11,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Creates a new context.
+// Updates a context.
 // Responses:
 //   - 400 If invalid body.
 //   - 400 If json fields are invalid.
 //   - 400 If ident is already in use.
+//   - 400 If invalid id.
+//   - 404 If not found.
 //   - 200 If succeeded.
-func CreateContextHandler(api *api.API) func(c *gin.Context) {
+func UpdateContextHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get team id
+		// ctx id
+		ctxId, err := strconv.Atoi(c.Param("ctxId"))
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
+		// team id
 		teamId, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -29,7 +38,7 @@ func CreateContextHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// bind context
-		var context models.ContextCreateReq
+		var context models.Context
 		err = c.ShouldBind(&context)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -44,7 +53,7 @@ func CreateContextHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// get ident existence
-		te, ie, err := api.PgConn.Contexts.ExistsTeamAndIdent(ctx, teamId, context.Ident)
+		te, ie, err := api.PgConn.Contexts.ExistsTeamAndIdent(ctx, int32(teamId), context.Ident, int32(ctxId))
 		if err != nil {
 			api.Log.Error("fail to get context existence", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
@@ -64,11 +73,11 @@ func CreateContextHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// create context
-		err = api.PgConn.Contexts.Create(ctx, models.Context{
-			TeamId: teamId,
-			Name:   context.Name,
-			Ident:  context.Ident,
-			Descr:  context.Descr,
+		err = api.PgConn.Contexts.Update(ctx, models.Context{
+			Name:  context.Name,
+			Ident: context.Ident,
+			Descr: context.Descr,
+			Id:    int32(ctxId),
 		})
 		if err != nil {
 			api.Log.Error("fail to create context", logger.ErrField(err))

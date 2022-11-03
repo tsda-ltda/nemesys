@@ -58,7 +58,7 @@ func ProtectUser(api *api.API, accessLevel roles.Role) func(c *gin.Context) {
 		}
 
 		// validate role
-		if meta.Role < accessLevel && meta.UserId != id {
+		if meta.Role < accessLevel && meta.UserId != int32(id) {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}

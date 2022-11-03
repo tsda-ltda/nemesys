@@ -1,7 +1,6 @@
-package team
+package ctxmetric
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -12,74 +11,77 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Updates a team on database.
+// Updates a contextual metric.
 // Responses:
+//   - 400 If invalid id.
 //   - 400 If invalid body.
-//   - 400 If json fields are invalid
-//   - 400 If ident is already in use.
-//   - 404 If team does not exists.
-//   - 200 If succeeded.
+//   - 400 If invalid json fields.
+//   - 404 If contextual metric does not exists.
+//   - 204 If succeeded.
 func UpdateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get team id
-		id, err := strconv.Atoi(c.Param("id"))
+		// context id
+		rawCtxId := c.Param("ctxId")
+		ctxId, err := strconv.Atoi(rawCtxId)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		// bind team
-		var team models.Team
-		err = c.ShouldBind(&team)
+		// contextual metric id
+		rawId := c.Param("metricId")
+		id, err := strconv.Atoi(rawId)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		// validate team
-		err = api.Validate.Struct(team)
+		// bind body
+		var cmetric models.ContextualMetric
+		err = c.ShouldBind(&cmetric)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		// validate ident
-		_, err = strconv.Atoi(team.Ident)
-		if err == nil {
+		// validate body
+		err = api.Validate.Struct(cmetric)
+		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		// check if ident is already in use
-		e, err := api.PgConn.Teams.IdentAvailableUpdate(ctx, id, team.Ident)
+		// check if ident is in use
+		ie, err := api.PgConn.ContextualMetrics.ExistsIdent(ctx, cmetric.Ident, int32(ctxId), int64(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check if ident is available", logger.ErrField(err))
+			api.Log.Error("fail to check if contextual metric exits", logger.ErrField(err))
 			return
 		}
-		if e {
+		if ie {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}
 
-		// update team in database
-		team.Id = id
-		e, err = api.PgConn.Teams.Update(ctx, team)
+		// assign id
+		cmetric.Id = int64(id)
+
+		// update
+		e, err := api.PgConn.ContextualMetrics.Update(ctx, cmetric)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to update team", logger.ErrField(err))
+			api.Log.Error("fail to update contextual metric", logger.ErrField(err))
 			return
 		}
 
-		// check if team exists
+		// check if exists
 		if !e {
 			c.Status(http.StatusNotFound)
 			return
 		}
-
-		api.Log.Debug("team updated successfully, id" + fmt.Sprint(id))
+		api.Log.Debug("contextual metric updated, id: " + rawId)
 
 		c.Status(http.StatusOK)
 	}

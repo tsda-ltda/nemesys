@@ -26,7 +26,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// get team
-		e, team, err := api.PgConn.Teams.Get(ctx, id)
+		e, team, err := api.PgConn.Teams.Get(ctx, int32(id))
 		if err != nil {
 			api.Log.Error("fail to get team", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)

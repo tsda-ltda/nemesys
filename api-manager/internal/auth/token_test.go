@@ -2,14 +2,18 @@ package auth
 
 import "testing"
 
+var v = 0
+
 func TestNewToken(t *testing.T) {
-	l := 32
-	token, err := NewToken(l)
+	t.Log(v)
+	v++
+	expected := 32
+	token, err := NewToken(expected)
 	if err != nil {
 		t.Fatalf("fail to generate token, err: %s", err)
 	}
-
-	if len(token) != l {
-		t.Errorf("invalid token size, want: %d, got: %d", l, len(token))
+	received := len(token)
+	if received != expected {
+		t.Errorf("invalid token size, want: %d, got: %d", expected, received)
 	}
 }

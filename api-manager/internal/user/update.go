@@ -24,7 +24,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get id param
-		id, err := strconv.Atoi(c.Param("id"))
+		id, err := strconv.ParseInt(c.Param("id"), 10, 0)
 		if err != nil {
 			c.Status((http.StatusBadRequest))
 			return
@@ -46,7 +46,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// get username and email availability
-		ue, ee, err := api.PgConn.Users.UsernameEmailAvailableToUpdate(ctx, id, user.Username, user.Email)
+		ue, ee, err := api.PgConn.Users.UsernameEmailAvailableToUpdate(ctx, int32(id), user.Username, user.Email)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if username and email exists", logger.ErrField(err))
@@ -75,7 +75,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 
 		// update user
 		e, err := api.PgConn.Users.Update(ctx, models.User{
-			Id:       id,
+			Id:       int32(id),
 			Role:     user.Role,
 			Name:     user.Name,
 			Username: user.Username,

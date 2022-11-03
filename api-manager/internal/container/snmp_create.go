@@ -2,7 +2,6 @@ package container
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -12,26 +11,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Updates a SNMP container.
+// Creates a SNMP container.
 // Responses:
 //   - 400 If invalid body.
 //   - 400 If json fields are invalid.
 //   - 400 If ident or target:port is in use.
 //   - 200 If succeeded.
-func UpdateSNMPHandler(api *api.API) func(c *gin.Context) {
+func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get container id
-		id, err := strconv.Atoi(c.Param("id"))
-		if err != nil {
-			c.Status(http.StatusBadRequest)
-			return
-		}
-
 		// bind container
 		var container models.Container[models.SNMPContainer]
-		err = c.ShouldBind(&container)
+		err := c.ShouldBind(&container)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
@@ -44,17 +36,15 @@ func UpdateSNMPHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// set type and container id
+		// set type
 		container.Base.Type = types.CTSNMP
-		container.Base.Id = id
-		container.Protocol.ContainerId = id
 
 		// get ident and target port existence
 		ie, tpe, err := api.PgConn.SNMPContainers.AvailableIdentAndTargetPort(ctx,
 			container.Base.Ident,
 			container.Protocol.Target,
 			container.Protocol.Port,
-			id,
+			-1,
 		)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
@@ -71,36 +61,29 @@ func UpdateSNMPHandler(api *api.API) func(c *gin.Context) {
 		// check if target port exists
 		if tpe {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTargetPortExists))
+			return
 		}
 
 		// create container
-		e, err := api.PgConn.Containers.Update(ctx, container.Base)
+		id, err := api.PgConn.Containers.Create(ctx, container.Base)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to update container", logger.ErrField(err))
+			api.Log.Error("fail to crate container", logger.ErrField(err))
 			return
 		}
+		api.Log.Debug("container created, ident: " + container.Base.Ident)
 
-		// check if container exists
-		if !e {
-			c.Status(http.StatusNotFound)
-			return
-		}
-		api.Log.Debug("container updated, ident: " + container.Base.Ident)
+		// assign id
+		container.Protocol.ContainerId = int32(id)
 
-		// update snmp container
-		e, err = api.PgConn.SNMPContainers.Update(ctx, container.Protocol)
+		// create snmp container
+		err = api.PgConn.SNMPContainers.Create(ctx, container.Protocol)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to update snmp container", logger.ErrField(err))
+			api.Log.Error("fail to crate snmp container", logger.ErrField(err))
 			return
 		}
-		if !e {
-			c.Status(http.StatusNotFound)
-			api.Log.Error("base container exists but snmp container don't")
-			return
-		}
-		api.Log.Debug("snmp container updated, target: " + container.Protocol.Target)
+		api.Log.Debug("snmp container crated, target: " + container.Protocol.Target)
 
 		c.Status(http.StatusOK)
 	}

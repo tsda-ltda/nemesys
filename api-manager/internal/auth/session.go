@@ -14,7 +14,7 @@ import (
 const SessionCookieName = "sess"
 
 type SessionMeta struct {
-	UserId int
+	UserId int32
 	Role   roles.Role
 }
 
@@ -28,11 +28,11 @@ func (a *Auth) ReadSessionMetadata(bytes []byte) (metadata SessionMeta, err erro
 	splited := strings.Split(string(bytes), "=")
 
 	// get userId
-	userId, err := strconv.Atoi(splited[0])
+	userId, err := strconv.ParseInt(splited[0], 10, 0)
 	if err != nil {
 		return metadata, err
 	}
-	metadata.UserId = userId
+	metadata.UserId = int32(userId)
 
 	// get role
 	role, err := strconv.Atoi(splited[1])
@@ -77,7 +77,7 @@ func (a *Auth) NewSession(ctx context.Context, meta SessionMeta) (string, error)
 }
 
 // RemoveSession removes a user session. If session doesn't exists returns an error.
-func (a *Auth) RemoveSession(ctx context.Context, userId int) error {
+func (a *Auth) RemoveSession(ctx context.Context, userId int32) error {
 	// get old session
 	oldToken, err := a.rdb.Get(ctx, db.RDBAuthReverseSessionKey(userId)).Result()
 	if err != nil && err != redis.Nil {

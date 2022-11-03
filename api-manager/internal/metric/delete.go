@@ -9,9 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Delete a container and dependencies.
+// Delete a metric.
 // Responses:
-//   - 400 If invalid params.
 //   - 404 If not found.
 //   - 204 If succeeded.
 func DeleteHandler(api *api.API) func(c *gin.Context) {
@@ -19,8 +18,8 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get metric id
-		rawId := c.Param("id")
-		id, err := strconv.Atoi(rawId)
+		rawId := c.Param("metricId")
+		id, err := strconv.ParseInt(rawId, 10, 0)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return

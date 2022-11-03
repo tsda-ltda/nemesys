@@ -23,9 +23,16 @@ func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
+		// container id
+		containerId, err := strconv.Atoi(c.Param("containerId"))
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
 		// bind body
 		var metric models.Metric[models.SNMPMetric]
-		err := c.ShouldBind(&metric)
+		err = c.ShouldBind(&metric)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
@@ -37,6 +44,10 @@ func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 			c.Status(http.StatusBadRequest)
 			return
 		}
+
+		// assign containerId and container type
+		metric.Base.ContainerId = int32(containerId)
+		metric.Base.ContainerType = types.CTSNMP
 
 		// get if ident, container and data policy exists
 		_, ce, dpe, ie, err := api.PgConn.Metrics.ExistsIdentAndContainerAndDataPolicy(ctx, metric.Base.ContainerId, types.CTSNMP, metric.Base.DataPolicyId, metric.Base.Ident, -1)
@@ -64,9 +75,6 @@ func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// assing type
-		metric.Base.ContainerType = types.CTSNMP
-
 		// create metric
 		id, err := api.PgConn.Metrics.Create(ctx, metric.Base)
 		if err != nil {
@@ -86,7 +94,7 @@ func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("fail to create snmp metric", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("snmp metric created, base metric id: " + strconv.Itoa(id))
+		api.Log.Debug("snmp metric created, base metric id: " + strconv.FormatInt(id, 10))
 
 		c.Status(http.StatusOK)
 	}

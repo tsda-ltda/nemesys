@@ -24,8 +24,8 @@ func UpdateSNMPHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get metric id
-		rawId := c.Param("id")
-		id, err := strconv.Atoi(rawId)
+		rawId := c.Param("metricId")
+		id, err := strconv.ParseInt(rawId, 10, 0)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
@@ -95,7 +95,7 @@ func UpdateSNMPHandler(api *api.API) func(c *gin.Context) {
 			c.Status(http.StatusNotFound)
 			return
 		}
-		api.Log.Debug("snmp metric update, base metric id: " + strconv.Itoa(id))
+		api.Log.Debug("snmp metric update, base metric id: " + strconv.FormatInt(id, 10))
 
 		// update metric
 		e, err = api.PgConn.Metrics.Update(ctx, metric.Base)

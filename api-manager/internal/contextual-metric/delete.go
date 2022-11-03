@@ -1,7 +1,6 @@
-package team
+package ctxmetric
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -10,35 +9,37 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Deletes team from databse
+// Deletes a contextual metric.
 // Responses:
-//   - 404 If team not founded
-//   - 204 If succeeded
+//   - 400 If invalid id.
+//   - 404 If contextual metric does not exists.
+//   - 204 If succeeded.
 func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get id
-		id, err := strconv.Atoi(c.Param("id"))
+		// contextual metric id
+		rawId := c.Param("metricId")
+		id, err := strconv.Atoi(rawId)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
 
-		// delete team
-		e, err := api.PgConn.Teams.Delete(ctx, id)
+		// delete
+		e, err := api.PgConn.ContextualMetrics.Delete(ctx, int64(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to delete team", logger.ErrField(err))
+			api.Log.Error("fail to delete contextual metric", logger.ErrField(err))
 			return
 		}
 
-		// check if team existed
+		// check if exists
 		if !e {
 			c.Status(http.StatusNotFound)
 			return
 		}
-		api.Log.Debug("team deleted, id: " + fmt.Sprint(id))
+		api.Log.Debug("contextual metric deleted, id: " + rawId)
 
 		c.Status(http.StatusNoContent)
 	}

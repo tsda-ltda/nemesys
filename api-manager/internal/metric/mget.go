@@ -2,6 +2,7 @@ package metric
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -12,7 +13,7 @@ import (
 
 // Get multi base metrics on database
 // Params:
-//   - "limit" Limit of teams returned. Default is 30, max is 30, min is 0.
+//   - "limit" Limit of metrics returned. Default is 30, max is 30, min is 0.
 //   - "offset" Offset for searching. Default is 0, min is 0.
 //
 // Responses:
@@ -21,6 +22,14 @@ import (
 func MGet(api *api.API, t types.ContainerType) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
+
+		// container id
+		ucontainerId, err := strconv.Atoi(c.Param("containerId"))
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
+		containerId := int32(ucontainerId)
 
 		// db query params
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
@@ -36,7 +45,7 @@ func MGet(api *api.API, t types.ContainerType) func(c *gin.Context) {
 		}
 
 		// get metrics
-		metrics, err := api.PgConn.Metrics.MGetSimplified(ctx, t, limit, offset)
+		metrics, err := api.PgConn.Metrics.MGetSimplified(ctx, t, containerId, limit, offset)
 		if err != nil {
 			api.Log.Error("fail to get metrics", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)

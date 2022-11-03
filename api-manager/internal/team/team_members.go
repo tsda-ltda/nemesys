@@ -65,7 +65,7 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// add user to the team
-		err = api.PgConn.Teams.AddMember(ctx, userId.UserId, teamId)
+		err = api.PgConn.Teams.AddMember(ctx, userId.UserId, int32(teamId))
 		if err != nil {
 			api.Log.Error("fail to add member to team", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
@@ -104,7 +104,7 @@ func RemoveMemberHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// remove user from team
-		e, err := api.PgConn.Teams.RemMember(ctx, userId, teamId)
+		e, err := api.PgConn.Teams.RemMember(ctx, int32(userId), int32(teamId))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to remove member", logger.ErrField(err))
@@ -156,7 +156,7 @@ func MGetMembersHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// get members
-		m, err := api.PgConn.Teams.MGetMembers(ctx, id, limit, offset)
+		m, err := api.PgConn.Teams.MGetMembers(ctx, int32(id), limit, offset)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get team members", logger.ErrField(err))

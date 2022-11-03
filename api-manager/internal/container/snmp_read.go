@@ -19,11 +19,12 @@ func GetSNMPHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get container id
-		id, err := strconv.Atoi(c.Param("id"))
+		uid, err := strconv.Atoi(c.Param("containerId"))
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
 		}
+		id := int32(uid)
 
 		// get container base information
 		e, base, err := api.PgConn.Containers.Get(ctx, id)

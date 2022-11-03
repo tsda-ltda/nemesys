@@ -68,7 +68,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 		}
 
 		// get user role
-		e, role, err := api.PgConn.Users.GetRole(ctx, id)
+		e, role, err := api.PgConn.Users.GetRole(ctx, int32(id))
 		if err != nil {
 			api.Log.Error("fail to get user role", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
@@ -88,7 +88,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 		}
 
 		// remove session
-		err = api.Auth.RemoveSession(ctx, id)
+		err = api.Auth.RemoveSession(ctx, int32(id))
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
