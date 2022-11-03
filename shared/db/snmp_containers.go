@@ -61,7 +61,7 @@ func (c *SNMPContainers) Update(ctx context.Context, container models.SNMPContai
 }
 
 // Get returns a SNMP Contaier configuration. Returns an error if fails to get.
-func (c *SNMPContainers) Get(ctx context.Context, containerId int) (e bool, conf models.SNMPContainer, err error) {
+func (c *SNMPContainers) Get(ctx context.Context, containerId int32) (e bool, conf models.SNMPContainer, err error) {
 	rows, err := c.Query(ctx, sqlSNMPContainerGet, containerId)
 	if err != nil {
 		return false, conf, err
@@ -90,7 +90,7 @@ func (c *SNMPContainers) Get(ctx context.Context, containerId int) (e bool, conf
 }
 
 // ExistsIdentAndTargetPort returns the existence of a ident and target:port. Returns an error if fails to check.
-func (c *SNMPContainers) AvailableIdentAndTargetPort(ctx context.Context, ident string, target string, port uint16, id int) (ie bool, tpe bool, err error) {
+func (c *SNMPContainers) AvailableIdentAndTargetPort(ctx context.Context, ident string, target string, port int32, id int32) (ie bool, tpe bool, err error) {
 	rows, err := c.Query(ctx, sqlSNMPContainerExistsTargetPort, ident, target, port, id)
 	if err != nil {
 		return false, false, err

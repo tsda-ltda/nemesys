@@ -17,7 +17,7 @@ var sqlCommands []string = []string{
 		name VARCHAR (50) NOT NULL,
 		ident VARCHAR (50) UNIQUE NOT NULL,
 		descr VARCHAR (255) NOT NULL
-		);`,
+	);`,
 
 	// Users teams table
 	`CREATE TABLE users_teams (
@@ -31,7 +31,7 @@ var sqlCommands []string = []string{
 			FOREIGN KEY(team_id)
 				REFERENCES teams(id)
 				ON DELETE CASCADE
-				);`,
+	);`,
 
 	// Data policy table
 	`CREATE TABLE data_policies (
@@ -41,24 +41,7 @@ var sqlCommands []string = []string{
 		retention INT4 NOT NULL,
 		aggregation_retention INT4 NOT NULL,
 		aggregation_interval INT4 NOT NULL
-		);`,
-
-	// Context table
-	`CREATE TABLE contexts (
-		id SERIAL4 PRIMARY KEY,
-		team_id INT4 NOT NULL,
-		descr VARCHAR (255) NOT NULL,
-		ident VARCHAR (50) NOT NULL,
-		name VARCHAR (50) NOT NULL,
-		CONSTRAINT fk_team_id
-			FOREIGN KEY(team_id)
-				REFERENCES teams(id)
-				ON DELETE CASCADE
-		
 	);`,
-
-	// Create context index
-	`CREATE INDEX context_team_ident_index ON contexts (ident, team_id);`,
 
 	// Containers table
 	`CREATE TABLE containers (
@@ -77,13 +60,14 @@ var sqlCommands []string = []string{
 		id SERIAL8 PRIMARY KEY,
 		container_id INT4 NOT NULL,
 		container_type INT2 NOT NULL,
+		type INT2 NOT NULL,
 		name VARCHAR (50) NOT NULL,
 		ident VARCHAR (50) NOT NULL,
 		descr VARCHAR (255) NOT NULL,
 		data_policy_id INT4 NOT NULL,
 		rts_pulling_interval INT4 NOT NULL,
 		rts_pulling_times INT2 NOT NULL,
-		rts_cache_duration INT8 NOT NULL,
+		rts_cache_duration INT4 NOT NULL,
 		CONSTRAINT fk_container_id
 			FOREIGN KEY(container_id)
 				REFERENCES containers(id)
@@ -106,7 +90,7 @@ var sqlCommands []string = []string{
 		retries INT2 NOT NULL,
 		msg_flag INT2 NOT NULL,
 		version INT2 NOT NULL,
-		max_oids INT4 NOT NULL,
+		max_oids INT2 NOT NULL,
 		timeout INT4 NOT NULL,
 		CONSTRAINT fk_container_id
 			FOREIGN KEY(container_id)
@@ -129,4 +113,42 @@ var sqlCommands []string = []string{
 				REFERENCES metrics(id)
 				ON DELETE CASCADE
 	);`,
+
+	// Context table
+	`CREATE TABLE contexts (
+		id SERIAL4 PRIMARY KEY,
+		team_id INT4 NOT NULL,
+		ident VARCHAR (50) NOT NULL,
+		name VARCHAR (50) NOT NULL,
+		descr VARCHAR (255) NOT NULL,
+		CONSTRAINT fk_team_id
+			FOREIGN KEY(team_id)
+				REFERENCES teams(id)
+				ON DELETE CASCADE
+	);`,
+
+	// Create context index
+	`CREATE INDEX context_team_ident_index ON contexts (ident, team_id);`,
+
+	// Create contextual metrics
+	`CREATE TABLE contextual_metrics (
+		id SERIAL8 PRIMARY KEY,
+		ctx_id INT4 NOT NULL,
+		metric_id INT8 NOT NULL,
+		ident VARCHAR (50) NOT NULL,
+		name VARCHAR (50) NOT NULL,
+		descr VARCHAR (255) NOT NULL,
+		CONSTRAINT fk_ctx_id
+			FOREIGN KEY(ctx_id)
+				REFERENCES contexts(id)
+				ON DELETE CASCADE,
+		CONSTRAINT fk_metric_id
+			FOREIGN KEY(metric_id)
+				REFERENCES metrics(id)
+				ON DELETE CASCADE
+	);`,
+
+	// Create contextual metrics
+	`CREATE INDEX contextual_metric_ctx_id ON contextual_metrics (ctx_id);`,
+	`CREATE INDEX contextual_metric_ident_id ON contextual_metrics (ident);`,
 }

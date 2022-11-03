@@ -43,7 +43,7 @@ const (
 )
 
 // Exists return the existence of user. Returns an error if fails to check.
-func (c *Users) Exists(ctx context.Context, id int) (e bool, err error) {
+func (c *Users) Exists(ctx context.Context, id int32) (e bool, err error) {
 	err = c.QueryRow(ctx, sqlUsersExists, id).Scan(&e)
 	return e, err
 }
@@ -69,7 +69,7 @@ func (c *Users) Create(ctx context.Context, user models.User) error {
 }
 
 // Delete deletes a user by id if exists. Returns an error if fails to delete.
-func (c *Users) Delete(ctx context.Context, id int) (e bool, err error) {
+func (c *Users) Delete(ctx context.Context, id int32) (e bool, err error) {
 	t, err := c.Exec(ctx, sqlUsersDelete, id)
 	return t.RowsAffected() != 0, err
 }
@@ -96,7 +96,7 @@ func (c *Users) MGetSimplified(ctx context.Context, limit int, offset int) (user
 
 // GetWithout returns a user without password and it's existence.
 // Returns an error if fail to get user.
-func (c *Users) GetWithoutPW(ctx context.Context, id int) (user models.UserWithoutPW, e bool, err error) {
+func (c *Users) GetWithoutPW(ctx context.Context, id int32) (user models.UserWithoutPW, e bool, err error) {
 	rows, err := c.Query(ctx, sqlUsersGetWithoutPW, id)
 	if err != nil {
 		return user, false, err
@@ -120,7 +120,7 @@ func (c *Users) GetWithoutPW(ctx context.Context, id int) (user models.UserWitho
 
 // UsernameEmailAvailableToUpdate returns if a username and a email is available to update.
 // Returns an error if fail to check.
-func (c *Users) UsernameEmailAvailableToUpdate(ctx context.Context, id int, username string, email string) (ue bool, ee bool, err error) {
+func (c *Users) UsernameEmailAvailableToUpdate(ctx context.Context, id int32, username string, email string) (ue bool, ee bool, err error) {
 	err = c.QueryRow(ctx, sqlUsersUsernameEmailAvailableUpdate, id, username, email).Scan(&ue, &ee)
 	return ue, ee, err
 }
@@ -161,7 +161,7 @@ func (c *Users) LoginInfo(ctx context.Context, username string) (li LoginInfo, e
 
 // GetRole returns an user's role if the user exists.
 // Returns an error if fails to get role.
-func (c *Users) GetRole(ctx context.Context, id int) (e bool, role int, err error) {
+func (c *Users) GetRole(ctx context.Context, id int32) (e bool, role int, err error) {
 	rows, err := c.Query(ctx, sqlUsersGetRole, id)
 	if err != nil {
 		return false, role, err
@@ -179,7 +179,7 @@ func (c *Users) GetRole(ctx context.Context, id int) (e bool, role int, err erro
 
 // Teams returns all user's teams with a limit and offset.
 // Returns an error if fail to get teams.
-func (c *Users) Teams(ctx context.Context, userId int, limit int, offset int) (teams []models.Team, err error) {
+func (c *Users) Teams(ctx context.Context, userId int32, limit int, offset int) (teams []models.Team, err error) {
 	teams = []models.Team{}
 	rows, err := c.Query(ctx, sqlUsersTeams, userId, limit, offset)
 	if err != nil {

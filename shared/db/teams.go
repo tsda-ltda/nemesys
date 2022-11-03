@@ -24,7 +24,7 @@ const (
 	sqlTeamsRemMember            = `DELETE FROM users_teams WHERE user_id = $1 AND team_id = $2;`
 	sqlTeamsMGetMembers          = `SELECT u.id, u.name, u.username 
 		FROM users u 
-		LEFT JOIN users_teams ut ON ut.team_id = $1
+		LEFT JOIN users_teams ut ON ut.user_id = u.id WHERE ut.team_id = $1
 		LIMIT $2 OFFSET $3;`
 	sqlTeamsExistsRelUserTeam = `SELECT 
 		EXISTS(SELECT 1 FROM users_teams WHERE user_id = $1 AND team_id = $2), 
@@ -50,13 +50,13 @@ func (c *Teams) Create(ctx context.Context, team models.Team) error {
 }
 
 // Delete deletes a team if exists. Returns an error if fails to delete.
-func (c *Teams) Delete(ctx context.Context, id int) (e bool, err error) {
+func (c *Teams) Delete(ctx context.Context, id int32) (e bool, err error) {
 	t, err := c.Exec(ctx, sqlTeamsDelete, id)
 	return t.RowsAffected() != 0, err
 }
 
 // Get returns a team by id if exists. Returns an error if fails to get.
-func (c *Teams) Get(ctx context.Context, id int) (e bool, team models.Team, err error) {
+func (c *Teams) Get(ctx context.Context, id int32) (e bool, team models.Team, err error) {
 	rows, err := c.Query(ctx, sqlTeamsGet, id)
 	if err != nil {
 		return false, team, err
@@ -100,7 +100,7 @@ func (c *Teams) MGet(ctx context.Context, limit int, offset int) (teams []models
 
 // IdentAvailableUpdate returns the availability of a team's ident.
 // Returns an error if fails to check availability.
-func (c *Teams) IdentAvailableUpdate(ctx context.Context, id int, ident string) (e bool, err error) {
+func (c *Teams) IdentAvailableUpdate(ctx context.Context, id int32, ident string) (e bool, err error) {
 	err = c.QueryRow(ctx, sqlTeamsIdentAvailableUpdate, id, ident).Scan(&e)
 	return e, err
 }
@@ -118,27 +118,27 @@ func (c *Teams) Update(ctx context.Context, team models.Team) (e bool, err error
 
 // ExistsRelUserTeam returns a user-team relation, user and team existence.
 // Returns an error if fails to check.
-func (c *Teams) ExistsRelUserTeam(ctx context.Context, userId int, teamId int) (rel bool, ue bool, te bool, err error) {
+func (c *Teams) ExistsRelUserTeam(ctx context.Context, userId int32, teamId int) (rel bool, ue bool, te bool, err error) {
 	err = c.QueryRow(ctx, sqlTeamsExistsRelUserTeam, userId, teamId).Scan(&rel, &ue, &te)
 	return rel, ue, te, err
 }
 
 // AddMember add a user to a team. Returns an error if fails to add.
-func (c *Teams) AddMember(ctx context.Context, userId int, teamId int) error {
+func (c *Teams) AddMember(ctx context.Context, userId int32, teamId int32) error {
 	_, err := c.Exec(ctx, sqlTeamsAddMember, userId, teamId)
 	return err
 }
 
 // RemMember removes a memeber from a team if relation exists.
 // Returns an error if fails to remove.
-func (c *Teams) RemMember(ctx context.Context, userId int, teamId int) (e bool, err error) {
+func (c *Teams) RemMember(ctx context.Context, userId int32, teamId int32) (e bool, err error) {
 	t, err := c.Exec(ctx, sqlTeamsRemMember, userId, teamId)
 	return t.RowsAffected() != 0, err
 }
 
 // MGetMembers returns all members of a team with a limit and offset.
 // Returns an error if fails to get.
-func (c *Teams) MGetMembers(ctx context.Context, teamId int, limit int, offset int) (m []models.UserSimplified, err error) {
+func (c *Teams) MGetMembers(ctx context.Context, teamId int32, limit int, offset int) (m []models.UserSimplified, err error) {
 	m = []models.UserSimplified{}
 	rows, err := c.Query(ctx, sqlTeamsMGetMembers, teamId, limit, offset)
 	if err != nil {

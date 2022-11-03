@@ -30,7 +30,7 @@ func (c *SNMPMetrics) Update(ctx context.Context, m models.SNMPMetric) (e bool, 
 }
 
 // Get returns a SNMP metric if exists. Returns an error if fails to get.
-func (c *SNMPMetrics) Get(ctx context.Context, metricId int) (e bool, m models.SNMPMetric, err error) {
+func (c *SNMPMetrics) Get(ctx context.Context, metricId int64) (e bool, m models.SNMPMetric, err error) {
 	rows, err := c.Query(ctx, sqlSNMPMetricsGet, metricId)
 	if err != nil {
 		return false, m, err

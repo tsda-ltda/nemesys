@@ -45,13 +45,13 @@ func (c *BaseContainers) Update(ctx context.Context, container models.BaseContai
 }
 
 // Delete deletes a container if exists. Returns an error if fails to delete.
-func (c *BaseContainers) Delete(ctx context.Context, id int) (e bool, err error) {
+func (c *BaseContainers) Delete(ctx context.Context, id int32) (e bool, err error) {
 	t, err := c.Exec(ctx, sqlContainerDelete, id)
 	return t.RowsAffected() != 0, err
 }
 
 // Get returns a container by id. Returns an error if fail to get.
-func (c *BaseContainers) Get(ctx context.Context, id int) (e bool, container models.BaseContainer, err error) {
+func (c *BaseContainers) Get(ctx context.Context, id int32) (e bool, container models.BaseContainer, err error) {
 	rows, err := c.Query(ctx, sqlContainerGet, id)
 	if err != nil {
 		return false, container, err

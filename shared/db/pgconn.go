@@ -10,14 +10,15 @@ import (
 
 type PgConn struct {
 	*pgx.Conn
-	Users          Users
-	Teams          Teams
-	DataPolicy     DataPolicy
-	Contexts       Contexts
-	Metrics        Metrics
-	Containers     BaseContainers
-	SNMPContainers SNMPContainers
-	SNMPMetrics    SNMPMetrics
+	Users             Users
+	Teams             Teams
+	DataPolicy        DataPolicy
+	Contexts          Contexts
+	ContextualMetrics ContextualMetrics
+	Metrics           Metrics
+	Containers        BaseContainers
+	SNMPContainers    SNMPContainers
+	SNMPMetrics       SNMPMetrics
 }
 
 // Connects to a Postgresql database server
@@ -37,14 +38,15 @@ func ConnectToPG() (*PgConn, error) {
 	}
 
 	return &PgConn{
-		Conn:           conn,
-		Users:          Users{Conn: conn},
-		Teams:          Teams{Conn: conn},
-		Contexts:       Contexts{Conn: conn},
-		Metrics:        Metrics{Conn: conn},
-		DataPolicy:     DataPolicy{Conn: conn},
-		Containers:     BaseContainers{Conn: conn},
-		SNMPContainers: SNMPContainers{Conn: conn},
-		SNMPMetrics:    SNMPMetrics{Conn: conn},
+		Conn:              conn,
+		Users:             Users{Conn: conn},
+		Teams:             Teams{Conn: conn},
+		Contexts:          Contexts{Conn: conn},
+		ContextualMetrics: ContextualMetrics{Conn: conn},
+		Metrics:           Metrics{Conn: conn},
+		DataPolicy:        DataPolicy{Conn: conn},
+		Containers:        BaseContainers{Conn: conn},
+		SNMPContainers:    SNMPContainers{Conn: conn},
+		SNMPMetrics:       SNMPMetrics{Conn: conn},
 	}, nil
 }

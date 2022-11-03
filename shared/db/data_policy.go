@@ -56,7 +56,7 @@ func (c *DataPolicy) Update(ctx context.Context, dp models.DataPolicy) (e bool, 
 
 // Delete deletes a data policy from the system.
 // Returns an error if fails to delete.
-func (c *DataPolicy) Delete(ctx context.Context, id int) (e bool, err error) {
+func (c *DataPolicy) Delete(ctx context.Context, id int16) (e bool, err error) {
 	t, err := c.Exec(ctx, sqlDPDelete, id)
 	return t.RowsAffected() != 0, err
 }

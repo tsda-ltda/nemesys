@@ -34,21 +34,21 @@ func RDBAuthConnect() (c *redis.Client, err error) {
 	return c, err
 }
 
-// Connects to Redis real time service database.
-func RDBRTSConnect() (c *redis.Client, err error) {
+// Connects to Redis cache database.
+func RDBCacheConnect() (c *redis.Client, err error) {
 	ctx := context.Background()
 
-	// get redis rts database number
-	db, err := strconv.Atoi(env.RDBRTSDB)
+	// get redis cache db number
+	db, err := strconv.Atoi(env.RDBCacheDB)
 	if err != nil {
-		return nil, fmt.Errorf("\nfail to parse to int RDB_RTS_DB env, err: %s", err)
+		return nil, fmt.Errorf("\nfail to parse to int RDB_CACHE_DB env, err: %s", err)
 	}
 
 	// redis client
 	c = redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", env.RDBRTSHost, env.RDBRTSPort),
+		Addr:     fmt.Sprintf("%s:%s", env.RDBCacheHost, env.RDBCachePort),
 		DB:       db,
-		Password: env.RDBRTSPW,
+		Password: env.RDBCachePW,
 	})
 
 	// ping redis
