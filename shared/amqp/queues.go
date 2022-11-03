@@ -6,6 +6,6 @@ const (
 
 	ExchangeGetMetricData = "services.get_metric_data"
 	ExchangeMetricData    = "services.metric_data"
-	ExchangeRTSGet        = "services.rts.get_metric_data"
+	ExchangeRTSGetData    = "services.rts.get_metric_data"
 	ExchangeRTSData       = "services.rts.metric_data"
 )
