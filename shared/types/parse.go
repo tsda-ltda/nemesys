@@ -77,7 +77,7 @@ func ParseFloat32(f float32, t MetricType) (any, error) {
 			return true, nil
 		}
 	case MTString:
-		return strconv.FormatInt(int64(f), 10), nil
+		return strconv.FormatFloat(float64(f), 'f', -1, 32), nil
 	case MTInt8:
 		return int8(f), nil
 	case MTInt16:
@@ -104,7 +104,7 @@ func ParseFloat64(f float64, t MetricType) (any, error) {
 			return true, nil
 		}
 	case MTString:
-		return strconv.FormatInt(int64(f), 10), nil
+		return strconv.FormatFloat(f, 'f', -1, 32), nil
 	case MTInt8:
 		return int8(f), nil
 	case MTInt16:
@@ -155,19 +155,24 @@ func ParseString(s string, t MetricType) (any, error) {
 	case MTString:
 		return s, nil
 	case MTInt8:
-		return strconv.ParseInt(s, 10, 8)
+		i64, err := strconv.ParseInt(s, 10, 8)
+		return int8(i64), err
 	case MTInt16:
-		return strconv.ParseInt(s, 10, 16)
+		i64, err := strconv.ParseInt(s, 10, 16)
+		return int16(i64), err
 	case MTInt32:
-		return strconv.ParseInt(s, 10, 32)
+		i64, err := strconv.ParseInt(s, 10, 32)
+		return int32(i64), err
 	case MTInt64:
 		return strconv.ParseInt(s, 10, 64)
 	case MTFloat32:
-		return strconv.ParseFloat(s, 32)
+		f64, err := strconv.ParseFloat(s, 64)
+		return float32(f64), err
 	case MTFloat64:
 		return strconv.ParseFloat(s, 64)
 	case MTComplex64:
-		return strconv.ParseComplex(s, 64)
+		c128, err := strconv.ParseComplex(s, 64)
+		return complex64(c128), err
 	case MTComplex128:
 		return strconv.ParseComplex(s, 128)
 	case MTBool:
