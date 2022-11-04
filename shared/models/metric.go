@@ -49,6 +49,8 @@ type BaseMetric struct {
 	RTSPullingTimes int16 `json:"rts-pulling-times" validate:"max=1000000"`
 	// RTSCacheDuration is the data duration in miliseconds on RTS cache. Max is one hour.
 	RTSCacheDuration int32 `json:"rts-cache-duration" validate:"max=3600000"`
+	// EvaluableExpression is the a evaluable expression for the metric value.
+	EvaluableExpression string `json:"evaluable-expression" validate:"max=255"`
 }
 
 type MetricDataResponse struct {
@@ -56,10 +58,10 @@ type MetricDataResponse struct {
 	ContainerId int32
 	// MetricId is the metric identifier.
 	MetricId int64
+	// MetricType is the data type.
+	MetricType types.MetricType
 	// Value is the metric data as bytes.
 	Value any
-	// Type is the data type.
-	Type types.MetricType
 }
 
 type MetricRequest struct {
