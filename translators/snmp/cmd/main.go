@@ -12,8 +12,6 @@ func main() {
 
 	// run service
 	s := snmp.New()
-	s.Run()
-
 	defer s.Close()
-	<-s.Done
+	s.Run()
 }

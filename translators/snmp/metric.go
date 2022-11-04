@@ -10,7 +10,7 @@ import (
 // Metric is the SNMP metric representation.
 type Metric struct {
 	// Id is the connection id.
-	Id int
+	Id int64
 	// TTL is the connection time to live.
 	TTL time.Duration
 	// Agent is the GoSNMP configuratation and connection.
@@ -24,16 +24,16 @@ type Metric struct {
 }
 
 // RegisterMetric register a metric.
-func (s *SNMPService) RegisterMetric(ctx context.Context, metricId int, ttl time.Duration) error {
+func (s *SNMPService) RegisterMetric(ctx context.Context, metricId int64, ttl time.Duration) (*Metric, error) {
 	// get metric configuration
 	e, conf, err := s.pgConn.SNMPMetrics.Get(ctx, metricId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// check if exists
 	if !e {
-		return errors.New("snmp metric not found")
+		return nil, errors.New("snmp metric not found")
 	}
 
 	m := &Metric{
@@ -41,19 +41,20 @@ func (s *SNMPService) RegisterMetric(ctx context.Context, metricId int, ttl time
 		TTL:    ttl,
 		OID:    conf.OID,
 		Ticker: time.NewTicker(ttl),
+		Closed: make(chan any),
 	}
 
 	// run ttl handler
 	go m.RunTTL()
 	m.OnClose = func(m *Metric) {
 		// remove connection
-		s.metrics[m.Id] = nil
+		delete(s.metrics, m.Id)
 		s.Log.Debug("metric removed, id: " + fmt.Sprint(m.Id))
 	}
 
 	// save connection
 	s.metrics[metricId] = m
-	return nil
+	return m, nil
 }
 
 // Close closes Closed chan.

@@ -2,11 +2,12 @@ package snmp
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/rabbitmq/amqp091-go"
 )
 
 // getListener listen to get metric data messages and redirect to
@@ -77,36 +78,42 @@ func (s *SNMPService) getListener() {
 		return
 	}
 
+	// close and cancel channels
+	closeCh := make(chan *amqp091.Error)
+	cancelCh := make(chan string)
+	ch.NotifyCancel(cancelCh)
+	ch.NotifyClose(closeCh)
+
 	for {
 		select {
 		case d := <-msgs:
 			ctx := context.Background()
 
 			// decode message data
-			var m models.GetMetricData
+			var m models.MetricRequest
 			err = amqp.Decode(d.Body, &m)
 			if err != nil {
 				s.Log.Error("fail to unmarshal amqp message body", logger.ErrField(err))
 				continue
 			}
+			s.Log.Debug("new data request, metric id: " + strconv.FormatInt(m.MetricId, 10))
 
 			// check if agent connection exists
 			c, ok := s.conns[m.ContainerId]
 			if !ok {
-				err = s.RegisterAgent(ctx, m.ContainerId)
+				c, err = s.RegisterAgent(ctx, m.ContainerId)
 				if err != nil {
 					s.Log.Error("fail to register agent", logger.ErrField(err))
 					continue
 				}
 			} else {
-				// reset ttl
 				c.Reset()
 			}
 
 			// get metric oid
 			metric, ok := s.metrics[m.MetricId]
 			if !ok {
-				err = s.RegisterMetric(ctx, m.MetricId, c.TTL)
+				metric, err = s.RegisterMetric(ctx, m.MetricId, c.TTL)
 				if err != nil {
 					s.Log.Error("fail to register metric", logger.ErrField(err))
 					continue
@@ -118,22 +125,29 @@ func (s *SNMPService) getListener() {
 			// get routing key on message header
 			rk, ok := d.Headers["routing_key"].(string)
 			if !ok {
-				s.Log.Error("fail to make routing_key assetion from message header")
+				s.Log.Error("fail to make routing_key assertion from message header")
 				continue
 			}
 
 			// add data request
-			s.singleDataReq <- models.AMQPCorrelated[SingleDataReq]{
+			s.singleDataReq <- models.AMQPCorrelated[metricRequest]{
 				CorrelationId: d.CorrelationId,
 				RoutingKey:    rk,
-				Data: SingleDataReq{
-					Conn:   c,
-					Metric: m,
-					OID:    metric.OID,
+				Info: metricRequest{
+					Conn:          c,
+					MetricRequest: m,
+					OID:           metric.OID,
 				},
 			}
-			s.Log.Debug("new data request for metric " + fmt.Sprint(m.MetricId))
-		case <-s.Done:
+		case err := <-closeCh:
+			s.Log.Warn("channel closed", logger.ErrField(err))
+			s.Close()
+			return
+		case r := <-cancelCh:
+			s.Log.Warn("channel canceled, reason: " + r)
+			s.Close()
+			return
+		case <-s.stopGetListener:
 			return
 		}
 	}

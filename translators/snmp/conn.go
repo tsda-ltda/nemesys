@@ -3,7 +3,6 @@ package snmp
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	g "github.com/gosnmp/gosnmp"
@@ -12,7 +11,7 @@ import (
 // Conn is the SNMP connection representation.
 type Conn struct {
 	// Id is the connection id.
-	Id int
+	Id int32
 	// TTL is the connection time to live.
 	TTL time.Duration
 	// Agent is the GoSNMP configuratation and connection.
@@ -26,52 +25,53 @@ type Conn struct {
 }
 
 // RegisterConn register a connection.
-func (s *SNMPService) RegisterAgent(ctx context.Context, containerId int) error {
+func (s *SNMPService) RegisterAgent(ctx context.Context, containerId int32) (*Conn, error) {
 	// get agent configuration
 	e, conf, err := s.pgConn.SNMPContainers.Get(ctx, containerId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// check if exists
 	if !e {
-		return errors.New("snmp container not found")
+		return nil, errors.New("snmp container does not exists")
 	}
 
 	c := &Conn{
 		Agent: &g.GoSNMP{
 			Target:             conf.Target,
-			Port:               conf.Port,
+			Port:               uint16(conf.Port),
 			Community:          conf.Community,
 			Transport:          conf.Transport,
-			MaxOids:            conf.MaxOids,
+			MaxOids:            int(conf.MaxOids),
 			Timeout:            time.Millisecond * time.Duration(conf.Timeout),
-			Retries:            conf.Retries,
+			Retries:            int(conf.Retries),
 			Version:            g.SnmpVersion(conf.Version),
 			MsgFlags:           g.SnmpV3MsgFlags(conf.MsgFlags),
 			ExponentialTimeout: false,
 		},
 		TTL:    time.Millisecond * time.Duration(conf.CacheDuration),
 		Closed: make(chan any),
+		Id:     containerId,
 	}
 
 	// connect to agent
 	err = c.Agent.Connect()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// run ttl handler
 	go c.RunTTL()
 	c.OnClose = func(c *Conn) {
 		// remove connection
-		s.conns[c.Id] = nil
-		s.Log.Debug("conn removed, addr: " + fmt.Sprint(c.Id))
+		delete(s.conns, c.Id)
+		s.Log.Debug("conn removed, addr: " + c.Agent.Target)
 	}
 
 	// save connection
-	s.conns[containerId] = c
-	return nil
+	s.conns[c.Id] = c
+	return c, nil
 }
 
 // Close closes agent connection and Closed chan.
@@ -95,7 +95,6 @@ func (c *Conn) RunTTL() {
 		case <-c.Closed:
 			return
 		case <-c.Ticker.C:
-			print("a")
 			c.Close()
 			return
 		}
