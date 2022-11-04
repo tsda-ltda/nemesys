@@ -83,7 +83,7 @@ func New(conn *amqp091.Connection, log *logger.Logger) (*API, error) {
 		Auth:           auth,
 		Validate:       validate,
 		Log:            log,
-		Cache:          cache.New(log),
+		Cache:          cache.New(),
 		RTSDataPlumber: models.NewAMQPPlumber(),
 	}, nil
 }
