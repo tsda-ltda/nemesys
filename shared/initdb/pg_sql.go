@@ -68,6 +68,7 @@ var sqlCommands []string = []string{
 		rts_pulling_interval INT4 NOT NULL,
 		rts_pulling_times INT2 NOT NULL,
 		rts_cache_duration INT4 NOT NULL,
+		ev_expression VARCHAR (255) NOT NULL,
 		CONSTRAINT fk_container_id
 			FOREIGN KEY(container_id)
 				REFERENCES containers(id)
