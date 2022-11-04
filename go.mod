@@ -3,6 +3,7 @@ module github.com/fernandotsda/nemesys
 go 1.19
 
 require (
+	github.com/Knetic/govaluate v3.0.0+incompatible
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/go-redis/redis/v8 v8.11.5
@@ -10,6 +11,7 @@ require (
 	github.com/jackc/pgx/v5 v5.0.1
 	github.com/joho/godotenv v1.4.0
 	github.com/rabbitmq/amqp091-go v1.5.0
+	github.com/segmentio/ksuid v1.0.4
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	go.uber.org/zap v1.23.0
 	golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be
