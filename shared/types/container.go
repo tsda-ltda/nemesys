@@ -3,5 +3,6 @@ package types
 type ContainerType byte
 
 const (
-	CTSNMP ContainerType = iota
+	CTUnknown ContainerType = iota
+	CTSNMP
 )
