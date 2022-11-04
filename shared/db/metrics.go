@@ -14,11 +14,11 @@ type Metrics struct {
 
 const (
 	sqlMetricsCreate = `INSERT INTO metrics 
-		(container_id, container_type, name, ident, descr, data_policy_id, rts_pulling_interval, rts_pulling_times, rts_cache_duration)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id;`
+		(container_id, container_type, name, ident, descr, data_policy_id, rts_pulling_interval, rts_pulling_times, rts_cache_duration, type, ev_expression)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id;`
 	sqlMetricsUpdate = `UPDATE metrics SET 
-		(name, ident, descr, data_policy_id, rts_pulling_interval, rts_pulling_times, rts_cache_duration) 
-		= ($1, $2, $3, $4, $5, $6, $7) WHERE id = $8;`
+		(name, ident, descr, data_policy_id, rts_pulling_interval, rts_pulling_times, rts_cache_duration, type, ev_expression) 
+		= ($1, $2, $3, $4, $5, $6, $7, $8, $9) WHERE id = $10;`
 	sqlMetricsGetRTSConfig = `SELECT rts_pulling_interval, rts_pulling_times, rts_cache_duration
 		FROM metrics WHERE id = $1;`
 	sqlMetricsExistsIdentAndContainerAndDataPolicy = `SELECT 
@@ -28,11 +28,30 @@ const (
 		EXISTS (SELECT 1 FROM metrics WHERE ident = $4 AND container_id = $1 AND id != $5);`
 	sqlMetricsGet = `SELECT 
 		container_id, container_type, name, ident, descr, data_policy_id, 
-		rts_pulling_interval, rts_pulling_times, rts_cache_duration FROM metrics WHERE id = $1;`
-	sqlMetricsDelete         = `DELETE FROM metrics WHERE id = $1;`
-	sqlMetricsMGetSimplified = `SELECT id, container_id, name, ident, descr FROM metrics WHERE container_id = $1 LIMIT $2 OFFSET $3;`
+		rts_pulling_interval, rts_pulling_times, rts_cache_duration, type, ev_expression FROM metrics WHERE id = $1;`
+	sqlMetricsDelete                 = `DELETE FROM metrics WHERE id = $1;`
+	sqlMetricsMGetSimplified         = `SELECT id, container_id, name, ident, descr FROM metrics WHERE container_id = $1 LIMIT $2 OFFSET $3;`
+	sqlMetricsGetEvaluableExpression = `SELECT ev_expression FROM metrics WHERE id = $1;`
 )
 
+// GetEvaluableExpression returns the metric evaluable expression if exists. Returns an error if fails to get.
+func (c *Metrics) GetEvaluableExpression(ctx context.Context, id int64) (e bool, expression string, err error) {
+	rows, err := c.Query(ctx, sqlMetricsGetEvaluableExpression, id)
+	if err != nil {
+		return false, expression, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(&expression)
+		if err != nil {
+			return false, expression, err
+		}
+		e = true
+	}
+	return e, expression, err
+}
+
+// Get returns a metric if exists. Returns an error if fails to get.
 func (c *Metrics) Get(ctx context.Context, id int64) (e bool, m models.BaseMetric, err error) {
 	rows, err := c.Query(ctx, sqlMetricsGet, id)
 	if err != nil {
@@ -50,6 +69,8 @@ func (c *Metrics) Get(ctx context.Context, id int64) (e bool, m models.BaseMetri
 			&m.RTSPullingInterval,
 			&m.RTSPullingTimes,
 			&m.RTSCacheDuration,
+			&m.Type,
+			&m.EvaluableExpression,
 		)
 		if err != nil {
 			return false, m, err
@@ -98,6 +119,8 @@ func (c *Metrics) Create(ctx context.Context, metric models.BaseMetric) (id int6
 		metric.RTSPullingInterval,
 		metric.RTSPullingTimes,
 		metric.RTSCacheDuration,
+		metric.Type,
+		metric.EvaluableExpression,
 	).Scan(&id)
 	return id, err
 }
@@ -112,6 +135,8 @@ func (c *Metrics) Update(ctx context.Context, metric models.BaseMetric) (e bool,
 		metric.RTSPullingInterval,
 		metric.RTSPullingTimes,
 		metric.RTSCacheDuration,
+		metric.Type,
+		metric.EvaluableExpression,
 		metric.Id,
 	)
 	return t.RowsAffected() != 0, err
