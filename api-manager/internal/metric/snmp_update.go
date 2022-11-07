@@ -23,6 +23,14 @@ func UpdateSNMPHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
+		// get container id
+		rawContainerId := c.Param("containerId")
+		containerId, err := strconv.ParseInt(rawContainerId, 10, 0)
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
 		// get metric id
 		rawId := c.Param("metricId")
 		id, err := strconv.ParseInt(rawId, 10, 0)
@@ -48,7 +56,8 @@ func UpdateSNMPHandler(api *api.API) func(c *gin.Context) {
 
 		// assign id
 		metric.Base.Id = id
-		metric.Protocol.MetricId = id
+		metric.Protocol.Id = id
+		metric.Base.ContainerId = int32(containerId)
 
 		// get if ident, container and data policy exists
 		e, ce, dpe, ie, err := api.PgConn.Metrics.ExistsIdentAndContainerAndDataPolicy(ctx, metric.Base.ContainerId, types.CTSNMP, metric.Base.DataPolicyId, metric.Base.Ident, id)

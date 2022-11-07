@@ -85,7 +85,7 @@ func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 		api.Log.Debug("base metric created, ident: " + metric.Base.Ident)
 
 		// assign id
-		metric.Protocol.MetricId = id
+		metric.Protocol.Id = id
 
 		// create SNMP metric
 		err = api.PgConn.SNMPMetrics.Create(ctx, metric.Protocol)
