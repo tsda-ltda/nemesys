@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
@@ -27,13 +28,13 @@ func DataHandler(api *api.API) func(c *gin.Context) {
 
 	// declare get data exchange
 	err = ch.ExchangeDeclare(
-		amqp.ExchangeRTSGetData, // name
-		"direct",                // type
-		true,                    // durable
-		false,                   // auto-deleted
-		false,                   // internal
-		false,                   // no-wait
-		nil,                     // arguments
+		amqp.ExchangeRTSGetMetricData, // name
+		"direct",                      // type
+		true,                          // durable
+		false,                         // auto-deleted
+		false,                         // internal
+		false,                         // no-wait
+		nil,                           // arguments
 	)
 	if err != nil {
 		api.Log.Panic("fail to declare exchange", logger.ErrField(err))
@@ -42,13 +43,13 @@ func DataHandler(api *api.API) func(c *gin.Context) {
 
 	// declare data exchange
 	err = ch.ExchangeDeclare(
-		amqp.ExchangeRTSData, // name
-		"fanout",             // type
-		true,                 // durable
-		false,                // auto-deleted
-		false,                // internal
-		false,                // no-wait
-		nil,                  // arguments
+		amqp.ExchangeRTSMetricData, // name
+		"fanout",                   // type
+		true,                       // durable
+		false,                      // auto-deleted
+		false,                      // internal
+		false,                      // no-wait
+		nil,                        // arguments
 	)
 	if err != nil {
 		api.Log.Panic("fail to declare exchange", logger.ErrField(err))
@@ -121,10 +122,10 @@ func DataHandler(api *api.API) func(c *gin.Context) {
 
 		// request data
 		err = ch.PublishWithContext(ctx,
-			amqp.ExchangeRTSGetData, // exchange
-			"",                      // routing key
-			false,                   // mandatory
-			false,                   // immediate
+			amqp.ExchangeRTSGetMetricData, // exchange
+			"",                            // routing key
+			false,                         // mandatory
+			false,                         // immediate
 			amqp091.Publishing{
 				Expiration:    "30000",
 				Body:          bytes,
@@ -150,7 +151,7 @@ func DataHandler(api *api.API) func(c *gin.Context) {
 
 		// check if something is wrong
 		if t != amqp.OK {
-			c.Status(amqp.ParseToHttpStatus(t))
+			c.JSON(amqp.ParseToHttpStatus(t), tools.JSONMSG(amqp.GetMessage(t)))
 			return
 		}
 
@@ -173,7 +174,7 @@ func dataListener(api *api.API, ch *amqp091.Channel) {
 	// declare queue
 	q, err := ch.QueueDeclare(
 		"",    // name
-		false, // durable
+		false, // durable'
 		false, // delete when unused
 		true,  // exclusive
 		false, // no-wait
@@ -186,11 +187,11 @@ func dataListener(api *api.API, ch *amqp091.Channel) {
 
 	// bind queue
 	err = ch.QueueBind(
-		q.Name,               // queue name
-		"",                   // routing key
-		amqp.ExchangeRTSData, // exchange
-		false,                // no-wait
-		nil,                  // args
+		q.Name,                     // queue name
+		"",                         // routing key
+		amqp.ExchangeRTSMetricData, // exchange
+		false,                      // no-wait
+		nil,                        // args
 	)
 	if err != nil {
 		api.Log.Panic("fail to bind queue", logger.ErrField(err))
