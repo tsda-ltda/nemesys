@@ -34,8 +34,11 @@ type SNMPService struct {
 	// closed is the channel to quit.
 	closed chan any
 
-	// singleDataReq is the channel for new data requests.
-	singleDataReq chan models.AMQPCorrelated[metricRequest]
+	// metricDataReq is the channel for new metric data requests.
+	metricDataReq chan models.AMQPCorrelated[metricRequest]
+
+	// metricsDataReq is the channel for new metrics data requests.
+	metricsDataReq chan models.AMQPCorrelated[metricsRequest]
 
 	// stopGetListener is the channel to stop the getListener
 	stopGetListener chan any
@@ -75,7 +78,8 @@ func New() *SNMPService {
 		evaluator:         evaluator.New(pgConn),
 		conns:             make(map[int32]*Conn, 100),
 		metrics:           make(map[int64]*Metric),
-		singleDataReq:     make(chan models.AMQPCorrelated[metricRequest]),
+		metricDataReq:     make(chan models.AMQPCorrelated[metricRequest]),
+		metricsDataReq:    make(chan models.AMQPCorrelated[metricsRequest]),
 		stopGetListener:   make(chan any),
 		stopDataPublisher: make(chan any),
 	}
@@ -83,10 +87,12 @@ func New() *SNMPService {
 
 // Run sets up all receivers and producers.
 func (s *SNMPService) Run() {
-	go s.dataPublisher()
-	go s.getListener()
-	s.Log.Info("service started")
+	go s.metricDataPublisher()
+	go s.metricsDataPublisher()
+	go s.getMetricListener()
+	go s.getMetricsListener()
 
+	s.Log.Info("service started")
 	<-s.closed
 }
 
