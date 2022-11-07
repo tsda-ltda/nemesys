@@ -14,12 +14,12 @@ type Metrics struct {
 
 const (
 	sqlMetricsCreate = `INSERT INTO metrics 
-		(container_id, container_type, name, ident, descr, data_policy_id, rts_pulling_interval, rts_pulling_times, rts_cache_duration, type, ev_expression)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id;`
+		(container_id, container_type, name, ident, descr, data_policy_id, rts_pulling_times, rts_cache_duration, type, ev_expression)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id;`
 	sqlMetricsUpdate = `UPDATE metrics SET 
-		(name, ident, descr, data_policy_id, rts_pulling_interval, rts_pulling_times, rts_cache_duration, type, ev_expression) 
-		= ($1, $2, $3, $4, $5, $6, $7, $8, $9) WHERE id = $10;`
-	sqlMetricsGetRTSConfig = `SELECT rts_pulling_interval, rts_pulling_times, rts_cache_duration
+		(name, ident, descr, data_policy_id, rts_pulling_times, rts_cache_duration, type, ev_expression) 
+		= ($1, $2, $3, $4, $5, $6, $7, $8) WHERE id = $9;`
+	sqlMetricsGetRTSConfig = `SELECT rts_pulling_times, rts_cache_duration
 		FROM metrics WHERE id = $1;`
 	sqlMetricsExistsIdentAndContainerAndDataPolicy = `SELECT 
 		EXISTS (SELECT 1 FROM metrics WHERE id = $5),
@@ -28,7 +28,7 @@ const (
 		EXISTS (SELECT 1 FROM metrics WHERE ident = $4 AND container_id = $1 AND id != $5);`
 	sqlMetricsGet = `SELECT 
 		container_id, container_type, name, ident, descr, data_policy_id, 
-		rts_pulling_interval, rts_pulling_times, rts_cache_duration, type, ev_expression FROM metrics WHERE id = $1;`
+		rts_pulling_times, rts_cache_duration, type, ev_expression FROM metrics WHERE id = $1;`
 	sqlMetricsDelete                 = `DELETE FROM metrics WHERE id = $1;`
 	sqlMetricsMGetSimplified         = `SELECT id, container_id, name, ident, descr FROM metrics WHERE container_id = $1 LIMIT $2 OFFSET $3;`
 	sqlMetricsGetEvaluableExpression = `SELECT ev_expression FROM metrics WHERE id = $1;`
@@ -66,7 +66,6 @@ func (c *Metrics) Get(ctx context.Context, id int64) (e bool, m models.BaseMetri
 			&m.Ident,
 			&m.Descr,
 			&m.DataPolicyId,
-			&m.RTSPullingInterval,
 			&m.RTSPullingTimes,
 			&m.RTSCacheDuration,
 			&m.Type,
@@ -116,7 +115,6 @@ func (c *Metrics) Create(ctx context.Context, metric models.BaseMetric) (id int6
 		metric.Ident,
 		metric.Descr,
 		metric.DataPolicyId,
-		metric.RTSPullingInterval,
 		metric.RTSPullingTimes,
 		metric.RTSCacheDuration,
 		metric.Type,
@@ -132,7 +130,6 @@ func (c *Metrics) Update(ctx context.Context, metric models.BaseMetric) (e bool,
 		metric.Ident,
 		metric.Descr,
 		metric.DataPolicyId,
-		metric.RTSPullingInterval,
 		metric.RTSPullingTimes,
 		metric.RTSCacheDuration,
 		metric.Type,
@@ -157,7 +154,6 @@ func (c *Metrics) GetRTSConfig(ctx context.Context, id int64) (e bool, info mode
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&info.PullingInterval,
 			&info.PullingTimes,
 			&info.CacheDuration,
 		)

@@ -49,7 +49,8 @@ var sqlCommands []string = []string{
 		name VARCHAR (50) NOT NULL,
 		ident VARCHAR (50) UNIQUE NOT NULL,
 		descr VARCHAR (255) NOT NULL,
-		type INT2 NOT NULL
+		type INT2 NOT NULL,
+		rts_pulling_interval INT4 NOT NULL
 	);`,
 
 	// Create container index
@@ -65,7 +66,6 @@ var sqlCommands []string = []string{
 		ident VARCHAR (50) NOT NULL,
 		descr VARCHAR (255) NOT NULL,
 		data_policy_id INT4 NOT NULL,
-		rts_pulling_interval INT4 NOT NULL,
 		rts_pulling_times INT2 NOT NULL,
 		rts_cache_duration INT4 NOT NULL,
 		ev_expression VARCHAR (255) NOT NULL,
