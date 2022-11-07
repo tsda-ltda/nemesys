@@ -2,7 +2,6 @@ package rts
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-func (s *RTS) DataRequestListener() {
+func (s *RTS) MetricDataRequestListener() {
 	// open amqp socket channel
 	ch, err := s.amqp.Channel()
 	if err != nil {
@@ -25,13 +24,13 @@ func (s *RTS) DataRequestListener() {
 
 	// declare exchange
 	err = ch.ExchangeDeclare(
-		amqp.ExchangeRTSGetData, // name
-		"direct",                // type
-		true,                    // durable
-		false,                   // auto-deleted
-		false,                   // internal
-		false,                   // no-wait
-		nil,                     // arguments
+		amqp.ExchangeRTSGetMetricData, // name
+		"direct",                      // type
+		true,                          // durable
+		false,                         // auto-deleted
+		false,                         // internal
+		false,                         // no-wait
+		nil,                           // arguments
 	)
 	if err != nil {
 		s.Log.Panic("fail to declare exchange", logger.ErrField(err))
@@ -40,12 +39,12 @@ func (s *RTS) DataRequestListener() {
 
 	// declare queue
 	q, err := ch.QueueDeclare(
-		amqp.QueueRTSGetData, // name
-		false,                // durable
-		false,                // delete when unused
-		false,                // exclusive
-		false,                // no-wait
-		nil,                  // arguments
+		amqp.QueueRTSGetMetricData, // name
+		false,                      // durable
+		false,                      // delete when unused
+		false,                      // exclusive
+		false,                      // no-wait
+		nil,                        // arguments
 	)
 	if err != nil {
 		s.Log.Panic("fail to declare queue", logger.ErrField(err))
@@ -54,11 +53,11 @@ func (s *RTS) DataRequestListener() {
 
 	// bind queue
 	err = ch.QueueBind(
-		q.Name,                  // queue name
-		"",                      // routing key
-		amqp.ExchangeRTSGetData, // exchange
-		false,                   // no-wait
-		nil,                     // args
+		q.Name,                        // queue name
+		"",                            // routing key
+		amqp.ExchangeRTSGetMetricData, // exchange
+		false,                         // no-wait
+		nil,                           // args
 	)
 	if err != nil {
 		s.Log.Panic("fail to bind queue", logger.ErrField(err))
@@ -97,7 +96,6 @@ func (s *RTS) DataRequestListener() {
 				s.Log.Error("fail to decode message body", logger.ErrField(err))
 				continue
 			}
-			s.Log.Debug("new data request, metric id: " + strconv.FormatInt(r.MetricId, 10))
 
 			// get data on cache
 			bytes, err := s.cache.Get(ctx, db.RDBCacheMetricDataKey(r.MetricId))
@@ -120,23 +118,24 @@ func (s *RTS) DataRequestListener() {
 					continue
 				}
 
-				// do pulling stuff here...
+				// start pulling
+				s.addPulling(r, info)
 
 				// publish data when available
 				go func(correlationId string, r models.MetricRequest) {
 					// send data request
-					s.getDataCh <- models.AMQPCorrelated[[]byte]{
+					s.metricDataRequestCh <- models.AMQPCorrelated[[]byte]{
 						RoutingKey:    amqp.GetDataRoutingKey(r.ContainerType),
 						CorrelationId: d.CorrelationId,
 						Info:          d.Body,
 					}
 
 					// set pending request
-					s.pendingDataMap[correlationId] = info
+					s.pendingMetricData[correlationId] = info
 
 					// delete channel
 					defer func(correlationId string) {
-						delete(s.pendingDataMap, correlationId)
+						delete(s.pendingMetricData, correlationId)
 					}(correlationId)
 
 					// wait response
@@ -147,7 +146,7 @@ func (s *RTS) DataRequestListener() {
 					}
 
 					// publish data
-					s.publisherDataCh <- amqp091.Publishing{
+					s.metricDataPublisherCh <- amqp091.Publishing{
 						Type:          res.Type,
 						Body:          res.Body,
 						CorrelationId: correlationId,
@@ -155,21 +154,26 @@ func (s *RTS) DataRequestListener() {
 				}(d.CorrelationId, r)
 				continue
 			}
+			s.Log.Debug("metric data fetched on cache, metricId: " + strconv.FormatInt(r.MetricId, 10))
+
+			// reset pulling
+			s.resetPulling(r)
 
 			// publish data
-			s.publisherDataCh <- amqp091.Publishing{
+			s.metricDataPublisherCh <- amqp091.Publishing{
+				Expiration:    "5000",
 				Body:          bytes,
 				Type:          amqp.FromMessageType(amqp.OK),
 				CorrelationId: d.CorrelationId,
 			}
 
-		case <-s.stopDataRequestListener:
+		case <-s.stopMetricDataRequestListener:
 			return
 		}
 	}
 }
 
-func (s *RTS) DataListener() {
+func (s *RTS) MetricDataListener() {
 	// open amqp socket channel
 	ch, err := s.amqp.Channel()
 	if err != nil {
@@ -195,12 +199,12 @@ func (s *RTS) DataListener() {
 
 	// declare queue
 	q, err := ch.QueueDeclare(
-		"",    // name
-		false, // durable
-		false, // delete when unused
-		true,  // exclusive
-		false, // no-wait
-		nil,   // arguments
+		amqp.QueueRTSMetricData, // name
+		false,                   // durable
+		false,                   // delete when unused
+		true,                    // exclusive
+		false,                   // no-wait
+		nil,                     // arguments
 	)
 	if err != nil {
 		s.Log.Panic("fail to declare queue", logger.ErrField(err))
@@ -240,10 +244,17 @@ func (s *RTS) DataListener() {
 			ctx := context.Background()
 
 			// check for pending request
-			info, ok := s.pendingDataMap[d.CorrelationId]
+			info, ok := s.pendingMetricData[d.CorrelationId]
 
 			// send data as response for a possible listener
 			s.plumber.Send(d)
+
+			// check if info exists
+			if !ok {
+				continue
+			}
+
+			// check message type
 			if amqp.ToMessageType(d.Type) != amqp.OK {
 				continue
 			}
@@ -255,21 +266,138 @@ func (s *RTS) DataListener() {
 				s.Log.Error("fail to decode amqp message body", logger.ErrField(err))
 				continue
 			}
-			s.Log.Debug("new data received, metric id: " + strconv.FormatInt(m.MetricId, 10))
-
-			// check if info exists
-			if !ok {
-				continue
-			}
 
 			// save on cache
-			err = s.cache.Set(ctx, d.Body, db.RDBCacheMetricDataKey(m.MetricId), time.Millisecond*time.Duration(info.CacheDuration))
+			err = s.cache.Set(ctx, d.Body, db.RDBCacheMetricDataKey(m.Id), time.Millisecond*time.Duration(info.CacheDuration))
 			if err != nil {
 				s.Log.Error("fail to save metric data on cache", logger.ErrField(err))
 				continue
 			}
-			s.Log.Debug("metric data saved on cache, metricId: " + fmt.Sprint(m.MetricId))
-		case <-s.stopDataListener:
+
+			s.Log.Debug("metric data received, id: " + strconv.FormatInt(m.Id, 10))
+		case <-s.stopMetricDataListener:
+			return
+		}
+	}
+}
+
+func (s *RTS) MetricsDataListener() {
+	// open amqp socket channel
+	ch, err := s.amqp.Channel()
+	if err != nil {
+		s.Log.Panic("fail to open amqp socket channel", logger.ErrField(err))
+		return
+	}
+	defer ch.Close()
+
+	// declare exchange
+	err = ch.ExchangeDeclare(
+		amqp.ExchangeMetricsData, // name
+		"direct",                 // type
+		true,                     // durable
+		false,                    // auto-deleted
+		false,                    // internal
+		false,                    // no-wait
+		nil,                      // arguments
+	)
+	if err != nil {
+		s.Log.Panic("fail to declare exchange", logger.ErrField(err))
+		return
+	}
+
+	// declare queue
+	q, err := ch.QueueDeclare(
+		amqp.QueueRTSMetricsData, // name
+		false,                    // durable
+		false,                    // delete when unused
+		true,                     // exclusive
+		false,                    // no-wait
+		nil,                      // arguments
+	)
+	if err != nil {
+		s.Log.Panic("fail to declare queue", logger.ErrField(err))
+		return
+	}
+
+	// bind queue
+	err = ch.QueueBind(
+		q.Name,                   // queue name
+		"rts",                    // routing key
+		amqp.ExchangeMetricsData, // exchange
+		false,                    // no-wait
+		nil,                      // args
+	)
+	if err != nil {
+		s.Log.Panic("fail to bind queue", logger.ErrField(err))
+		return
+	}
+
+	// consume messages
+	msgs, err := ch.Consume(
+		q.Name, // queue
+		"",     // consumer
+		true,   // auto-ack
+		false,  // exclusive
+		false,  // no-local
+		false,  // no-wait
+		nil,    // args
+	)
+	if err != nil {
+		s.Log.Panic("fail to consume messages", logger.ErrField(err))
+	}
+
+	for {
+		select {
+		case d := <-msgs:
+			ctx := context.Background()
+
+			// check if message type
+			if amqp.ToMessageType(d.Type) != amqp.OK {
+				continue
+			}
+
+			// decode message body
+			var m models.MetricsDataResponse
+			err := amqp.Decode(d.Body, &m)
+			if err != nil {
+				s.Log.Error("fail to decode amqp message body", logger.ErrField(err))
+				continue
+			}
+
+			// check for pending request
+			infos, ok := s.pendingMetricsData[m.ContainerId]
+			if !ok {
+				continue
+			}
+
+			for _, v := range m.Metrics {
+				var info models.RTSMetricInfo
+				for _, i := range infos {
+					if i.Id == v.Id {
+						info = i.RTSMetricInfo
+						break
+					}
+				}
+
+				b, err := amqp.Encode(models.MetricDataResponse{
+					MetricBasicDataReponse: v,
+					ContainerId:            m.ContainerId,
+				})
+				if err != nil {
+					s.Log.Error("fail to encode metric response", logger.ErrField(err))
+					continue
+				}
+
+				// save on cache
+				err = s.cache.Set(ctx, b, db.RDBCacheMetricDataKey(v.Id), time.Millisecond*time.Duration(info.CacheDuration))
+				if err != nil {
+					s.Log.Error("fail to save metric data on cache", logger.ErrField(err))
+					continue
+				}
+			}
+
+			s.Log.Debug("metrics data received, container id: " + strconv.FormatInt(int64(m.ContainerId), 10))
+		case <-s.stopMetricDataListener:
 			return
 		}
 	}

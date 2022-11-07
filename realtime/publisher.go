@@ -8,7 +8,7 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-func (s *RTS) DataPublisher() {
+func (s *RTS) MetricDataPublisher() {
 	// open amqp socket channel
 	ch, err := s.amqp.Channel()
 	if err != nil {
@@ -19,13 +19,13 @@ func (s *RTS) DataPublisher() {
 
 	// declare exchange
 	err = ch.ExchangeDeclare(
-		amqp.ExchangeRTSData, // exchange
-		"fanout",             // type
-		true,                 // durable
-		false,                // auto-deleted
-		false,                // internal
-		false,                // no-wait
-		nil,                  // arguments
+		amqp.ExchangeRTSMetricData, // exchange
+		"fanout",                   // type
+		true,                       // durable
+		false,                      // auto-deleted
+		false,                      // internal
+		false,                      // no-wait
+		nil,                        // arguments
 	)
 	if err != nil {
 		s.Log.Panic("fail to declare exchange", logger.ErrField(err))
@@ -35,28 +35,26 @@ func (s *RTS) DataPublisher() {
 	for {
 		select {
 		// publish data
-		case p := <-s.publisherDataCh:
-			s.Log.Debug("publishing new data for listeners")
-
+		case p := <-s.metricDataPublisherCh:
 			// publish
 			err = ch.PublishWithContext(context.Background(),
-				amqp.ExchangeRTSData, // exchange
-				"",                   // routing key
-				false,                // mandatory
-				false,                // immediate
-				p,                    // publishing
+				amqp.ExchangeRTSMetricData, // exchange
+				"",                         // routing key
+				false,                      // mandatory
+				false,                      // immediate
+				p,                          // publishing
 			)
 			if err != nil {
 				s.Log.Error("fail to publish message", logger.ErrField(err))
 			}
 		// quit
-		case <-s.stopDataPublisher:
+		case <-s.stopMetricDataPublisher:
 			return
 		}
 	}
 }
 
-func (s *RTS) DataRequestPublisher() {
+func (s *RTS) MetricDataRequestPublisher() {
 	// open amqp socket channel
 	ch, err := s.amqp.Channel()
 	if err != nil {
@@ -81,24 +79,80 @@ func (s *RTS) DataRequestPublisher() {
 
 	for {
 		select {
-		// get data
-		case r := <-s.getDataCh:
+		case r := <-s.metricDataRequestCh:
 			ctx := context.Background()
-			s.Log.Debug("publishing new data request for translators, routing key: " + r.RoutingKey)
+			s.Log.Debug("publishing metric data request for: " + r.RoutingKey)
 
 			// publish
-			ch.PublishWithContext(ctx,
+			err = ch.PublishWithContext(ctx,
 				amqp.ExchangeGetMetricData, // exchange
 				r.RoutingKey,               // routing key
 				false,                      // mandatory
 				false,                      // immediate
 				amqp091.Publishing{
+					Expiration:    "5000",
 					Headers:       amqp091.Table{"routing_key": "rts"},
 					CorrelationId: r.CorrelationId,
 					Body:          r.Info,
 				},
 			)
-		case <-s.stopDataRequestPublisher:
+			if err != nil {
+				s.Log.Error("fail to publish metric data request")
+				continue
+			}
+		case <-s.stopMetricDataRequestPublisher:
+			return
+		}
+	}
+}
+
+func (s *RTS) MetricsDataRequestPublisher() {
+	// open amqp socket channel
+	ch, err := s.amqp.Channel()
+	if err != nil {
+		s.Log.Panic("fail to open socket channel", logger.ErrField(err))
+		return
+	}
+
+	// declare snmp exchange
+	err = ch.ExchangeDeclare(
+		amqp.ExchangeGetMetricsData, // name
+		"direct",                    // type
+		true,                        // durable
+		false,                       // auto-deleted
+		false,                       // internal
+		false,                       // no-wait
+		nil,                         // arguments
+	)
+	if err != nil {
+		s.Log.Panic("fail to declare exchange", logger.ErrField(err))
+		return
+	}
+
+	for {
+		select {
+		case r := <-s.metricsDataRequestCh:
+			ctx := context.Background()
+			s.Log.Debug("publishing metrics data request for: " + r.RoutingKey)
+
+			// publish
+			err = ch.PublishWithContext(ctx,
+				amqp.ExchangeGetMetricsData, // exchange
+				r.RoutingKey,                // routing key
+				false,                       // mandatory
+				false,                       // immediate
+				amqp091.Publishing{
+					Expiration:    "5000",
+					Headers:       amqp091.Table{"routing_key": "rts"},
+					CorrelationId: r.CorrelationId,
+					Body:          r.Info,
+				},
+			)
+			if err != nil {
+				s.Log.Error("fail to publish metrics data request")
+				continue
+			}
+		case <-s.stopMetricsDataRequestPublisher:
 			return
 		}
 	}

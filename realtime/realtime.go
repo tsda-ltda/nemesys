@@ -3,6 +3,7 @@ package rts
 import (
 	"context"
 	"log"
+	"sync"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/cache"
@@ -31,29 +32,47 @@ type RTS struct {
 	// for deal with request responses cases.
 	plumber *models.AMQPPlumber
 
-	// pendingDataMap is a map of pending data requests.
-	pendingDataMap map[string]models.RTSMetricInfo
+	// muPulling is the mutex to add metrics on pulling.
+	muPulling sync.Mutex
 
-	// getDataCh is the channel to request data.
-	getDataCh chan models.AMQPCorrelated[[]byte]
+	// pulling is the map of containers pulling.
+	pulling map[int32]*ContainerPulling
 
-	// publisherDataCh is the channel to publish data.
-	publisherDataCh chan amqp091.Publishing
+	// pendingMetricData is a map of pending data requests.
+	pendingMetricData map[string]models.RTSMetricInfo
 
-	// publisherDataCh is the channel to publish data.
-	getDataSNMPCh chan amqp091.Publishing
+	// pendingMetricData is a map of pending data requests.
+	pendingMetricsData map[int32][]struct {
+		Id int64
+		models.RTSMetricInfo
+	}
 
-	// stopDataRequestPublisher is the channel to stop the DataRequestPubliser
-	stopDataRequestPublisher chan any
+	// metricDataRequestCh is the channel to request metric data.
+	metricDataRequestCh chan models.AMQPCorrelated[[]byte]
 
-	// stopDataRequestListener is the channel to stop the DataRequestListener
-	stopDataRequestListener chan any
+	// metricDataRequestCh is the channel to request metric data.
+	metricsDataRequestCh chan models.AMQPCorrelated[[]byte]
 
-	// stopDataListener is the channel to stop the DataListener
-	stopDataListener chan any
+	// metricDataPublisherCh is the channel to publish metric data.
+	metricDataPublisherCh chan amqp091.Publishing
 
-	// stopDataPublisher is the channel to stop the DataPublisher
-	stopDataPublisher chan any
+	// stopMetricDataRequestPublisher is the channel to stop the MetricDataRequestPublisher
+	stopMetricDataRequestPublisher chan any
+
+	// stopMetricsDataRequestPublisher is the channel to stop the MetricsDataRequestPublisher
+	stopMetricsDataRequestPublisher chan any
+
+	// stopMetricDataRequestListener is the channel to stop the DataRequestListener
+	stopMetricDataRequestListener chan any
+
+	// stopMetricDataListener is the channel to stop the DataListener
+	stopMetricDataListener chan any
+
+	// stopMetricDataListener is the channel to stop the DataListener
+	stopMetricsDataListener chan any
+
+	// stopMetricDataPublisher is the channel to stop the DataPublisher
+	stopMetricDataPublisher chan any
 
 	// closed is the filled when rts is closed.
 	closed chan any
@@ -87,31 +106,40 @@ func New() *RTS {
 	if err != nil {
 		l.Panic("fail to connect postgres", logger.ErrField(err))
 	}
-	l.Info("connected to postgresql")
+	l.Info("connected to postgres ")
 
 	return &RTS{
-		pgConn:                   pg,
-		amqp:                     amqpConn,
-		Log:                      l,
-		plumber:                  models.NewAMQPPlumber(),
-		pendingDataMap:           make(map[string]models.RTSMetricInfo),
-		publisherDataCh:          make(chan amqp091.Publishing),
-		getDataCh:                make(chan models.AMQPCorrelated[[]byte]),
-		getDataSNMPCh:            make(chan amqp091.Publishing),
-		closed:                   make(chan any),
-		stopDataRequestPublisher: make(chan any),
-		stopDataListener:         make(chan any),
-		stopDataRequestListener:  make(chan any),
-		stopDataPublisher:        make(chan any),
-		cache:                    cache.New(),
+		Log:     l,
+		pgConn:  pg,
+		amqp:    amqpConn,
+		cache:   cache.New(),
+		plumber: models.NewAMQPPlumber(),
+		pendingMetricsData: make(map[int32][]struct {
+			Id int64
+			models.RTSMetricInfo
+		}),
+		pendingMetricData:               make(map[string]models.RTSMetricInfo),
+		pulling:                         make(map[int32]*ContainerPulling),
+		metricDataPublisherCh:           make(chan amqp091.Publishing),
+		metricDataRequestCh:             make(chan models.AMQPCorrelated[[]byte]),
+		metricsDataRequestCh:            make(chan models.AMQPCorrelated[[]byte]),
+		stopMetricDataRequestPublisher:  make(chan any),
+		stopMetricsDataRequestPublisher: make(chan any),
+		stopMetricDataListener:          make(chan any),
+		stopMetricsDataListener:         make(chan any),
+		stopMetricDataRequestListener:   make(chan any),
+		stopMetricDataPublisher:         make(chan any),
+		closed:                          make(chan any),
 	}
 }
 
 func (s *RTS) Run() {
-	go s.DataRequestListener()  // listen to data requests
-	go s.DataPublisher()        // publish data responses
-	go s.DataListener()         // listen to new data
-	go s.DataRequestPublisher() // publish data requests fro translators
+	go s.MetricDataRequestListener()   // listen to data requests
+	go s.MetricDataPublisher()         // publish data responses
+	go s.MetricDataListener()          // listen to new data
+	go s.MetricsDataListener()         // listen to new data
+	go s.MetricDataRequestPublisher()  // publish metric data requests fro translators
+	go s.MetricsDataRequestPublisher() // publish metrics data requests fro translators
 
 	s.Log.Info("service started")
 	<-s.closed
@@ -131,10 +159,10 @@ func (s *RTS) Close() {
 	// close Redis client
 	s.cache.Close()
 
-	s.stopDataListener <- nil
-	s.stopDataPublisher <- nil
-	s.stopDataRequestListener <- nil
-	s.stopDataRequestPublisher <- nil
+	s.stopMetricDataListener <- nil
+	s.stopMetricDataPublisher <- nil
+	s.stopMetricDataRequestListener <- nil
+	s.stopMetricDataRequestPublisher <- nil
 
 	s.closed <- nil
 }
