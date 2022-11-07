@@ -14,6 +14,8 @@ const (
 	InvalidBody
 	NotFound
 	Failed
+	InvalidParse
+	EvaluateFailed
 )
 
 func ToMessageType(t string) MessageType {
@@ -40,7 +42,24 @@ func ParseToHttpStatus(t MessageType) int {
 		return http.StatusNotFound
 	case Failed:
 		return http.StatusServiceUnavailable
+	case InvalidParse:
+		return http.StatusBadRequest
+	case EvaluateFailed:
+		return http.StatusBadRequest
 	default:
 		return http.StatusInternalServerError
+	}
+}
+
+func GetMessage(t MessageType) string {
+	switch t {
+	case Failed:
+		return "Fail to get metric's data."
+	case InvalidParse:
+		return "Fail to parse data to metric type. Check if the metric's type is correct."
+	case EvaluateFailed:
+		return "Fail to evaluate data with metric's evaluate expression."
+	default:
+		return ""
 	}
 }
