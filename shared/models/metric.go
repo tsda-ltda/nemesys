@@ -43,25 +43,12 @@ type BaseMetric struct {
 	Descr string `json:"descr" validate:"required,max=255"`
 	// DataPolicyId is the metric data policy identifier.
 	DataPolicyId int16 `json:"data-policy-id" validate:"required"`
-	// RTSPullingInterval is the interval in miliseconds between each pull. Max is one hour.
-	RTSPullingInterval int32 `json:"rts-pulling-interval" validate:"required,max=3600000"`
 	// RTSPullingTimes is how many times will pull the data.
-	RTSPullingTimes int16 `json:"rts-pulling-times" validate:"max=1000000"`
+	RTSPullingTimes int16 `json:"rts-pulling-times" validate:"min=0,max=1000000"`
 	// RTSCacheDuration is the data duration in miliseconds on RTS cache. Max is one hour.
-	RTSCacheDuration int32 `json:"rts-cache-duration" validate:"max=3600000"`
+	RTSCacheDuration int32 `json:"rts-cache-duration" validate:"min=1000,max=3600000"`
 	// EvaluableExpression is the a evaluable expression for the metric value.
 	EvaluableExpression string `json:"evaluable-expression" validate:"max=255"`
-}
-
-type MetricDataResponse struct {
-	// ContainerId is the metric's container identifier.
-	ContainerId int32
-	// MetricId is the metric identifier.
-	MetricId int64
-	// MetricType is the data type.
-	MetricType types.MetricType
-	// Value is the metric data as bytes.
-	Value any
 }
 
 type MetricRequest struct {
@@ -73,4 +60,42 @@ type MetricRequest struct {
 	MetricId int64
 	// MetricType is the metric type.
 	MetricType types.MetricType
+}
+
+type MetricsRequest struct {
+	// ContainerId is the metric's container identifier.
+	ContainerId int32
+	// ContainerType is the metric's container type.
+	ContainerType types.ContainerType
+	// Metrics is the metrics.
+	Metrics []MetricBasicRequestInfo
+}
+
+type MetricBasicRequestInfo struct {
+	// Id is the metric identifier.
+	Id int64
+	// Type is the metric type.
+	Type types.MetricType
+}
+
+type MetricDataResponse struct {
+	MetricBasicDataReponse
+	// ContainerId is the metric's container identifier.
+	ContainerId int32
+}
+
+type MetricsDataResponse struct {
+	// ContainerId is the metric's container identifier.
+	ContainerId int32
+	// Metrics is the metrics responses.
+	Metrics []MetricBasicDataReponse
+}
+
+type MetricBasicDataReponse struct {
+	// Id is the metric identifier.
+	Id int64
+	// Type is the data type.
+	Type types.MetricType
+	// Value is the metric data as MetricType.
+	Value any
 }

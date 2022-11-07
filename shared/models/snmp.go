@@ -20,7 +20,7 @@ type SNMPContainer struct {
 	Community string `json:"community" validate:"required,max=50"`
 
 	// Timeout is the timeout for one SNMP request/response.
-	Timeout int32 `json:"timeout" validate:"required,max=60000"`
+	Timeout int32 `json:"timeout" validate:"required,min=100,max=60000"`
 
 	// Set the number of retries to attempt.
 	Retries int16 `json:"retries" validate:"required"`
@@ -36,8 +36,8 @@ type SNMPContainer struct {
 }
 
 type SNMPMetric struct {
-	// MetricId is the metric identifier.
-	MetricId int64 `json:"-" validate:"-"`
+	// Id is the metric identifier.
+	Id int64 `json:"-" validate:"-"`
 	// OID is the snmp object identifier.
 	OID string `json:"oid" validate:"required,max=128"`
 }
