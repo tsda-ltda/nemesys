@@ -2,6 +2,7 @@ package types
 
 import (
 	"errors"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
@@ -151,25 +152,22 @@ func ParseInt(i int, t MetricType) (any, error) {
 
 func ParseString(s string, t MetricType) (any, error) {
 	s = strings.Replace(s, ",", ".", 1)
+	f, err := strconv.ParseFloat(s, 64)
 	switch t {
 	case MTString:
 		return s, nil
 	case MTInt8:
-		i64, err := strconv.ParseInt(s, 10, 8)
-		return int8(i64), err
+		return int8(math.Round(f)), err
 	case MTInt16:
-		i64, err := strconv.ParseInt(s, 10, 16)
-		return int16(i64), err
+		return int16(math.Round(f)), err
 	case MTInt32:
-		i64, err := strconv.ParseInt(s, 10, 32)
-		return int32(i64), err
+		return int32(math.Round(f)), err
 	case MTInt64:
-		return strconv.ParseInt(s, 10, 64)
+		return int64(math.Round(f)), err
 	case MTFloat32:
-		f64, err := strconv.ParseFloat(s, 64)
-		return float32(f64), err
+		return float32(f), err
 	case MTFloat64:
-		return strconv.ParseFloat(s, 64)
+		return f, err
 	case MTComplex64:
 		c128, err := strconv.ParseComplex(s, 64)
 		return complex64(c128), err
@@ -186,7 +184,18 @@ func ParseString(s string, t MetricType) (any, error) {
 			return false, nil
 		case "true":
 			return true, nil
+		default:
+			f, err := strconv.ParseFloat(s, 64)
+			if err != nil {
+				return nil, ErrInvalidParseType
+			}
+			if f > 0 {
+				return true, nil
+			} else {
+				return false, nil
+			}
 		}
+	default:
+		return nil, ErrInvalidParseType
 	}
-	return nil, ErrInvalidParseType
 }
