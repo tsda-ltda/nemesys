@@ -12,6 +12,8 @@ type Contexts struct {
 }
 
 const (
+	sqlCtxGetIdsByIdent = `WITH tid AS (SELECT id FROM teams WHERE ident = $1)
+		SELECT id, (SELECT * FROM tid) FROM contexts WHERE ident = $2 and team_id = (SELECT * FROM tid);`
 	sqlCtxExistsTeamAndIdent = `SELECT 
 		EXISTS (SELECT 1 FROM teams WHERE id = $1), 
 		EXISTS (SELECT 1 FROM contexts WHERE ident = $2 AND id != $3);`
@@ -100,4 +102,21 @@ func (c *Contexts) Get(ctx context.Context, id int32) (e bool, context models.Co
 		e = true
 	}
 	return e, context, nil
+}
+
+// GetIdsByIdent returns the context and team id using their ident. Returns an error if fails to get.
+func (c *Contexts) GetIdsByIdent(ctx context.Context, ctxIdent string, teamIdent string) (e bool, cid int32, tid int32, err error) {
+	rows, err := c.Query(ctx, sqlCtxGetIdsByIdent, teamIdent, ctxIdent)
+	if err != nil {
+		return false, cid, tid, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(&cid, &tid)
+		if err != nil {
+			return false, cid, tid, err
+		}
+		e = true
+	}
+	return e, cid, tid, nil
 }

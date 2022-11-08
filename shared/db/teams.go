@@ -118,7 +118,7 @@ func (c *Teams) Update(ctx context.Context, team models.Team) (e bool, err error
 
 // ExistsRelUserTeam returns a user-team relation, user and team existence.
 // Returns an error if fails to check.
-func (c *Teams) ExistsRelUserTeam(ctx context.Context, userId int32, teamId int) (rel bool, ue bool, te bool, err error) {
+func (c *Teams) ExistsRelUserTeam(ctx context.Context, userId int32, teamId int32) (rel bool, ue bool, te bool, err error) {
 	err = c.QueryRow(ctx, sqlTeamsExistsRelUserTeam, userId, teamId).Scan(&rel, &ue, &te)
 	return rel, ue, te, err
 }

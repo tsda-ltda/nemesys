@@ -12,11 +12,11 @@ type ContextualMetrics struct {
 }
 
 const (
-	sqlGetIdContainerIdTeamId = `WITH 
-		tid  AS (SELECT id FROM teams WHERE ident = $1),
-		cid  AS (SELECT id FROM contexts WHERE ident = $2 and team_id = (SELECT * FROM tid)),
-		mid AS (SELECT metric_id FROM contextual_metrics WHERE ident = $3 AND ctx_id = (SELECT * FROM cid))
-		SELECT (SELECT * FROM mid), type, container_id, container_type FROM metrics WHERE id = (SELECT * FROM mid);`
+	sqlCtxMetricsGetMetricRequestInfo = `SELECT type, container_id, container_type FROM metrics WHERE id = $1;`
+	sqlCtxMetricsGetIdsByIdent        = `WITH 
+		tid AS (SELECT id FROM teams WHERE ident = $1),
+		cid AS (SELECT id FROM contexts WHERE ident = $2 and team_id = (SELECT * FROM tid))
+		SELECT id, (SELECT * FROM cid), (SELECT * FROM tid) FROM contextual_metrics WHERE ident = $3 AND ctx_id = (SELECT * FROM cid);`
 	sqlCtxMetricsExistsIdent = `SELECT EXISTS (SELECT 1 FROM contextual_metrics 
 		WHERE ident = $1 AND ctx_id = $2 AND id != $3);`
 	sqlCtxMetricsExistsContextMetricAndIdent = `SELECT
@@ -33,6 +33,23 @@ const (
 	sqlCtxMetricsMGet   = `SELECT id, metric_id, ident, name, descr FROM contextual_metrics WHERE ctx_id = $1 LIMIT $2 OFFSET $3;`
 	sqlCtxMetricsGet    = `SELECT ctx_id, metric_id, ident, name, descr FROM contextual_metrics WHERE id = $1;`
 )
+
+// GetIdByIdent returns a team id, ctx id, metric id using their idents. Returns an error if fails to get.
+func (c *ContextualMetrics) GetIdByIdent(ctx context.Context, metricIdent string, ctxIdent string, teamIdent string) (e bool, mid int64, cid int32, tid int32, err error) {
+	rows, err := c.Query(ctx, sqlCtxMetricsGetIdsByIdent, teamIdent, ctxIdent, metricIdent)
+	if err != nil {
+		return false, mid, cid, tid, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(&mid, &cid, &tid)
+		if err != nil {
+			return false, mid, cid, tid, err
+		}
+		e = true
+	}
+	return e, mid, cid, tid, nil
+}
 
 // Get returns a contextual metric if exists. Returns an error if fail to get.
 func (c *ContextualMetrics) Get(ctx context.Context, id int64) (e bool, metric models.ContextualMetric, err error) {
@@ -89,15 +106,14 @@ func (c *ContextualMetrics) ExistsIdent(ctx context.Context, ident string, ctxId
 
 // GetMetricRequestByIdent returns the metric's information to make a data request by ident if exists.
 // Returns an error if fails to get.
-func (c *ContextualMetrics) GetMetricRequestByIdent(ctx context.Context, metricIdent string, contextIdent string, teamIdent string) (e bool, r models.MetricRequest, err error) {
-	rows, err := c.Query(ctx, sqlGetIdContainerIdTeamId, teamIdent, contextIdent, metricIdent)
+func (c *ContextualMetrics) GetMetricRequestById(ctx context.Context, id int64) (e bool, r models.MetricRequest, err error) {
+	rows, err := c.Query(ctx, sqlCtxMetricsGetMetricRequestInfo, id)
 	if err != nil {
 		return false, r, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.MetricId,
 			&r.MetricType,
 			&r.ContainerId,
 			&r.ContainerType,
@@ -106,6 +122,7 @@ func (c *ContextualMetrics) GetMetricRequestByIdent(ctx context.Context, metricI
 			return false, r, err
 		}
 		e = true
+		r.MetricId = id
 	}
 	return e, r, nil
 }
