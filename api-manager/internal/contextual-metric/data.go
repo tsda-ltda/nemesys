@@ -2,6 +2,7 @@ package ctxmetric
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
@@ -62,46 +63,25 @@ func DataHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// team identification
-		teamIdent := c.Param("teamIdent")
-
-		// context identification
-		contextIdent := c.Param("ctxIdent")
-
-		// metric identification
-		metricIdent := c.Param("metricIdent")
-
-		// get metric reques
-		e, r, err := api.Cache.GetMetricRequestByIdent(ctx, teamIdent, contextIdent, metricIdent)
+		// get metric id
+		id, err := strconv.ParseInt(c.Param("metricId"), 10, 64)
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get metric id and container id on cache", logger.ErrField(err))
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// check if cache is empty
+		// get metric request
+		e, r, err := api.PgConn.ContextualMetrics.GetMetricRequestById(ctx, id)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			api.Log.Error("fail to get contextual metric, team and context id on database", logger.ErrField(err))
+			return
+		}
+
+		// check if exists
 		if !e {
-			// get metric request
-			e, r, err = api.PgConn.ContextualMetrics.GetMetricRequestByIdent(ctx, metricIdent, contextIdent, teamIdent)
-			if err != nil {
-				c.Status(http.StatusInternalServerError)
-				api.Log.Error("fail to get contextual metric, team and context id on database", logger.ErrField(err))
-				return
-			}
-
-			// check if exists
-			if !e {
-				c.Status(http.StatusNotFound)
-				return
-			}
-
-			// save on cache
-			err = api.Cache.SetMetricRequestByIdent(ctx, teamIdent, contextIdent, metricIdent, r)
-			if err != nil {
-				c.Status(http.StatusInternalServerError)
-				api.Log.Error("fail to save metric id container id on cache", logger.ErrField(err))
-				return
-			}
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgContextualMetricNotFound))
+			return
 		}
 
 		// encode request
@@ -141,8 +121,8 @@ func DataHandler(api *api.API) func(c *gin.Context) {
 		// listen to response
 		d, err := api.RTSDataPlumber.Listen(uuid, time.Second*30)
 		if err != nil {
-			c.Status(http.StatusServiceUnavailable)
-			api.Log.Warn("RTS plumber data timeouted")
+			c.JSON(http.StatusRequestTimeout, tools.JSONMSG(tools.MsgRequestTimeout))
+			api.Log.Warn("RTS plumber data timeout")
 			return
 		}
 

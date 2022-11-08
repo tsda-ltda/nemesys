@@ -24,9 +24,9 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get id param
-		id, err := strconv.ParseInt(c.Param("id"), 10, 0)
+		id, err := strconv.ParseInt(c.Param("id"), 10, 32)
 		if err != nil {
-			c.Status((http.StatusBadRequest))
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
@@ -34,14 +34,14 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		var user models.User
 		err = c.ShouldBind(&user)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
 			return
 		}
 
 		// validate user
 		err = api.Validate.Struct(user)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -90,7 +90,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 
 		// check if user exists
 		if e {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
 			return
 		}
 

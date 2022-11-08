@@ -23,9 +23,9 @@ func Get(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// contextual metric id
-		id, err := strconv.Atoi(c.Param("metricId"))
+		id, err := strconv.ParseInt(c.Param("metricId"), 10, 64)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
@@ -39,7 +39,7 @@ func Get(api *api.API) func(c *gin.Context) {
 
 		// check if exists
 		if !e {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
 			return
 		}
 
@@ -60,22 +60,22 @@ func MGet(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// context id
-		ctxId, err := strconv.Atoi(c.Param("ctxId"))
+		ctxId, err := strconv.ParseInt(c.Param("ctxId"), 10, 32)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
 		// db query params
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
@@ -87,7 +87,7 @@ func MGet(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !e {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
 			return
 		}
 

@@ -26,14 +26,14 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		var dp models.DataPolicy
 		err := c.ShouldBind(&dp)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
 		// validate struct
 		err = api.Validate.Struct(dp)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
 			return
 		}
 
@@ -46,7 +46,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// get maximum permited data policies
-		max, err := strconv.Atoi(env.MaxDataPolicies)
+		max, err := strconv.ParseInt(env.MaxDataPolicies, 10, 0)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to parse env.MaxDataPolicies", logger.ErrField(err))

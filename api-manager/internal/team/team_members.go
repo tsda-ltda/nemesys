@@ -23,7 +23,7 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get team id
-		teamId, err := strconv.Atoi(c.Param("id"))
+		teamId, err := strconv.ParseInt(c.Param("id"), 10, 32)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
@@ -45,7 +45,7 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// get realation, user and team existence
-		re, ue, te, err := api.PgConn.Teams.ExistsRelUserTeam(ctx, userId.UserId, teamId)
+		re, ue, te, err := api.PgConn.Teams.ExistsRelUserTeam(ctx, userId.UserId, int32(teamId))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get realation, user and team existence", logger.ErrField(err))
@@ -90,14 +90,14 @@ func RemoveMemberHandler(api *api.API) func(c *gin.Context) {
 		rawUserId := c.Param("userId")
 
 		// get team teamId
-		teamId, err := strconv.Atoi(rawTeamId)
+		teamId, err := strconv.ParseInt(rawTeamId, 10, 32)
 		if err != nil {
 			c.Status(http.StatusNotFound)
 			return
 		}
 
 		// get user id
-		userId, err := strconv.Atoi(rawUserId)
+		userId, err := strconv.ParseInt(rawUserId, 10, 32)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
@@ -136,22 +136,22 @@ func MGetMembersHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get team id
-		id, err := strconv.Atoi(c.Param("id"))
+		id, err := strconv.ParseInt(c.Param("id"), 10, 32)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
 		// db query params
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 

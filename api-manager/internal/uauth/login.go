@@ -31,14 +31,14 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 		// bind login form
 		err := c.ShouldBind(&form)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
 			return
 		}
 
 		// validate
 		err = api.Validate.Struct(form)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 

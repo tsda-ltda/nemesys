@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -19,9 +20,9 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get id
-		id, err := strconv.Atoi(c.Param("id"))
+		id, err := strconv.ParseInt(c.Param("id"), 10, 32)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
@@ -33,9 +34,9 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// check if team existed
+		// check if team exist
 		if !e {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTeamNotFound))
 			return
 		}
 		api.Log.Debug("team deleted, id: " + fmt.Sprint(id))

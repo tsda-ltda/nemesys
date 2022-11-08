@@ -6,6 +6,7 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/roles"
+	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/gin-gonic/gin"
 )
 
@@ -44,9 +45,9 @@ func Protect(api *api.API, accessLevel roles.Role) func(c *gin.Context) {
 func ProtectUser(api *api.API, accessLevel roles.Role) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		// get user id
-		id, err := strconv.Atoi(c.Param("id"))
+		id, err := strconv.ParseInt(c.Param("id"), 10, 32)
 		if err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+			c.AbortWithStatusJSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 

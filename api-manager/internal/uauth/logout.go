@@ -61,9 +61,9 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 
 		// get user id
 		rawId := c.Param("id")
-		id, err := strconv.Atoi(rawId)
+		id, err := strconv.ParseInt(rawId, 10, 64)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
@@ -77,7 +77,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 
 		// check if user exists
 		if !e {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
 			return
 		}
 
@@ -90,7 +90,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 		// remove session
 		err = api.Auth.RemoveSession(ctx, int32(id))
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgSessionAlreadyRemoved))
 			return
 		}
 		api.Log.Debug("user forcibly logout with success, id: " + rawId)

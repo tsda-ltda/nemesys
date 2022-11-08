@@ -23,22 +23,22 @@ func TeamsHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// user id
-		id, err := strconv.ParseInt(c.Param("id"), 10, 0)
+		id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
 		// db query params
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 

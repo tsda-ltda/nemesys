@@ -16,6 +16,7 @@ import (
 //   - 400 If invalid body.
 //   - 400 If json fields are invalid.
 //   - 400 If ident is already in use.
+//   - 400 If ident can be parsed to number.
 //   - 400 If invalid id.
 //   - 404 If not found.
 //   - 200 If succeeded.
@@ -24,16 +25,16 @@ func UpdateContextHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// ctx id
-		ctxId, err := strconv.Atoi(c.Param("ctxId"))
+		ctxId, err := strconv.ParseInt(c.Param("ctxId"), 10, 32)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
 		// team id
-		teamId, err := strconv.Atoi(c.Param("id"))
+		teamId, err := strconv.ParseInt(c.Param("id"), 10, 32)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
@@ -41,14 +42,21 @@ func UpdateContextHandler(api *api.API) func(c *gin.Context) {
 		var context models.Context
 		err = c.ShouldBind(&context)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
 			return
 		}
 
 		// validate struct
 		err = api.Validate.Struct(context)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			return
+		}
+
+		// validate ident
+		_, err = strconv.ParseInt(context.Ident, 10, 64)
+		if err == nil {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentIsNumber))
 			return
 		}
 
@@ -62,7 +70,7 @@ func UpdateContextHandler(api *api.API) func(c *gin.Context) {
 
 		// check if team exists
 		if !te {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTeamNotFound))
 			return
 		}
 

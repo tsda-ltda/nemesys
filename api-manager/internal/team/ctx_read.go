@@ -20,7 +20,7 @@ func GetContextHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// context id
-		contextId, err := strconv.Atoi(c.Param("contextId"))
+		contextId, err := strconv.ParseInt(c.Param("ctxId"), 10, 32)
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
@@ -57,22 +57,22 @@ func MGetContextHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// team id
-		teamId, err := strconv.Atoi(c.Param("id"))
+		teamId, err := strconv.ParseInt(c.Param("id"), 10, 32)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
 		// db query params
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 

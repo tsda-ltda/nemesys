@@ -23,29 +23,31 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// context id
-		ucontextId, err := strconv.Atoi(c.Param("ctxId"))
+		contextId, err := strconv.ParseInt(c.Param("ctxId"), 10, 32)
 		if err != nil {
-			c.Status(http.StatusBadGateway)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
-		contextId := int32(ucontextId)
 
 		// bind body
 		var cmetric models.ContextualMetric
 		err = c.ShouldBind(&cmetric)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
 			return
 		}
 
 		// validate contextual metric
 		err = api.Validate.Struct(cmetric)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
-		ce, me, ie, err := api.PgConn.ContextualMetrics.ExistsContextMetricAndIdent(ctx, contextId, cmetric.MetricId, cmetric.Ident, -1)
+		// assign id
+		cmetric.ContextId = int32(contextId)
+
+		ce, me, ie, err := api.PgConn.ContextualMetrics.ExistsContextMetricAndIdent(ctx, cmetric.ContextId, cmetric.MetricId, cmetric.Ident, -1)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if context, metric and ident exists", logger.ErrField(err))
@@ -54,13 +56,13 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		// check if context exists
 		if !ce {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextNotFound))
 			return
 		}
 
 		// check if metric exists
 		if !me {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
 			return
 		}
 
@@ -69,9 +71,6 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}
-
-		// assign context id
-		cmetric.ContextId = contextId
 
 		// create contextual metric
 		err = api.PgConn.ContextualMetrics.Create(ctx, cmetric)

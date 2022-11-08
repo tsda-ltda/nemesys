@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -20,9 +21,9 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 
 		// contextual metric id
 		rawId := c.Param("metricId")
-		id, err := strconv.Atoi(rawId)
+		id, err := strconv.ParseInt(rawId, 10, 64)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
@@ -36,7 +37,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 
 		// check if exists
 		if !e {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
 			return
 		}
 		api.Log.Debug("contextual metric deleted, id: " + rawId)

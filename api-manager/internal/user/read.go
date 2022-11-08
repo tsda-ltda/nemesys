@@ -20,9 +20,9 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get id from param
-		id, err := strconv.Atoi(c.Param("id"))
+		id, err := strconv.ParseInt(c.Param("id"), 10, 32)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
@@ -36,7 +36,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 
 		// check if user exists
 		if !e {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
 			return
 		}
 
@@ -59,14 +59,14 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 		// get limit
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
 		// get offset
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 

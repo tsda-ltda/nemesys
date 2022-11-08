@@ -2,6 +2,7 @@ package team
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -15,6 +16,7 @@ import (
 //   - 400 If invalid body.
 //   - 400 If json fields are invalid.
 //   - 400 If ident is already in use.
+//   - 400 If ident can be parsed to number.
 //   - 200 If succeeded.
 func CreateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
@@ -24,14 +26,21 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		var team models.Team
 		err := c.ShouldBind(&team)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
 		// validate team
 		err = api.Validate.Struct(team)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			return
+		}
+
+		// validate ident
+		_, err = strconv.ParseInt(team.Ident, 10, 64)
+		if err == nil {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentIsNumber))
 			return
 		}
 

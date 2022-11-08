@@ -43,7 +43,7 @@ func Set(api *api.API) {
 	}
 
 	// teams and context config
-	teams := r.Group("config/teams", middleware.Protect(api, roles.TeamsManager))
+	teams := r.Group("/teams", middleware.Protect(api, roles.TeamsManager))
 	{
 		// teams
 		teams.GET("/", team.MGetHandler(api))
@@ -58,24 +58,32 @@ func Set(api *api.API) {
 		teams.DELETE("/:id/members/:userId", team.RemoveMemberHandler(api))
 
 		// contexts
-		teams.GET("/:id/ctx", team.MGetContextHandler(api))
-		teams.GET("/:id/ctx/:ctxId", team.MGetContextHandler(api))
-		teams.POST("/:id/ctx", team.CreateContextHandler(api))
-		teams.PATCH("/:id/ctx/:ctxId", team.UpdateContextHandler(api))
-		teams.DELETE("/:id/ctx/:ctxId", team.DeleteContextHandler(api))
+		ctx := teams.Group("/:id/ctx")
+		{
+			ctx.GET("/", team.MGetContextHandler(api))
+			ctx.GET("/:ctxId", middleware.ParseContextParams(api), team.MGetContextHandler(api))
+			ctx.POST("/", team.CreateContextHandler(api))
+			ctx.PATCH("/:ctxId", middleware.ParseContextParams(api), team.UpdateContextHandler(api))
+			ctx.DELETE("/:ctxId", middleware.ParseContextParams(api), team.DeleteContextHandler(api))
+		}
 
 		// contextual metrics
-		teams.GET("/:id/ctx/:ctxId/metrics", ctxmetric.MGet(api))
-		teams.GET("/:id/ctx/:ctxId/metrics/:metricId", ctxmetric.Get(api))
-		teams.POST("/:id/ctx/:ctxId/metrics", ctxmetric.CreateHandler(api))
-		teams.PATCH("/:id/ctx/:ctxId/metrics/:metricId", ctxmetric.UpdateHandler(api))
-		teams.DELETE("/:id/ctx/:ctxId/metrics/:metricId", ctxmetric.DeleteHandler(api))
+		ctxMetric := ctx.Group("/:ctxId/metrics")
+		{
+			ctxMetric.GET("/", middleware.ParseContextParams(api), ctxmetric.MGet(api))
+			ctxMetric.GET("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.Get(api))
+			ctxMetric.GET("/:metricId/data", middleware.ParseContextualMetricParams(api), ctxmetric.DataHandler(api))
+			ctxMetric.POST("/", middleware.ParseContextParams(api), ctxmetric.CreateHandler(api))
+			ctxMetric.PATCH("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.UpdateHandler(api))
+			ctxMetric.DELETE("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.DeleteHandler(api))
+		}
 	}
 
 	// data-policies
 	dp := r.Group("/data-policies", middleware.Protect(api, roles.Master))
 	{
 		dp.GET("/", datapolicy.MGetHandler(api))
+		dp.GET("/:id", datapolicy.GetHandler(api))
 		dp.POST("/", datapolicy.CreateHandler(api))
 		dp.PATCH("/:id", datapolicy.UpdateHandler(api))
 		dp.DELETE("/:id", datapolicy.DeleteHandler(api))
@@ -97,10 +105,5 @@ func Set(api *api.API) {
 		snmp.POST("/:containerId/metrics", metric.CreateSNMPHandler(api))
 		snmp.PATCH("/:containerId/metrics/:metricId", metric.UpdateSNMPHandler(api))
 		snmp.DELETE("/:containerId/metrics/:metricId", metric.DeleteHandler(api))
-	}
-
-	data := r.Group("/teams/:teamIdent/ctx/:ctxIdent/metrics")
-	{
-		data.GET("/:metricIdent/data", ctxmetric.DataHandler(api))
 	}
 }

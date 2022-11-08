@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
@@ -23,9 +24,9 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get data policy id
-		id, err := strconv.Atoi(c.Param("id"))
+		id, err := strconv.ParseInt(c.Param("id"), 10, 16)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
@@ -33,14 +34,14 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		var dp models.DataPolicy
 		err = c.ShouldBind(&dp)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
 			return
 		}
 
 		// validate struct
 		err = api.Validate.Struct(dp)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -53,7 +54,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !e {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgDataPolicyNotFound))
 			return
 		}
 		api.Log.Info("data policy updated, id: " + fmt.Sprint(id))

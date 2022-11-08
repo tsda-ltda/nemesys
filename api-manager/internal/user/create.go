@@ -26,14 +26,14 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		var user models.User
 		err := c.ShouldBind(&user)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
 			return
 		}
 
 		// validate user
 		err = api.Validate.Struct(user)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
