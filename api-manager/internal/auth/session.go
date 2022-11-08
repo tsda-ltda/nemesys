@@ -28,7 +28,7 @@ func (a *Auth) ReadSessionMetadata(bytes []byte) (metadata SessionMeta, err erro
 	splited := strings.Split(string(bytes), "=")
 
 	// get userId
-	userId, err := strconv.ParseInt(splited[0], 10, 0)
+	userId, err := strconv.ParseInt(splited[0], 10, 32)
 	if err != nil {
 		return metadata, err
 	}
