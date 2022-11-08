@@ -41,6 +41,6 @@ func (p *AMQPPlumber) Listen(key string, timeout time.Duration) (amqp091.Deliver
 	case res := <-p.channels[key]:
 		return res, nil
 	case <-time.After(timeout):
-		return amqp091.Delivery{}, errors.New("response timeouted")
+		return amqp091.Delivery{}, errors.New("response timeout")
 	}
 }

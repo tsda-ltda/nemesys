@@ -141,7 +141,7 @@ func (s *RTS) MetricDataRequestListener() {
 					// wait response
 					res, err := s.plumber.Listen(correlationId, time.Second*5)
 					if err != nil {
-						s.Log.Warn("plumber timeouted, no data response was available")
+						s.Log.Warn("plumber timeout, no data response was available")
 						return
 					}
 
