@@ -15,10 +15,8 @@ const (
 	sqlSNMPContainerGet = `SELECT 
 		target, port, cache_duration, transport, community, retries, msg_flag,
 		version, max_oids, timeout FROM snmp_containers WHERE container_id = $1; `
-	sqlSNMPContainerExistsTargetPort = `SELECT 
-		EXISTS (SELECT 1 FROM containers WHERE ident = $1 AND id != $4), 
-		EXISTS (SELECT 1 FROM snmp_containers WHERE target = $2 AND port = $3 AND container_id != $4);`
-	sqlSNMPContainerCreate = `INSERT INTO snmp_containers (container_id, target, port, cache_duration, transport, community,
+	sqlSNMPContainerExistsTargetPort = `SELECT EXISTS (SELECT 1 FROM snmp_containers WHERE target = $1 AND port = $2 AND container_id != $4);`
+	sqlSNMPContainerCreate           = `INSERT INTO snmp_containers (container_id, target, port, cache_duration, transport, community,
 		retries, msg_flag, version, max_oids, timeout) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`
 	sqlSNMPContainerUpdate = `UPDATE snmp_containers SET (target, port, cache_duration, transport, community,
 		retries, msg_flag, version, max_oids, timeout) = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) WHERE container_id = $11;`
@@ -89,18 +87,18 @@ func (c *SNMPContainers) Get(ctx context.Context, containerId int32) (e bool, co
 	return e, conf, nil
 }
 
-// ExistsIdentAndTargetPort returns the existence of a ident and target:port. Returns an error if fails to check.
-func (c *SNMPContainers) AvailableIdentAndTargetPort(ctx context.Context, ident string, target string, port int32, id int32) (ie bool, tpe bool, err error) {
-	rows, err := c.Query(ctx, sqlSNMPContainerExistsTargetPort, ident, target, port, id)
+// AvailableTargetPort returns the existence of an target:port. Returns an error if fails to check.
+func (c *SNMPContainers) AvailableTargetPort(ctx context.Context, target string, port int32, id int32) (tpe bool, err error) {
+	rows, err := c.Query(ctx, sqlSNMPContainerExistsTargetPort, target, port, id)
 	if err != nil {
-		return false, false, err
+		return false, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err = rows.Scan(&ie, &tpe)
+		err = rows.Scan(&tpe)
 		if err != nil {
-			return false, false, err
+			return false, err
 		}
 	}
-	return ie, tpe, nil
+	return tpe, nil
 }

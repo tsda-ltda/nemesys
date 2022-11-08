@@ -14,8 +14,6 @@ type BaseContainer struct {
 	Id int32 `json:"id" validate:"-"`
 	// Name is the container name.
 	Name string `json:"name" validate:"required,max=50"`
-	// Ident is the cotnainer string identifier.
-	Ident string `json:"ident" validate:"required,max=50"`
 	// Descr is the container description.
 	Descr string `json:"descr" validate:"required,max=255"`
 	// Type is the container type.

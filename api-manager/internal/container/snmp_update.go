@@ -23,49 +23,41 @@ func UpdateSNMPHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get container id
-		uid, err := strconv.Atoi(c.Param("containerId"))
+		id, err := strconv.ParseInt(c.Param("containerId"), 10, 32)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
-		id := int32(uid)
 
 		// bind container
 		var container models.Container[models.SNMPContainer]
 		err = c.ShouldBind(&container)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
 			return
 		}
 
 		// validate container
 		err = api.Validate.Struct(container)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
-		// set type and container id
+		// assign values
 		container.Base.Type = types.CTSNMP
-		container.Base.Id = id
-		container.Protocol.ContainerId = id
+		container.Base.Id = int32(id)
+		container.Protocol.ContainerId = int32(id)
 
-		// get ident and target port existence
-		ie, tpe, err := api.PgConn.SNMPContainers.AvailableIdentAndTargetPort(ctx,
-			container.Base.Ident,
+		// get target port existence
+		tpe, err := api.PgConn.SNMPContainers.AvailableTargetPort(ctx,
 			container.Protocol.Target,
 			container.Protocol.Port,
-			id,
+			container.Base.Id,
 		)
 		if err != nil {
+			api.Log.Error("fail to check if target port exists", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check container ident and target port existence", logger.ErrField(err))
-			return
-		}
-
-		// check if ident exists
-		if ie {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}
 
@@ -77,31 +69,30 @@ func UpdateSNMPHandler(api *api.API) func(c *gin.Context) {
 		// create container
 		e, err := api.PgConn.Containers.Update(ctx, container.Base)
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to update container", logger.ErrField(err))
+			c.Status(http.StatusInternalServerError)
 			return
 		}
 
 		// check if container exists
 		if !e {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
-		api.Log.Debug("container updated, ident: " + container.Base.Ident)
 
 		// update snmp container
 		e, err = api.PgConn.SNMPContainers.Update(ctx, container.Protocol)
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to update snmp container", logger.ErrField(err))
+			c.Status(http.StatusInternalServerError)
 			return
 		}
 		if !e {
-			c.Status(http.StatusNotFound)
 			api.Log.Error("base container exists but snmp container don't")
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
-		api.Log.Debug("snmp container updated, target: " + container.Protocol.Target)
+		api.Log.Debug("snmp container updated, name: " + container.Base.Name)
 
 		c.Status(http.StatusOK)
 	}

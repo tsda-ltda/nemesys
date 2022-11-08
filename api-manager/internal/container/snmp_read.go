@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
@@ -19,15 +20,14 @@ func GetSNMPHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// get container id
-		uid, err := strconv.Atoi(c.Param("containerId"))
+		id, err := strconv.ParseInt(c.Param("containerId"), 10, 32)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
-		id := int32(uid)
 
 		// get container base information
-		e, base, err := api.PgConn.Containers.Get(ctx, id)
+		e, base, err := api.PgConn.Containers.Get(ctx, int32(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get container", logger.ErrField(err))
@@ -36,12 +36,12 @@ func GetSNMPHandler(api *api.API) func(c *gin.Context) {
 
 		// check if exists
 		if !e {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
 
 		// get snmp container
-		e, snmp, err := api.PgConn.SNMPContainers.Get(ctx, id)
+		e, snmp, err := api.PgConn.SNMPContainers.Get(ctx, int32(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get SNMP container", logger.ErrField(err))
@@ -50,7 +50,7 @@ func GetSNMPHandler(api *api.API) func(c *gin.Context) {
 
 		// check if exists
 		if !e {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
 

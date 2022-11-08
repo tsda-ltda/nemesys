@@ -13,21 +13,19 @@ type BaseContainers struct {
 }
 
 const (
-	sqlContainerCreate = `INSERT INTO containers (name, ident, descr, type, rts_pulling_interval) VALUES ($1, $2, $3, $4, $5)
+	sqlContainerCreate = `INSERT INTO containers (name, descr, type, rts_pulling_interval) VALUES ($1, $2, $3, $4)
 		RETURNING id;`
-	sqlContainerGet         = `SELECT name, ident, descr, type, rts_pulling_interval FROM containers WHERE id = $1;`
-	sqlContainerUpdate      = `UPDATE containers SET (name, ident, descr, rts_pulling_interval) = ($1, $2, $3, $4) WHERE id = $5;`
-	sqlContainerExistsIdent = `SELECT EXISTS (SELECT 1 FROM containers WHERE ident = $1);`
-	sqlContainerDelete      = `DELETE FROM containers WHERE id = $1;`
-	sqlContainerMGet        = `SELECT id, name, ident, descr, rts_pulling_interval FROM containers WHERE type = $1 LIMIT $2 OFFSET $3;`
-	sqlContainerGetRTSInfo  = `SELECT rts_pulling_interval FROM containers WHERE id = $1;`
+	sqlContainerGet        = `SELECT name, descr, type, rts_pulling_interval FROM containers WHERE id = $1;`
+	sqlContainerUpdate     = `UPDATE containers SET (name, descr, rts_pulling_interval) = ($1, $2, $3) WHERE id = $4;`
+	sqlContainerDelete     = `DELETE FROM containers WHERE id = $1;`
+	sqlContainerMGet       = `SELECT id, name, descr, rts_pulling_interval FROM containers WHERE type = $1 LIMIT $2 OFFSET $3;`
+	sqlContainerGetRTSInfo = `SELECT rts_pulling_interval FROM containers WHERE id = $1;`
 )
 
 // Create crates a container. Returns an error if fails to create
 func (c *BaseContainers) Create(ctx context.Context, container models.BaseContainer) (id int, err error) {
 	err = c.QueryRow(ctx, sqlContainerCreate,
 		container.Name,
-		container.Ident,
 		container.Descr,
 		container.Type,
 		container.RTSPullingInterval,
@@ -39,7 +37,6 @@ func (c *BaseContainers) Create(ctx context.Context, container models.BaseContai
 func (c *BaseContainers) Update(ctx context.Context, container models.BaseContainer) (e bool, err error) {
 	t, err := c.Exec(ctx, sqlContainerUpdate,
 		container.Name,
-		container.Ident,
 		container.Descr,
 		container.RTSPullingInterval,
 		container.Id,
@@ -63,7 +60,6 @@ func (c *BaseContainers) Get(ctx context.Context, id int32) (e bool, container m
 	for rows.Next() {
 		err = rows.Scan(
 			&container.Name,
-			&container.Ident,
 			&container.Descr,
 			&container.Type,
 			&container.RTSPullingInterval,
@@ -90,7 +86,6 @@ func (c *BaseContainers) MGet(ctx context.Context, t types.ContainerType, limit 
 		err := rows.Scan(
 			&container.Id,
 			&container.Name,
-			&container.Ident,
 			&container.Descr,
 			&container.RTSPullingInterval,
 		)
@@ -118,9 +113,4 @@ func (c *BaseContainers) GetRTSInfo(ctx context.Context, id int32) (e bool, info
 		e = true
 	}
 	return e, info, nil
-}
-
-// ExistsIdent returns the existence of a ident. Returns an error if fails to query.
-func (c *BaseContainers) ExistsIdent(ctx context.Context, ident string) (e bool, err error) {
-	return e, c.QueryRow(ctx, sqlContainerExistsIdent).Scan(&e)
 }

@@ -25,36 +25,29 @@ func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 		var container models.Container[models.SNMPContainer]
 		err := c.ShouldBind(&container)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
 			return
 		}
 
 		// validate container
 		err = api.Validate.Struct(container)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
 		// set type
 		container.Base.Type = types.CTSNMP
 
-		// get ident and target port existence
-		ie, tpe, err := api.PgConn.SNMPContainers.AvailableIdentAndTargetPort(ctx,
-			container.Base.Ident,
+		// get target port existence
+		tpe, err := api.PgConn.SNMPContainers.AvailableTargetPort(ctx,
 			container.Protocol.Target,
 			container.Protocol.Port,
 			-1,
 		)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check container ident and target port existence", logger.ErrField(err))
-			return
-		}
-
-		// check if ident exists
-		if ie {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
+			api.Log.Error("fail to check if target port exists", logger.ErrField(err))
 			return
 		}
 
@@ -71,7 +64,6 @@ func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("fail to crate container", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("container created, ident: " + container.Base.Ident)
 
 		// assign id
 		container.Protocol.ContainerId = int32(id)
@@ -83,7 +75,7 @@ func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("fail to crate snmp container", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("snmp container crated, target: " + container.Protocol.Target)
+		api.Log.Debug("snmp container crated, name: " + container.Base.Name)
 
 		c.Status(http.StatusOK)
 	}

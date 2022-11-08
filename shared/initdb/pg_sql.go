@@ -47,7 +47,6 @@ var sqlCommands []string = []string{
 	`CREATE TABLE containers (
 		id SERIAL4 PRIMARY KEY,
 		name VARCHAR (50) NOT NULL,
-		ident VARCHAR (50) UNIQUE NOT NULL,
 		descr VARCHAR (255) NOT NULL,
 		type INT2 NOT NULL,
 		rts_pulling_interval INT4 NOT NULL
@@ -63,7 +62,6 @@ var sqlCommands []string = []string{
 		container_type INT2 NOT NULL,
 		type INT2 NOT NULL,
 		name VARCHAR (50) NOT NULL,
-		ident VARCHAR (50) NOT NULL,
 		descr VARCHAR (255) NOT NULL,
 		data_policy_id INT4 NOT NULL,
 		rts_pulling_times INT2 NOT NULL,
@@ -77,7 +75,6 @@ var sqlCommands []string = []string{
 
 	// Create metric index
 	`CREATE INDEX metrics_container_id_index ON metrics (container_id);`,
-	`CREATE UNIQUE INDEX metrics_container_id_ident_index ON metrics (container_id, ident);`,
 	`CREATE INDEX metrics_container_type_index ON metrics (container_type);`,
 
 	// SNMP Container table

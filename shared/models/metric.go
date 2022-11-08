@@ -20,8 +20,6 @@ type BaseMetricSimplified struct {
 	ContainerType types.ContainerType `json:"container-type" validate:"-"`
 	// Name is the metric name.
 	Name string `json:"name" validate:"required,max=50"`
-	// Ident is the metric string identification.
-	Ident string `json:"ident" validate:"required,max=50"`
 	// Descr is the metric description.
 	Descr string `json:"descr" validate:"required,max=255"`
 }
@@ -37,8 +35,6 @@ type BaseMetric struct {
 	Type types.MetricType `json:"type" validate:"required"`
 	// Name is the metric name.
 	Name string `json:"name" validate:"required,max=50"`
-	// Ident is the metric string identification.
-	Ident string `json:"ident" validate:"required,max=50"`
 	// Descr is the metric description.
 	Descr string `json:"descr" validate:"required,max=255"`
 	// DataPolicyId is the metric data policy identifier.

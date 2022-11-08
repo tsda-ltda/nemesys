@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
@@ -20,27 +21,27 @@ func GetSNMPHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// metric id
-		metricId, err := strconv.ParseInt(c.Param("metricId"), 10, 0)
+		metricId, err := strconv.ParseInt(c.Param("metricId"), 10, 64)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// get container base information
+		// get metric base information
 		e, base, err := api.PgConn.Metrics.Get(ctx, metricId)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get container", logger.ErrField(err))
+			api.Log.Error("fail to get metric", logger.ErrField(err))
 			return
 		}
 
 		// check if exists
 		if !e {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
 			return
 		}
 
-		// get snmp container
+		// get snmp metric
 		e, snmp, err := api.PgConn.SNMPMetrics.Get(ctx, metricId)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
@@ -50,7 +51,7 @@ func GetSNMPHandler(api *api.API) func(c *gin.Context) {
 
 		// check if exists
 		if !e {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
 			return
 		}
 

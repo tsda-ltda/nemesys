@@ -16,7 +16,6 @@ import (
 // Responses:
 //   - 400 If invalid body.
 //   - 400 If json fields are invalid.
-//   - 400 If ident is in use.
 //   - 404 If container not found.
 //   - 200 If succeeded.
 func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
@@ -24,9 +23,9 @@ func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// container id
-		containerId, err := strconv.Atoi(c.Param("containerId"))
+		containerId, err := strconv.ParseInt(c.Param("containerId"), 10, 32)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
@@ -34,14 +33,14 @@ func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 		var metric models.Metric[models.SNMPMetric]
 		err = c.ShouldBind(&metric)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
 			return
 		}
 
 		// validate body
 		err = api.Validate.Struct(metric)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -49,23 +48,17 @@ func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 		metric.Base.ContainerId = int32(containerId)
 		metric.Base.ContainerType = types.CTSNMP
 
-		// get if ident, container and data policy exists
-		_, ce, dpe, ie, err := api.PgConn.Metrics.ExistsIdentAndContainerAndDataPolicy(ctx, metric.Base.ContainerId, types.CTSNMP, metric.Base.DataPolicyId, metric.Base.Ident, -1)
+		// get if container and data policy exists
+		_, ce, dpe, err := api.PgConn.Metrics.ExistsContainerAndDataPolicy(ctx, metric.Base.ContainerId, types.CTSNMP, metric.Base.DataPolicyId, -1)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check metric's ident, container and data policy existence", logger.ErrField(err))
+			api.Log.Error("fail to check container and data policy existence", logger.ErrField(err))
 			return
 		}
 
 		// check if data policy exists
 		if !dpe {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgDataPolicyNotFound))
-			return
-		}
-
-		// check if ident already in use
-		if ie {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}
 
@@ -82,7 +75,7 @@ func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("fail to create base metric", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("base metric created, ident: " + metric.Base.Ident)
+		api.Log.Debug("base metric created, name: " + metric.Base.Name)
 
 		// assign id
 		metric.Protocol.Id = id
@@ -94,7 +87,7 @@ func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("fail to create snmp metric", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("snmp metric created, base metric id: " + strconv.FormatInt(id, 10))
+		api.Log.Debug("snmp metric created, name" + metric.Base.Name)
 
 		c.Status(http.StatusOK)
 	}
