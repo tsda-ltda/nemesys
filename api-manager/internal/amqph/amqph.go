@@ -16,22 +16,27 @@ type Amqph struct {
 	plumber *models.AMQPPlumber
 	// rtsMetricDataRequestsCh is the channel to request metric data.
 	rtsMetricDataRequestsCh chan amqp091.Publishing
-	// stopRTSMetricDataListenerCh is the channel to stop the RTS metric data listener.
-	stopRTSMetricDataListenerCh chan any
+	// containerNotifierCh is the channel to notify a container creation or update.
+	containerNotifierCh chan containerNotification
+	// metricNotifierCh is the channel to notify a metric creation or update.
+	metricNotifierCh chan any
 }
 
 // New returns a new Amqph.
 func New(conn *amqp091.Connection, log *logger.Logger) *Amqph {
 	amqph := &Amqph{
-		conn:                        conn,
-		log:                         log,
-		plumber:                     models.NewAMQPPlumber(),
-		rtsMetricDataRequestsCh:     make(chan amqp091.Publishing),
-		stopRTSMetricDataListenerCh: make(chan any),
+		conn:                    conn,
+		log:                     log,
+		plumber:                 models.NewAMQPPlumber(),
+		rtsMetricDataRequestsCh: make(chan amqp091.Publishing),
+		containerNotifierCh:     make(chan containerNotification),
+		metricNotifierCh:        make(chan any),
 	}
 
 	// run listeners
 	go amqph.listenRTSMetricData()
 	go amqph.listenRTSMetricDataRequests()
+	go amqph.containerNotifier()
+	go amqph.metricNotifier()
 	return amqph
 }

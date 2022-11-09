@@ -12,13 +12,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Creates a SNMP metric.
+// Creates a SNMPv2c metric .
 // Responses:
 //   - 400 If invalid body.
 //   - 400 If json fields are invalid.
 //   - 404 If container not found.
 //   - 200 If succeeded.
-func CreateSNMPHandler(api *api.API, ct types.ContainerType) func(c *gin.Context) {
+func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
@@ -46,10 +46,10 @@ func CreateSNMPHandler(api *api.API, ct types.ContainerType) func(c *gin.Context
 
 		// assign containerId and container type
 		metric.Base.ContainerId = int32(containerId)
-		metric.Base.ContainerType = ct
+		metric.Base.ContainerType = types.CTSNMPv2c
 
 		// get if container and data policy exists
-		_, ce, dpe, err := api.PgConn.Metrics.ExistsContainerAndDataPolicy(ctx, metric.Base.ContainerId, ct, metric.Base.DataPolicyId, -1)
+		_, ce, dpe, err := api.PgConn.Metrics.ExistsContainerAndDataPolicy(ctx, metric.Base.ContainerId, types.CTSNMPv2c, metric.Base.DataPolicyId, -1)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check container and data policy existence", logger.ErrField(err))
@@ -79,20 +79,14 @@ func CreateSNMPHandler(api *api.API, ct types.ContainerType) func(c *gin.Context
 		// assign id
 		metric.Protocol.Id = id
 
-		switch ct {
-		case types.CTSNMPv2c:
-			err = api.PgConn.SNMPv2cMetrics.Create(ctx, metric.Protocol)
-			if err != nil {
-				c.Status(http.StatusInternalServerError)
-				api.Log.Error("fail to create snmp metric", logger.ErrField(err))
-				return
-			}
-			api.Log.Debug("snmp metric created, name" + metric.Base.Name)
-		default:
-			api.Log.Error("fail to create metric, unsupported container type")
+		err = api.PgConn.SNMPv2cMetrics.Create(ctx, metric.Protocol)
+		if err != nil {
 			c.Status(http.StatusInternalServerError)
+			api.Log.Error("fail to create snmp metric", logger.ErrField(err))
 			return
 		}
+		api.Log.Debug("snmp metric created, name" + metric.Base.Name)
+		api.Amqph.NotifyMetric(metric)
 
 		c.Status(http.StatusOK)
 	}

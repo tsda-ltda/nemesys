@@ -101,9 +101,9 @@ func Set(api *api.API) {
 
 		// metric
 		SNMPv2c.GET("/:containerId/metrics", metric.MGet(api, types.CTSNMPv2c))
-		SNMPv2c.GET("/:containerId/metrics/:metricId", metric.GetSNMPHandler(api, types.CTSNMPv2c))
-		SNMPv2c.POST("/:containerId/metrics", metric.CreateSNMPHandler(api, types.CTSNMPv2c))
-		SNMPv2c.PATCH("/:containerId/metrics/:metricId", metric.UpdateSNMPHandler(api, types.CTSNMPv2c))
+		SNMPv2c.GET("/:containerId/metrics/:metricId", metric.GetSNMPv2cHandler(api, types.CTSNMPv2c))
+		SNMPv2c.POST("/:containerId/metrics", metric.CreateSNMPv2cHandler(api))
+		SNMPv2c.PATCH("/:containerId/metrics/:metricId", metric.UpdateSNMPv2cHandler(api, types.CTSNMPv2c))
 		SNMPv2c.DELETE("/:containerId/metrics/:metricId", metric.DeleteHandler(api))
 	}
 }

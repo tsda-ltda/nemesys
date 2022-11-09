@@ -12,13 +12,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Updates a SNMP metric.
+// Updates a SNMPv2c metric.
 // Responses:
 //   - 400 If invalid body.
 //   - 400 If json fields are invalid.
 //   - 404 If container or metric not found.
 //   - 200 If succeeded.
-func UpdateSNMPHandler(api *api.API, ct types.ContainerType) func(c *gin.Context) {
+func UpdateSNMPv2cHandler(api *api.API, ct types.ContainerType) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
@@ -113,6 +113,7 @@ func UpdateSNMPHandler(api *api.API, ct types.ContainerType) func(c *gin.Context
 			return
 		}
 		api.Log.Debug("metric updated, name" + metric.Base.Name)
+		api.Amqph.NotifyMetric(metric)
 
 		c.Status(http.StatusOK)
 	}

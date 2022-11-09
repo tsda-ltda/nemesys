@@ -94,6 +94,9 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		}
 		api.Log.Debug("snmp container updated, name: " + container.Base.Name)
 
+		// notify container
+		api.Amqph.NotifyContainer(container, types.CTSNMPv2c)
+
 		c.Status(http.StatusOK)
 	}
 }

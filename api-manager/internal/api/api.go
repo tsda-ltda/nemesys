@@ -18,31 +18,22 @@ import (
 type API struct {
 	// Amqp is the amqp connection.
 	Amqp *amqp091.Connection
-
 	// Amqph is the amqp handler.
 	Amqph *amqph.Amqph
-
 	// Postgresql connection.
 	PgConn *db.PgConn
-
 	// Cache is the cache handler.
 	Cache *cache.Cache
-
 	// Gin web fremework engine.
 	Router *gin.Engine
-
 	// Auth handler.
 	Auth *auth.Auth
-
 	// Validator.
 	Validate *validator.Validate
-
 	// User pw hash cost.
 	UserPWBcryptCost int
-
 	// Logger is the internal logger.
 	Log *logger.Logger
-
 	// Closed is filled when application is closed.
 	Closed chan any
 }
@@ -88,15 +79,14 @@ func New(conn *amqp091.Connection, log *logger.Logger) (*API, error) {
 	}, nil
 }
 
-// Start listen and server
+// Start listen and server.
 func (api *API) Run() error {
 	url := fmt.Sprintf("%s:%s", env.APIManagerHost, env.APIManagerPort)
 	api.Log.Info("server listening to: " + url)
 	return api.Router.Run(url)
 }
 
-// Close all api dependencies. It's safe to call Close
-// on a already closed one
+// Close all api dependencies.
 func (api *API) Close() {
 	api.PgConn.Close(context.Background())
 	api.Auth.Close()

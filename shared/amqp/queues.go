@@ -7,6 +7,8 @@ const (
 	QueueRTSMetricData      = "services.rts.metric_data"
 	QueueRTSMetricsData     = "services.rts.metrics_data"
 
+	ExchangeNotifyContainer  = "services.notify.container"
+	ExchangeNotifyMetric     = "services.notify.metric"
 	ExchangeGetMetricData    = "services.get_metric_data"
 	ExchangeGetMetricsData   = "services.get_metrics_data"
 	ExchangeMetricData       = "services.metric_data"
