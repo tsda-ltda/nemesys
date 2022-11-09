@@ -17,9 +17,11 @@ type MetricPulling struct {
 	Id int64
 	// Type is the data type.
 	Type types.MetricType
-	// count is the pulling counter.
-	count   int16
-	OnClose func(m *MetricPulling)
+	// pullingTimes is the pulling times.
+	pullingTimes int16
+	// pullingRemaining is the pulling counter.
+	pullingRemaining int16
+	OnClose          func(m *MetricPulling)
 }
 
 type ContainerPulling struct {
@@ -29,7 +31,7 @@ type ContainerPulling struct {
 	// Type is the container type.
 	Type types.ContainerType
 	// Metrics is a map of the current metrics pulling.
-	Metrics map[int64]MetricPulling
+	Metrics map[int64]*MetricPulling
 	// stopCh is the channel to stop the container pulling.
 	stopCh chan any
 	// rch is the channel for requests.
@@ -85,7 +87,7 @@ func (s *RTS) addPulling(r models.MetricRequest, info models.RTSMetricInfo) {
 				Id:               r.ContainerId,
 				Type:             r.ContainerType,
 				RTSContainerInfo: info,
-				Metrics:          make(map[int64]MetricPulling),
+				Metrics:          make(map[int64]*MetricPulling),
 				stopCh:           make(chan any, 1),
 				rch:              s.metricsDataRequestCh,
 				RTS:              s,
@@ -109,10 +111,11 @@ func (s *RTS) addPulling(r models.MetricRequest, info models.RTSMetricInfo) {
 		if !ok {
 			// push metric to container's metrics
 			c.AddMetric(MetricPulling{
-				Id:            r.MetricId,
-				Type:          r.MetricType,
-				RTSMetricInfo: info,
-				count:         info.PullingTimes,
+				Id:               r.MetricId,
+				Type:             r.MetricType,
+				RTSMetricInfo:    info,
+				pullingRemaining: info.PullingTimes,
+				pullingTimes:     info.PullingTimes,
 			})
 		} else {
 			m.UpdateAndReset(r.MetricType)
@@ -146,8 +149,8 @@ func (c *ContainerPulling) Run() {
 				}
 
 				i++
-				m.count--
-				if m.count == 0 {
+				m.pullingRemaining--
+				if m.pullingRemaining == 0 {
 					c.Remove(k)
 					continue
 				}
@@ -175,7 +178,7 @@ func (c *ContainerPulling) Run() {
 
 // AddMetric adds a metric to container's metrics and save the metric info on pending metrics.
 func (c *ContainerPulling) AddMetric(m MetricPulling) {
-	c.Metrics[m.Id] = m
+	c.Metrics[m.Id] = &m
 	p, ok := c.RTS.pendingMetricsData[c.Id]
 	if !ok {
 		p = []struct {
@@ -201,7 +204,7 @@ func (c *ContainerPulling) Remove(metricId int64) {
 // Stop stops the container pulling.
 func (c *ContainerPulling) Stop() {
 	for _, m := range c.Metrics {
-		m.OnClose(&m)
+		m.OnClose(m)
 	}
 	c.stopCh <- struct{}{}
 }
@@ -214,6 +217,6 @@ func (c *ContainerPulling) Close() {
 
 // UpdateAndReset resets the metric count.
 func (m *MetricPulling) UpdateAndReset(t types.MetricType) {
-	m.count = 0
+	m.pullingRemaining = m.pullingTimes
 	m.Type = t
 }
