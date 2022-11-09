@@ -56,7 +56,7 @@ func GetMessage(t MessageType) string {
 	case Failed:
 		return "Fail to get metric's data."
 	case InvalidParse:
-		return "Fail to parse data to metric type. Check if the metric's type is correct."
+		return "Fail to parse data. Check if the metric's type is correct."
 	case EvaluateFailed:
 		return "Fail to evaluate data with metric's evaluate expression."
 	default:
