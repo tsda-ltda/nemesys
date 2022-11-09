@@ -35,7 +35,7 @@ func (s *SNMPService) RegisterMetrics(ctx context.Context, req []models.MetricBa
 	}
 
 	// get metrics configuration
-	confs, err := s.pgConn.SNMPMetrics.GetByIds(ctx, ids)
+	confs, err := s.pgConn.SNMPv2cMetrics.GetByIds(ctx, ids)
 	if err != nil {
 		return metrics, err
 	}
@@ -77,7 +77,7 @@ func (s *SNMPService) RegisterMetrics(ctx context.Context, req []models.MetricBa
 // RegisterMetric register a metric.
 func (s *SNMPService) RegisterMetric(ctx context.Context, id int64, t types.MetricType, ttl time.Duration) (metric *Metric, err error) {
 	// get metric configuration
-	e, conf, err := s.pgConn.SNMPMetrics.Get(ctx, id)
+	e, conf, err := s.pgConn.SNMPv2cMetrics.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}

@@ -99,7 +99,7 @@ func (s *SNMPService) getMetricListener() {
 			// check if agent connection exists
 			c, ok := s.conns[r.ContainerId]
 			if !ok {
-				c, err = s.RegisterAgent(ctx, r.ContainerId)
+				c, err = s.RegisterAgent(ctx, r.ContainerId, r.ContainerType)
 				if err != nil {
 					s.Log.Error("fail to register agent", logger.ErrField(err))
 					continue
@@ -118,6 +118,7 @@ func (s *SNMPService) getMetricListener() {
 				}
 			} else {
 				metric.Reset()
+				metric.Type = r.MetricType
 			}
 
 			// get routing key on message header
@@ -244,7 +245,7 @@ func (s *SNMPService) getMetricsListener() {
 			// check if agent connection exists
 			c, ok := s.conns[r.ContainerId]
 			if !ok {
-				c, err = s.RegisterAgent(ctx, r.ContainerId)
+				c, err = s.RegisterAgent(ctx, r.ContainerId, r.ContainerType)
 				if err != nil {
 					s.Log.Error("fail to register agent", logger.ErrField(err))
 					continue
@@ -261,6 +262,8 @@ func (s *SNMPService) getMetricsListener() {
 				// check if exists on local map
 				metric, ok := s.metrics[m.Id]
 				if ok {
+					metric.Reset()
+					metric.Type = m.Type
 					metrics = append(metrics, metric)
 					continue
 				} else {

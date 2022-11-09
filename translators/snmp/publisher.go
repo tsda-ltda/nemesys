@@ -116,7 +116,7 @@ func (s *SNMPService) metricDataPublisher() {
 				// parse value to metric type
 				v, err = types.ParseValue(v, t)
 				if err != nil {
-					s.Log.Error("fail to parse pdu value to metric value", logger.ErrField(err))
+					s.Log.Debug("fail to parse pdu value to metric value", logger.ErrField(err))
 					p.Type = amqp.FromMessageType(amqp.InvalidParse)
 					return
 				}

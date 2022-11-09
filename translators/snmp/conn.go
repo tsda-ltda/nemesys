@@ -3,8 +3,10 @@ package snmp
 import (
 	"context"
 	"errors"
+	"strconv"
 	"time"
 
+	"github.com/fernandotsda/nemesys/shared/types"
 	g "github.com/gosnmp/gosnmp"
 )
 
@@ -25,38 +27,51 @@ type Conn struct {
 }
 
 // RegisterConn register a connection.
-func (s *SNMPService) RegisterAgent(ctx context.Context, containerId int32) (*Conn, error) {
-	// get agent configuration
-	e, conf, err := s.pgConn.SNMPContainers.Get(ctx, containerId)
-	if err != nil {
-		return nil, err
+func (s *SNMPService) RegisterAgent(ctx context.Context, containerId int32, t types.ContainerType) (*Conn, error) {
+	var agent *g.GoSNMP
+	var ttl int32
+
+	switch t {
+	case types.CTSNMPv2c:
+		// get snmpv2c protocol configuration
+		e, conf, err := s.pgConn.SNMPv2cContainers.Get(ctx, containerId)
+		if err != nil {
+			return nil, err
+		}
+
+		// check if container exists
+		if !e {
+			return nil, errors.New("snmpv2c container does not exists")
+		}
+
+		// set ttl
+		ttl = conf.CacheDuration
+
+		// fill agent
+		agent = &g.GoSNMP{
+			Target:    conf.Target,
+			Port:      uint16(conf.Port),
+			Community: conf.Community,
+			Transport: conf.Transport,
+			Timeout:   time.Millisecond * time.Duration(conf.Timeout),
+			MaxOids:   int(conf.MaxOids),
+			Retries:   int(conf.Retries),
+			Version:   g.Version2c,
+		}
+	default:
+		return nil, errors.New("unsupported container type: " + strconv.FormatInt(int64(t), 10))
 	}
 
-	// check if exists
-	if !e {
-		return nil, errors.New("snmp container does not exists")
-	}
-
+	// create connection
 	c := &Conn{
-		Agent: &g.GoSNMP{
-			Target:             conf.Target,
-			Port:               uint16(conf.Port),
-			Community:          conf.Community,
-			Transport:          conf.Transport,
-			MaxOids:            int(conf.MaxOids),
-			Timeout:            time.Millisecond * time.Duration(conf.Timeout),
-			Retries:            int(conf.Retries),
-			Version:            g.SnmpVersion(conf.Version),
-			MsgFlags:           g.SnmpV3MsgFlags(conf.MsgFlags),
-			ExponentialTimeout: false,
-		},
-		TTL:    time.Millisecond * time.Duration(conf.CacheDuration),
-		Closed: make(chan any),
 		Id:     containerId,
+		TTL:    time.Millisecond * time.Duration(ttl),
+		Closed: make(chan any),
+		Agent:  agent,
 	}
 
 	// connect to agent
-	err = c.Agent.Connect()
+	err := c.Agent.Connect()
 	if err != nil {
 		return nil, err
 	}
