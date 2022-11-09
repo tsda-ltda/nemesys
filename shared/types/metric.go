@@ -8,10 +8,7 @@ const (
 	MTInt16
 	MTInt32
 	MTInt64
-	MTFloat32
 	MTFloat64
-	MTComplex64
-	MTComplex128
 	MTString
 	MTBool
 	MTInvalid

@@ -30,7 +30,7 @@ func ParseValue(v any, t MetricType) (any, error) {
 	case reflect.Int64:
 		return ParseInt(int(v.(int64)), t)
 	case reflect.Float32:
-		return ParseFloat32(v.(float32), t)
+		return ParseFloat64(float64(v.(float32)), t)
 	case reflect.Float64:
 		return ParseFloat64(v.(float64), t)
 	default:
@@ -60,37 +60,8 @@ func ParseBool(b bool, t MetricType) (any, error) {
 		return int32(n), nil
 	case MTInt64:
 		return int64(n), nil
-	case MTFloat32:
-		return float32(n), nil
 	case MTFloat64:
 		return float64(n), nil
-	default:
-		return nil, ErrInvalidParseType
-	}
-}
-
-func ParseFloat32(f float32, t MetricType) (any, error) {
-	switch t {
-	case MTBool:
-		if f < 1 {
-			return false, nil
-		} else {
-			return true, nil
-		}
-	case MTString:
-		return strconv.FormatFloat(float64(f), 'f', -1, 32), nil
-	case MTInt8:
-		return int8(f), nil
-	case MTInt16:
-		return int16(f), nil
-	case MTInt32:
-		return int32(f), nil
-	case MTInt64:
-		return int64(f), nil
-	case MTFloat32:
-		return f, nil
-	case MTFloat64:
-		return float64(f), nil
 	default:
 		return nil, ErrInvalidParseType
 	}
@@ -114,8 +85,6 @@ func ParseFloat64(f float64, t MetricType) (any, error) {
 		return int32(f), nil
 	case MTInt64:
 		return int64(f), nil
-	case MTFloat32:
-		return float32(f), nil
 	case MTFloat64:
 		return f, nil
 	default:
@@ -141,8 +110,6 @@ func ParseInt(i int, t MetricType) (any, error) {
 		return int32(i), nil
 	case MTInt64:
 		return int64(i), nil
-	case MTFloat32:
-		return float32(i), nil
 	case MTFloat64:
 		return float64(i), nil
 	default:
@@ -164,28 +131,16 @@ func ParseString(s string, t MetricType) (any, error) {
 		return int32(math.Round(f)), err
 	case MTInt64:
 		return int64(math.Round(f)), err
-	case MTFloat32:
-		return float32(f), err
 	case MTFloat64:
 		return f, err
-	case MTComplex64:
-		c128, err := strconv.ParseComplex(s, 64)
-		return complex64(c128), err
-	case MTComplex128:
-		return strconv.ParseComplex(s, 128)
 	case MTBool:
 		lower := strings.ToLower(s)
 		switch lower {
-		case "0":
-			return false, nil
-		case "1":
-			return true, nil
 		case "false":
 			return false, nil
 		case "true":
 			return true, nil
 		default:
-			f, err := strconv.ParseFloat(s, 64)
 			if err != nil {
 				return nil, ErrInvalidParseType
 			}
