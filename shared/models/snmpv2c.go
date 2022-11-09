@@ -1,6 +1,6 @@
 package models
 
-type SNMPContainer struct {
+type SNMPv2cContainer struct {
 	// ContainerId is the container id.
 	ContainerId int32 `json:"container-id" validate:"-"`
 
@@ -8,7 +8,7 @@ type SNMPContainer struct {
 	CacheDuration int32 `json:"cache-duration" validate:"required"`
 
 	// Target is an ipv4 address.
-	Target string `json:"target" validate:"required,max=50"`
+	Target string `json:"target" validate:"required,max=15"`
 
 	// Port is a port.
 	Port int32 `json:"port" validate:"required,max=65535"`
@@ -24,12 +24,6 @@ type SNMPContainer struct {
 
 	// Set the number of retries to attempt.
 	Retries int16 `json:"retries" validate:"required"`
-
-	// MsgFlags is an SNMPV3 MsgFlags.
-	MsgFlags uint8 `json:"msg-flags" validate:"-"`
-
-	// Version is an SNMP Version.
-	Version uint8 `json:"version" validate:"min=0,max=3"`
 
 	// Max oids per request.
 	MaxOids int16 `json:"max-oids" validate:"required"`

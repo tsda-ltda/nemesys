@@ -89,21 +89,21 @@ func Set(api *api.API) {
 		dp.DELETE("/:id", datapolicy.DeleteHandler(api))
 	}
 
-	// snmp container and metrics
-	snmp := r.Group("/containers/snmp", middleware.Protect(api, roles.Admin))
+	// SNMPv2c container and metrics
+	SNMPv2c := r.Group("/containers/snmpv2c", middleware.Protect(api, roles.Admin))
 	{
 		// container
-		snmp.GET("/", container.MGet(api, types.CTSNMP))
-		snmp.GET("/:containerId", container.GetSNMPHandler(api))
-		snmp.POST("/", container.CreateSNMPHandler(api))
-		snmp.PATCH("/:containerId", container.UpdateSNMPHandler(api))
-		snmp.DELETE("/:containerId", container.DeleteHandler(api))
+		SNMPv2c.GET("/", container.MGet(api, types.CTSNMPv2c))
+		SNMPv2c.GET("/:containerId", container.GetSNMPv2cHandler(api))
+		SNMPv2c.POST("/", container.CreateSNMPv2cHandler(api))
+		SNMPv2c.PATCH("/:containerId", container.UpdateSNMPv2cHandler(api))
+		SNMPv2c.DELETE("/:containerId", container.DeleteHandler(api))
 
 		// metric
-		snmp.GET("/:containerId/metrics", metric.MGet(api, types.CTSNMP))
-		snmp.GET("/:containerId/metrics/:metricId", metric.GetSNMPHandler(api))
-		snmp.POST("/:containerId/metrics", metric.CreateSNMPHandler(api))
-		snmp.PATCH("/:containerId/metrics/:metricId", metric.UpdateSNMPHandler(api))
-		snmp.DELETE("/:containerId/metrics/:metricId", metric.DeleteHandler(api))
+		SNMPv2c.GET("/:containerId/metrics", metric.MGet(api, types.CTSNMPv2c))
+		SNMPv2c.GET("/:containerId/metrics/:metricId", metric.GetSNMPHandler(api, types.CTSNMPv2c))
+		SNMPv2c.POST("/:containerId/metrics", metric.CreateSNMPHandler(api, types.CTSNMPv2c))
+		SNMPv2c.PATCH("/:containerId/metrics/:metricId", metric.UpdateSNMPHandler(api, types.CTSNMPv2c))
+		SNMPv2c.DELETE("/:containerId/metrics/:metricId", metric.DeleteHandler(api))
 	}
 }

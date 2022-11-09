@@ -12,27 +12,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Updates a SNMP metric.
+// Creates a SNMP metric.
 // Responses:
 //   - 400 If invalid body.
 //   - 400 If json fields are invalid.
-//   - 404 If container or metric not found.
+//   - 404 If container not found.
 //   - 200 If succeeded.
-func UpdateSNMPHandler(api *api.API) func(c *gin.Context) {
+func CreateSNMPHandler(api *api.API, ct types.ContainerType) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get container id
-		rawContainerId := c.Param("containerId")
-		containerId, err := strconv.ParseInt(rawContainerId, 10, 32)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
-			return
-		}
-
-		// get metric id
-		rawId := c.Param("metricId")
-		id, err := strconv.ParseInt(rawId, 10, 64)
+		// container id
+		containerId, err := strconv.ParseInt(c.Param("containerId"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
@@ -53,22 +44,15 @@ func UpdateSNMPHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// assign id
-		metric.Base.Id = id
-		metric.Protocol.Id = id
+		// assign containerId and container type
 		metric.Base.ContainerId = int32(containerId)
+		metric.Base.ContainerType = ct
 
 		// get if container and data policy exists
-		e, ce, dpe, err := api.PgConn.Metrics.ExistsContainerAndDataPolicy(ctx, metric.Base.ContainerId, types.CTSNMP, metric.Base.DataPolicyId, id)
+		_, ce, dpe, err := api.PgConn.Metrics.ExistsContainerAndDataPolicy(ctx, metric.Base.ContainerId, ct, metric.Base.DataPolicyId, -1)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check container and data policy existence", logger.ErrField(err))
-			return
-		}
-
-		// check metric if exists
-		if !e {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
 			return
 		}
 
@@ -84,35 +68,31 @@ func UpdateSNMPHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// create SNMP metric
-		e, err = api.PgConn.SNMPMetrics.Update(ctx, metric.Protocol)
+		id, err := api.PgConn.Metrics.Create(ctx, metric.Base)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to update snmp metric", logger.ErrField(err))
+			api.Log.Error("fail to create base metric", logger.ErrField(err))
 			return
 		}
+		api.Log.Debug("base metric created, name: " + metric.Base.Name)
 
-		// check if exists
-		if !e {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
-			return
-		}
+		// assign id
+		metric.Protocol.Id = id
 
-		// update metric
-		e, err = api.PgConn.Metrics.Update(ctx, metric.Base)
-		if err != nil {
+		switch ct {
+		case types.CTSNMPv2c:
+			err = api.PgConn.SNMPv2cMetrics.Create(ctx, metric.Protocol)
+			if err != nil {
+				c.Status(http.StatusInternalServerError)
+				api.Log.Error("fail to create snmp metric", logger.ErrField(err))
+				return
+			}
+			api.Log.Debug("snmp metric created, name" + metric.Base.Name)
+		default:
+			api.Log.Error("fail to create metric, unsupported container type")
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to update base update", logger.ErrField(err))
 			return
 		}
-
-		// check if metric exists
-		if !e {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
-			api.Log.Error("snmp metric exist but base metric don't")
-			return
-		}
-		api.Log.Debug("metric updated, name" + metric.Base.Name)
 
 		c.Status(http.StatusOK)
 	}

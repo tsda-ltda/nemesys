@@ -4,5 +4,5 @@ type ContainerType byte
 
 const (
 	CTUnknown ContainerType = iota
-	CTSNMP
+	CTSNMPv2c
 )

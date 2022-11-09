@@ -17,8 +17,8 @@ type PgConn struct {
 	ContextualMetrics ContextualMetrics
 	Metrics           Metrics
 	Containers        BaseContainers
-	SNMPContainers    SNMPContainers
-	SNMPMetrics       SNMPMetrics
+	SNMPv2cContainers SNMPv2cContainers
+	SNMPv2cMetrics    SNMPv2cMetrics
 }
 
 // Connects to a Postgresql database server
@@ -46,7 +46,7 @@ func ConnectToPG() (*PgConn, error) {
 		Metrics:           Metrics{Conn: conn},
 		DataPolicy:        DataPolicy{Conn: conn},
 		Containers:        BaseContainers{Conn: conn},
-		SNMPContainers:    SNMPContainers{Conn: conn},
-		SNMPMetrics:       SNMPMetrics{Conn: conn},
+		SNMPv2cContainers: SNMPv2cContainers{Conn: conn},
+		SNMPv2cMetrics:    SNMPv2cMetrics{Conn: conn},
 	}, nil
 }

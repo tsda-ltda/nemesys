@@ -1,4 +1,4 @@
-package container
+package metric
 
 import (
 	"net/http"
@@ -8,57 +8,59 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/fernandotsda/nemesys/shared/types"
 	"github.com/gin-gonic/gin"
 )
 
-// Get a SNMP container.
+// Get a SNMP metric.
 // Responses:
+//   - 400 If invalid params.
 //   - 404 If not found.
 //   - 200 If succeeded.
-func GetSNMPHandler(api *api.API) func(c *gin.Context) {
+func GetSNMPHandler(api *api.API, ct types.ContainerType) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get container id
-		id, err := strconv.ParseInt(c.Param("containerId"), 10, 32)
+		// metric id
+		metricId, err := strconv.ParseInt(c.Param("metricId"), 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// get container base information
-		e, base, err := api.PgConn.Containers.Get(ctx, int32(id))
+		// get metric base information
+		e, base, err := api.PgConn.Metrics.Get(ctx, metricId)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get container", logger.ErrField(err))
+			api.Log.Error("fail to get metric", logger.ErrField(err))
 			return
 		}
 
 		// check if exists
 		if !e {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
 			return
 		}
 
-		// get snmp container
-		e, snmp, err := api.PgConn.SNMPContainers.Get(ctx, int32(id))
+		// get snmp metric
+		e, snmp, err := api.PgConn.SNMPv2cMetrics.Get(ctx, metricId)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get SNMP container", logger.ErrField(err))
+			api.Log.Error("fail to get SNMP metric", logger.ErrField(err))
 			return
 		}
 
 		// check if exists
 		if !e {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
 			return
 		}
 
-		container := models.Container[models.SNMPContainer]{
+		metric := models.Metric[models.SNMPMetric]{
 			Base:     base,
 			Protocol: snmp,
 		}
 
-		c.JSON(http.StatusOK, container)
+		c.JSON(http.StatusOK, metric)
 	}
 }

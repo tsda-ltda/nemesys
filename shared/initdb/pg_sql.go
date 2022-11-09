@@ -78,18 +78,16 @@ var sqlCommands []string = []string{
 	`CREATE INDEX metrics_container_type_index ON metrics (container_type);`,
 
 	// SNMP Container table
-	`CREATE TABLE snmp_containers (
+	`CREATE TABLE snmpv2c_containers (
 		container_id INT4 UNIQUE NOT NULL,
 		target VARCHAR (15) NOT NULL,
 		port INT4 NOT NULL,
-		cache_duration INT8 NOT NULL,
 		transport VARCHAR (3) NOT NULL,
 		community VARCHAR (50) NOT NULL,
 		retries INT2 NOT NULL,
-		msg_flag INT2 NOT NULL,
-		version INT2 NOT NULL,
 		max_oids INT2 NOT NULL,
 		timeout INT4 NOT NULL,
+		cache_duration INT4 NOT NULL,
 		CONSTRAINT fk_container_id
 			FOREIGN KEY(container_id)
 				REFERENCES containers(id)
@@ -97,13 +95,13 @@ var sqlCommands []string = []string{
 	);`,
 
 	// Create SNMP container index on container id
-	`CREATE INDEX snmp_containers_container_id_index ON snmp_containers (container_id);`,
+	`CREATE INDEX snmpv2c_containers_container_id_index ON snmpv2c_containers (container_id);`,
 
 	// Create unique SNMP container index on target and port
-	`CREATE UNIQUE INDEX snmp_containers_target_port_index ON snmp_containers (target, port);`,
+	`CREATE UNIQUE INDEX snmpv2c_containers_target_port_index ON snmpv2c_containers (target, port);`,
 
 	// SNMP metrics table
-	`CREATE TABLE snmp_metrics (
+	`CREATE TABLE snmpv2c_metrics (
 		metric_id INT8 UNIQUE NOT NULL,
 		oid VARCHAR (128) NOT NULL,
 		CONSTRAINT fk_metric_id

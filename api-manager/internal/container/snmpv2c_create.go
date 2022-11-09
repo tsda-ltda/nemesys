@@ -17,12 +17,12 @@ import (
 //   - 400 If json fields are invalid.
 //   - 400 If ident or target:port is in use.
 //   - 200 If succeeded.
-func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
+func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		// bind container
-		var container models.Container[models.SNMPContainer]
+		var container models.Container[models.SNMPv2cContainer]
 		err := c.ShouldBind(&container)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
@@ -37,10 +37,10 @@ func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// set type
-		container.Base.Type = types.CTSNMP
+		container.Base.Type = types.CTSNMPv2c
 
 		// get target port existence
-		tpe, err := api.PgConn.SNMPContainers.AvailableTargetPort(ctx,
+		tpe, err := api.PgConn.SNMPv2cContainers.AvailableTargetPort(ctx,
 			container.Protocol.Target,
 			container.Protocol.Port,
 			-1,
@@ -69,7 +69,7 @@ func CreateSNMPHandler(api *api.API) func(c *gin.Context) {
 		container.Protocol.ContainerId = int32(id)
 
 		// create snmp container
-		err = api.PgConn.SNMPContainers.Create(ctx, container.Protocol)
+		err = api.PgConn.SNMPv2cContainers.Create(ctx, container.Protocol)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to crate snmp container", logger.ErrField(err))

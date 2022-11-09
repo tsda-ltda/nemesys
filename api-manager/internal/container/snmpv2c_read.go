@@ -1,4 +1,4 @@
-package metric
+package container
 
 import (
 	"net/http"
@@ -11,55 +11,54 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Get a SNMP metric.
+// Get a SNMP container.
 // Responses:
-//   - 400 If invalid params.
 //   - 404 If not found.
 //   - 200 If succeeded.
-func GetSNMPHandler(api *api.API) func(c *gin.Context) {
+func GetSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// metric id
-		metricId, err := strconv.ParseInt(c.Param("metricId"), 10, 64)
+		// get container id
+		id, err := strconv.ParseInt(c.Param("containerId"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// get metric base information
-		e, base, err := api.PgConn.Metrics.Get(ctx, metricId)
+		// get container base information
+		e, base, err := api.PgConn.Containers.Get(ctx, int32(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get metric", logger.ErrField(err))
+			api.Log.Error("fail to get container", logger.ErrField(err))
 			return
 		}
 
 		// check if exists
 		if !e {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
 
-		// get snmp metric
-		e, snmp, err := api.PgConn.SNMPMetrics.Get(ctx, metricId)
+		// get snmp container
+		e, snmp, err := api.PgConn.SNMPv2cContainers.Get(ctx, int32(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get SNMP metric", logger.ErrField(err))
+			api.Log.Error("fail to get SNMP container", logger.ErrField(err))
 			return
 		}
 
 		// check if exists
 		if !e {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
 
-		metric := models.Metric[models.SNMPMetric]{
+		container := models.Container[models.SNMPv2cContainer]{
 			Base:     base,
 			Protocol: snmp,
 		}
 
-		c.JSON(http.StatusOK, metric)
+		c.JSON(http.StatusOK, container)
 	}
 }
