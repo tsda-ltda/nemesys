@@ -129,7 +129,6 @@ func (c *Metric) RunTTL() {
 		case <-c.Closed:
 			return
 		case <-c.Ticker.C:
-			print("a")
 			c.Close()
 			return
 		}
