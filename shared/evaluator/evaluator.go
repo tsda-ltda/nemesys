@@ -43,12 +43,12 @@ func (e *Evaluator) Evaluate(v any, metricId int64, mt types.MetricType) (any, e
 		if !exists {
 			return nil, errors.New("fail to get evaluable expression, metric does not exists")
 		}
-	}
 
-	// save / reset cache
-	err = e.cache.SetMetricEvExpression(ctx, metricId, evexp)
-	if err != nil {
-		return nil, err
+		// save cache
+		err = e.cache.SetMetricEvExpression(ctx, metricId, evexp)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// check if is empty
