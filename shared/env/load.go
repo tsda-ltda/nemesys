@@ -59,18 +59,18 @@ func Init() {
 	set("PG_HOST", &PGHost)
 	set("PG_PORT", &PGPort)
 	set("PG_USERNAME", &PGUsername)
-	set("PG_PW", &PGPW)
+	set("PG_PASSWORD", &PGPassword)
 	set("PG_DB_NAME", &PGDBName)
 
 	set("RDB_AUTH_HOST", &RDBAuthHost)
 	set("RDB_AUTH_PORT", &RDBAuthPort)
 	set("RDB_AUTH_DB", &RDBAuthDB)
-	set("RDB_AUTH_PW", &RDBAuthPW)
+	set("RDB_AUTH_PASSWORD", &RDBAuthPassword)
 
 	set("RDB_CACHE_HOST", &RDBCacheHost)
 	set("RDB_CACHE_PORT", &RDBCachePort)
 	set("RDB_CACHE_DB", &RDBCacheDB)
-	set("RDB_CACHE_PW", &RDBCachePW)
+	set("RDB_CACHE_PASSWORD", &RDBCachePassword)
 
 	set("API_MANAGER_HOST", &APIManagerHost)
 	set("API_MANAGER_PORT", &APIManagerPort)

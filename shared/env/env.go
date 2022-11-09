@@ -3,80 +3,81 @@ package env
 // All enviroment variables
 var (
 	// LOG LEVELS = (debug, info, warn, error, dpanic, panic, fatal)
-	// Minimum log level to enable console logs in API Manager service. Default is debug.
+
+	// LogConsoleLevelAPIManager is the log level for console in API Manager service. Default is debug.
 	LogConsoleLevelAPIManager = "debug"
-	// Minimum log level to enable console logs in API Manager service. Default is info.
+	// LogBroadcastLevelAPIManager is the log level for broadcast in API Manager service. Default is info.
 	LogBroadcastLevelAPIManager = "info"
 
-	// Minimum log level to enable console logs in SNMP service. Default is debug.
+	// LogConsoleLevelSNMP is the log level for console in SNMP service. Default is debug.
 	LogConsoleLevelSNMP = "debug"
-	// Minimum log level to enable console logs in SNMP service. Default is info.
+	// LogBroadcastLevelSNMP is the log level for broadcast in SNMP service. Default is info.
 	LogBroadcastLevelSNMP = "info"
 
-	// Minimum log level to enable console logs in real time service. Default is debug.
+	// LogConsoleLevelRTS is the log level for console in Real Time service. Default is debug.
 	LogConsoleLevelRTS = "debug"
-	// Minimum log level to enable console logs in real time service. Default is info.
+	// LogBroadcastLevelRTS is the log level for broadcast in Real Time service. Default is info.
 	LogBroadcastLevelRTS = "info"
 
-	// Default master username. Default is "master".
+	// DefaultUsername is the default user's username. Default is "master".
 	DefaultUsername = "master"
-	// Default master password (is strongly recommended to not use the default value). Default is "admin".
+	// DefaultPassword is the default user's password (is strongly recommended to not use the default value). Default is "master".
 	DefaultPassword = "master"
 
-	// Max data policies. Default is "8".
+	// MaxDataPolicies is the max number of data policies. Default is "8".
 	MaxDataPolicies = "8"
 
-	// AMQP Username. Default is "guest".
+	// AMQPUsername is the amqp username. Default is "guest".
 	AMQPUsername = "guest"
-	// AMQP password. Default is "guest".
+	// AMQPPassword is the amqp password. Default is "guest".
 	AMQPPassword = "guest"
-	// AMQP host. Default is "localhost".
+	// AMQPHost is the amqp host. Default is "localhost".
 	AMQPHost = "localhost"
-	// AMQP port. Defaul is "5672".
+	// AMQPPort is the amqp port. Default is "5672".
 	AMQPPort = "5672"
 
-	// Postgresql host. Default is "127.0.0.1".
+	// PGHost is the postgres host. Default is "127.0.0.1".
 	PGHost = "127.0.0.1"
-	// Postgresql port. Default is "5432".
+	// PGPort is the postgres port. Default is "5432".
 	PGPort = "5432"
-	// Postgresql username. Default is "postgres".
+	// PGUsername is the postgres username. Default is "postgres".
 	PGUsername = "postgres"
-	// Postgresql password. Default is "postgres".
-	PGPW = "postgres"
-	// Postgresql database name. Default is "dev".
-	PGDBName = "dev"
+	// PGPassword is the postgres password. Default is "postgres".
+	PGPassword = "postgres"
+	// PGDBName is the database name. Default is "namesys".
+	PGDBName = "namesys"
 
-	// Redis for authentication host. Default is "localhost".
+	// RDBAuthHost is redis for auth host. Default is "localhost".
 	RDBAuthHost = "localhost"
-	// Redis for authentication host. Default is "6379".
+	// RDBAuthPort is the redis for auth port. Default is "6379".
 	RDBAuthPort = "6379"
-	// Redis for authentication database. Default is "0".
+	// RDBAuthDB is the redis for auth db. Default is "0".
 	RDBAuthDB = "0"
-	// Redis for authentication password. Default is "".
-	RDBAuthPW = ""
+	// RDBAuthPassword is the redis for auth password. Default is "".
+	RDBAuthPassword = ""
 
-	// Redis for real time service host. Default is "localhost".
+	// RDBCacheHost is the redis for cache host. Default is "localhost".
 	RDBCacheHost = "localhost"
-	// Redis for real time service host. Default is "6379".
+	// RDBCachePort is the redis for cache port. Default is "6379".
 	RDBCachePort = "6379"
-	// Redis for real time service database. Default is "1".
+	// RDBCacheDB is the redis for cache db. Default is "1".
 	RDBCacheDB = "1"
-	// Redis for real time service password. Default is "".
-	RDBCachePW = ""
+	// RDBCachePassword is the redis for cache password. Default is "".
+	RDBCachePassword = ""
 
-	// API Manager host. Default is "localhost".
+	// APIManagerHost is the api manager host. Default is "localhost".
 	APIManagerHost = "localhost"
-	// API Manager port. Default is "9000".
+	// APIManagerPort is the api manager port. Default is "9000".
 	APIManagerPort = "9000"
-	// API Manager port. Default is "9000".
-	APIManagerRoutesPrefix = "/api/v1"
+	// APIManagerRoutesPrefix is the api manager routes prefix. Default is "api/v1".
+	APIManagerRoutesPrefix = "api/v1"
 
-	// User session cookie time to live (seconds). Default is "604900" (one week).
+	// UserSessionTTL is the user session TTL (time to live) in secods. Default is "604900" (one week).
 	UserSessionTTL = "604800"
-	// User session token character size. Default is "64".
+	// UserSessionTokenSize is the user session token size. Default is "64".
 	UserSessionTokenSize = "64"
-	// The bcrypt cost for hashing users password. May vary according
+	// UserPWBcryptCost is the bcrypt cost for hashing users password. May vary according
 	// to each machine config, the recommended is to set a cost
-	// that makes '/login' route take around 200ms. Default is "11".
+	// that makes '/login' route takes around 200ms. Default is "11".
 	UserPWBcryptCost = "11"
 )

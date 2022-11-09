@@ -26,7 +26,7 @@ func ConnectToPG() (*PgConn, error) {
 	ctx := context.Background()
 
 	// connect to pg db
-	conn, err := pgx.Connect(ctx, fmt.Sprintf("postgres://%s:%s@%s:%s/%s", env.PGUsername, env.PGPW, env.PGHost, env.PGPort, env.PGDBName))
+	conn, err := pgx.Connect(ctx, fmt.Sprintf("postgres://%s:%s@%s:%s/%s", env.PGUsername, env.PGPassword, env.PGHost, env.PGPort, env.PGDBName))
 	if err != nil {
 		return nil, err
 	}

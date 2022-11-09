@@ -23,7 +23,7 @@ func RDBAuthConnect() (c *redis.Client, err error) {
 	c = redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", env.RDBAuthHost, env.RDBAuthPort),
 		DB:       db,
-		Password: env.RDBAuthPW,
+		Password: env.RDBAuthPassword,
 	})
 
 	// ping redis
@@ -48,7 +48,7 @@ func RDBCacheConnect() (c *redis.Client, err error) {
 	c = redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", env.RDBCacheHost, env.RDBCachePort),
 		DB:       db,
-		Password: env.RDBCachePW,
+		Password: env.RDBCachePassword,
 	})
 
 	// ping redis

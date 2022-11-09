@@ -14,7 +14,7 @@ func PG() (initialized bool, err error) {
 	ctx := context.Background()
 
 	// connect to default database
-	conn, err := pgx.Connect(ctx, fmt.Sprintf("postgres://%s:%s@%s:%s/postgres", env.PGUsername, env.PGPW, env.PGHost, env.PGPort))
+	conn, err := pgx.Connect(ctx, fmt.Sprintf("postgres://%s:%s@%s:%s/postgres", env.PGUsername, env.PGPassword, env.PGHost, env.PGPort))
 	if err != nil {
 		return false, err
 	}
