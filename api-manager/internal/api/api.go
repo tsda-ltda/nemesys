@@ -100,4 +100,6 @@ func (api *API) Run() error {
 func (api *API) Close() {
 	api.PgConn.Close(context.Background())
 	api.Auth.Close()
+	api.Cache.Close()
+	api.Amqp.Close()
 }
