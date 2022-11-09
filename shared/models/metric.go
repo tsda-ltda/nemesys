@@ -94,4 +94,6 @@ type MetricBasicDataReponse struct {
 	Type types.MetricType
 	// Value is the metric data as MetricType.
 	Value any
+	// Failed is the failed status.
+	Failed bool
 }

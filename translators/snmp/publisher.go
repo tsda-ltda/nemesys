@@ -232,15 +232,17 @@ func (s *SNMPService) metricsDataPublisher() {
 				for i, pdu := range pdus {
 					m := req.Info.Metrics[i]
 					res.Metrics[i] = models.MetricBasicDataReponse{
-						Id:    m.Id,
-						Type:  m.Type,
-						Value: nil,
+						Id:     m.Id,
+						Type:   m.Type,
+						Value:  nil,
+						Failed: false,
 					}
 
 					// parse SNMP response
 					v, err := ParsePDU(pdu)
 					if err != nil {
 						s.Log.Debug("fail to parse PDU, name "+pdu.Name, logger.ErrField(err))
+						res.Metrics[i].Failed = true
 						continue
 					}
 
@@ -248,6 +250,7 @@ func (s *SNMPService) metricsDataPublisher() {
 					v, err = types.ParseValue(v, m.Type)
 					if err != nil {
 						s.Log.Warn("fail to parse SNMP value to metric value", logger.ErrField(err))
+						res.Metrics[i].Failed = true
 						continue
 					}
 
@@ -255,6 +258,7 @@ func (s *SNMPService) metricsDataPublisher() {
 					v, err = s.evaluator.Evaluate(v, m.Id, m.Type)
 					if err != nil {
 						s.Log.Warn("fail to evaluate value")
+						res.Metrics[i].Failed = true
 						continue
 					}
 
@@ -266,6 +270,7 @@ func (s *SNMPService) metricsDataPublisher() {
 				bytes, err := amqp.Encode(res)
 				if err != nil {
 					s.Log.Error("fail to encode metrics data response", logger.ErrField(err))
+					p.Type = amqp.FromMessageType(amqp.InternalError)
 					return
 				}
 

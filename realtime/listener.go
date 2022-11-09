@@ -371,6 +371,11 @@ func (s *RTS) MetricsDataListener() {
 			}
 
 			for _, v := range m.Metrics {
+				// check if metric has failed
+				if v.Failed {
+					continue
+				}
+
 				var info models.RTSMetricInfo
 				for _, i := range infos {
 					if i.Id == v.Id {
@@ -379,6 +384,7 @@ func (s *RTS) MetricsDataListener() {
 					}
 				}
 
+				// encode metric
 				b, err := amqp.Encode(models.MetricDataResponse{
 					MetricBasicDataReponse: v,
 					ContainerId:            m.ContainerId,
