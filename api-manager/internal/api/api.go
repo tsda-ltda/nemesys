@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/fernandotsda/nemesys/api-manager/internal/amqph"
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
 	"github.com/fernandotsda/nemesys/shared/cache"
 	"github.com/fernandotsda/nemesys/shared/db"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/logger"
-	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/rabbitmq/amqp091-go"
@@ -18,6 +18,9 @@ import (
 type API struct {
 	// Amqp is the amqp connection.
 	Amqp *amqp091.Connection
+
+	// Amqph is the amqp handler.
+	Amqph *amqph.Amqph
 
 	// Postgresql connection.
 	PgConn *db.PgConn
@@ -36,9 +39,6 @@ type API struct {
 
 	// User pw hash cost.
 	UserPWBcryptCost int
-
-	// RTSDataPlumber is th plumber for rts data request/response.
-	RTSDataPlumber *models.AMQPPlumber
 
 	// Logger is the internal logger.
 	Log *logger.Logger
@@ -77,14 +77,14 @@ func New(conn *amqp091.Connection, log *logger.Logger) (*API, error) {
 	validate := validator.New()
 
 	return &API{
-		Amqp:           conn,
-		PgConn:         pgConn,
-		Router:         r,
-		Auth:           auth,
-		Validate:       validate,
-		Log:            log,
-		Cache:          cache.New(),
-		RTSDataPlumber: models.NewAMQPPlumber(),
+		Amqp:     conn,
+		PgConn:   pgConn,
+		Router:   r,
+		Auth:     auth,
+		Validate: validate,
+		Log:      log,
+		Cache:    cache.New(),
+		Amqph:    amqph.New(conn, log),
 	}, nil
 }
 
