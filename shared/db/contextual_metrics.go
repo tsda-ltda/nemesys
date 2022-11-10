@@ -12,8 +12,9 @@ type ContextualMetrics struct {
 }
 
 const (
-	sqlCtxMetricsGetMetricRequestInfo = `SELECT type, container_id, container_type FROM metrics WHERE id = $1;`
-	sqlCtxMetricsGetIdsByIdent        = `WITH 
+	sqlCtxMetricsGetMetricRequestInfo = `SELECT id, type, container_id, container_type FROM metrics 
+		WHERE id = (SELECT metric_id FROM contextual_metrics WHERE id = $1);`
+	sqlCtxMetricsGetIdsByIdent = `WITH 
 		tid AS (SELECT id FROM teams WHERE ident = $1),
 		cid AS (SELECT id FROM contexts WHERE ident = $2 and team_id = (SELECT * FROM tid))
 		SELECT id, (SELECT * FROM cid), (SELECT * FROM tid) FROM contextual_metrics WHERE ident = $3 AND ctx_id = (SELECT * FROM cid);`
@@ -106,14 +107,15 @@ func (c *ContextualMetrics) ExistsIdent(ctx context.Context, ident string, ctxId
 
 // GetMetricRequestByIdent returns the metric's information to make a data request by ident if exists.
 // Returns an error if fails to get.
-func (c *ContextualMetrics) GetMetricRequestById(ctx context.Context, id int64) (e bool, r models.MetricRequest, err error) {
-	rows, err := c.Query(ctx, sqlCtxMetricsGetMetricRequestInfo, id)
+func (c *ContextualMetrics) GetMetricRequestById(ctx context.Context, contextualMetricId int64) (e bool, r models.MetricRequest, err error) {
+	rows, err := c.Query(ctx, sqlCtxMetricsGetMetricRequestInfo, contextualMetricId)
 	if err != nil {
 		return false, r, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
+			&r.MetricId,
 			&r.MetricType,
 			&r.ContainerId,
 			&r.ContainerType,
@@ -122,7 +124,6 @@ func (c *ContextualMetrics) GetMetricRequestById(ctx context.Context, id int64) 
 			return false, r, err
 		}
 		e = true
-		r.MetricId = id
 	}
 	return e, r, nil
 }

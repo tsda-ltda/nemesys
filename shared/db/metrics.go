@@ -141,7 +141,7 @@ func (c *Metrics) Delete(ctx context.Context, id int64) (e bool, err error) {
 }
 
 // GetRTSConfig returns the metric's RTS configuration. Returns an error if fail to get.
-func (c *Metrics) GetRTSConfig(ctx context.Context, id int64) (e bool, info models.RTSMetricInfo, err error) {
+func (c *Metrics) GetRTSConfig(ctx context.Context, id int64) (e bool, info models.RTSMetricConfig, err error) {
 	rows, err := c.Query(ctx, sqlMetricsGetRTSConfig, id)
 	if err != nil {
 		return false, info, err

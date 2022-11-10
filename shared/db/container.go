@@ -20,6 +20,7 @@ const (
 	sqlContainerDelete     = `DELETE FROM containers WHERE id = $1;`
 	sqlContainerMGet       = `SELECT id, name, descr, rts_pulling_interval FROM containers WHERE type = $1 LIMIT $2 OFFSET $3;`
 	sqlContainerGetRTSInfo = `SELECT rts_pulling_interval FROM containers WHERE id = $1;`
+	sqlContainerExists     = `SELECT EXISTS (SELECT 1 FROM containers WHERE id = $1);`
 )
 
 // Create crates a container. Returns an error if fails to create
@@ -113,4 +114,9 @@ func (c *BaseContainers) GetRTSInfo(ctx context.Context, id int32) (e bool, info
 		e = true
 	}
 	return e, info, nil
+}
+
+// Exists returns the existence of a container. Returns an error if fails to check.
+func (c *BaseContainers) Exists(ctx context.Context, id int32) (e bool, err error) {
+	return e, c.QueryRow(ctx, sqlContainerExists, id).Scan(&e)
 }
