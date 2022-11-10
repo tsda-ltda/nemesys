@@ -32,6 +32,7 @@ func (s *RTS) MetricDataPublisher() {
 		return
 	}
 
+	closed, canceled := amqp.OnChannelClose(ch)
 	for {
 		select {
 		// publish data
@@ -47,8 +48,13 @@ func (s *RTS) MetricDataPublisher() {
 			if err != nil {
 				s.Log.Error("fail to publish message", logger.ErrField(err))
 			}
-		// quit
-		case <-s.stopMetricDataPublisher:
+
+			s.Log.Debug("publishing metric data, metric id: <encoded>")
+		case err := <-closed:
+			s.Log.Warn("metric data publisher channel closed", logger.ErrField(err))
+			return
+		case r := <-canceled:
+			s.Log.Warn("metric data publisher channel canceled, reason: " + r)
 			return
 		}
 	}
@@ -77,6 +83,7 @@ func (s *RTS) MetricDataRequestPublisher() {
 		return
 	}
 
+	closed, canceled := amqp.OnChannelClose(ch)
 	for {
 		select {
 		case r := <-s.metricDataRequestCh:
@@ -90,7 +97,7 @@ func (s *RTS) MetricDataRequestPublisher() {
 				false,                      // mandatory
 				false,                      // immediate
 				amqp091.Publishing{
-					Expiration:    "5000",
+					Expiration:    "2000",
 					Headers:       amqp091.Table{"routing_key": "rts"},
 					CorrelationId: r.CorrelationId,
 					Body:          r.Info,
@@ -100,7 +107,12 @@ func (s *RTS) MetricDataRequestPublisher() {
 				s.Log.Error("fail to publish metric data request")
 				continue
 			}
-		case <-s.stopMetricDataRequestPublisher:
+			s.Log.Debug("publishing metric data request, metric id: <encoded>")
+		case err := <-closed:
+			s.Log.Warn("metric data request publisher channel closed", logger.ErrField(err))
+			return
+		case r := <-canceled:
+			s.Log.Warn("metric data request publisher channel canceled, reason: " + r)
 			return
 		}
 	}
@@ -129,6 +141,7 @@ func (s *RTS) MetricsDataRequestPublisher() {
 		return
 	}
 
+	closed, canceled := amqp.OnChannelClose(ch)
 	for {
 		select {
 		case r := <-s.metricsDataRequestCh:
@@ -142,7 +155,7 @@ func (s *RTS) MetricsDataRequestPublisher() {
 				false,                       // mandatory
 				false,                       // immediate
 				amqp091.Publishing{
-					Expiration:    "5000",
+					Expiration:    "2000",
 					Headers:       amqp091.Table{"routing_key": "rts"},
 					CorrelationId: r.CorrelationId,
 					Body:          r.Info,
@@ -152,7 +165,12 @@ func (s *RTS) MetricsDataRequestPublisher() {
 				s.Log.Error("fail to publish metrics data request")
 				continue
 			}
-		case <-s.stopMetricsDataRequestPublisher:
+			s.Log.Debug("publishing metrics data request, container id: <encoded>")
+		case err := <-closed:
+			s.Log.Warn("metrics data request publisher channel closed", logger.ErrField(err))
+			return
+		case r := <-canceled:
+			s.Log.Warn("metrics data request publisher channel canceled, reason: " + r)
 			return
 		}
 	}

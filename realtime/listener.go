@@ -78,6 +78,8 @@ func (s *RTS) MetricDataRequestListener() {
 		s.Log.Panic("fail to consume messages", logger.ErrField(err))
 	}
 
+	// close and cancel channels
+	closed, canceled := amqp.OnChannelClose(ch)
 	for {
 		select {
 		case d := <-msgs:
@@ -96,6 +98,11 @@ func (s *RTS) MetricDataRequestListener() {
 				s.Log.Error("fail to decode message body", logger.ErrField(err))
 				continue
 			}
+
+			// parse metric id to string
+			metricIdString := strconv.FormatInt(int64(r.ContainerId), 10)
+
+			s.Log.Debug("get metric data request received, container id: " + metricIdString)
 
 			// get data on cache
 			bytes, err := s.cache.Get(ctx, db.RDBCacheMetricDataKey(r.MetricId))
@@ -119,7 +126,7 @@ func (s *RTS) MetricDataRequestListener() {
 				}
 
 				// start pulling
-				s.addPulling(r, info)
+				s.startMetricPulling(r, info)
 
 				// publish data when available
 				go func(correlationId string, r models.MetricRequest) {
@@ -154,10 +161,10 @@ func (s *RTS) MetricDataRequestListener() {
 				}(d.CorrelationId, r)
 				continue
 			}
-			s.Log.Debug("metric data fetched on cache, metricId: " + strconv.FormatInt(r.MetricId, 10))
+			s.Log.Debug("metric data fetched on cache, metric id: " + metricIdString)
 
-			// reset pulling
-			s.resetPulling(r)
+			// restart/start pulling
+			s.restartMetricPulling(r)
 
 			// publish data
 			s.metricDataPublisherCh <- amqp091.Publishing{
@@ -167,7 +174,11 @@ func (s *RTS) MetricDataRequestListener() {
 				CorrelationId: d.CorrelationId,
 			}
 
-		case <-s.stopMetricDataRequestListener:
+		case err := <-closed:
+			s.Log.Warn("metric data request listener channel closed", logger.ErrField(err))
+			return
+		case r := <-canceled:
+			s.Log.Warn("metric data request listener channel canceled, reason: " + r)
 			return
 		}
 	}
@@ -238,6 +249,7 @@ func (s *RTS) MetricDataListener() {
 		s.Log.Panic("fail to consume messages", logger.ErrField(err))
 	}
 
+	closed, canceled := amqp.OnChannelClose(ch)
 	for {
 		select {
 		case d := <-msgs:
@@ -275,7 +287,11 @@ func (s *RTS) MetricDataListener() {
 			}
 
 			s.Log.Debug("metric data received, id: " + strconv.FormatInt(m.Id, 10))
-		case <-s.stopMetricDataListener:
+		case err := <-closed:
+			s.Log.Warn("metric data listener channel closed", logger.ErrField(err))
+			return
+		case r := <-canceled:
+			s.Log.Warn("metric data listener channel canceled, reason: " + r)
 			return
 		}
 	}
@@ -346,6 +362,7 @@ func (s *RTS) MetricsDataListener() {
 		s.Log.Panic("fail to consume messages", logger.ErrField(err))
 	}
 
+	closed, canceled := amqp.OnChannelClose(ch)
 	for {
 		select {
 		case d := <-msgs:
@@ -364,8 +381,8 @@ func (s *RTS) MetricsDataListener() {
 				continue
 			}
 
-			// check for pending request
-			infos, ok := s.pendingMetricsData[m.ContainerId]
+			// get container pulling
+			p, ok := s.pulling[m.ContainerId]
 			if !ok {
 				continue
 			}
@@ -376,12 +393,10 @@ func (s *RTS) MetricsDataListener() {
 					continue
 				}
 
-				var info models.RTSMetricInfo
-				for _, i := range infos {
-					if i.Id == v.Id {
-						info = i.RTSMetricInfo
-						break
-					}
+				// get metric pulling
+				mp, ok := p.Metrics[v.Id]
+				if !ok {
+					continue
 				}
 
 				// encode metric
@@ -395,7 +410,7 @@ func (s *RTS) MetricsDataListener() {
 				}
 
 				// save on cache
-				err = s.cache.Set(ctx, b, db.RDBCacheMetricDataKey(v.Id), time.Millisecond*time.Duration(info.CacheDuration))
+				err = s.cache.Set(ctx, b, db.RDBCacheMetricDataKey(v.Id), time.Millisecond*time.Duration(mp.CacheDuration))
 				if err != nil {
 					s.Log.Error("fail to save metric data on cache", logger.ErrField(err))
 					continue
@@ -403,7 +418,11 @@ func (s *RTS) MetricsDataListener() {
 			}
 
 			s.Log.Debug("metrics data received, container id: " + strconv.FormatInt(int64(m.ContainerId), 10))
-		case <-s.stopMetricDataListener:
+		case err := <-closed:
+			s.Log.Warn("metric data listener channel closed", logger.ErrField(err))
+			return
+		case r := <-canceled:
+			s.Log.Warn("metric data listener channel canceled, reason: " + r)
 			return
 		}
 	}
