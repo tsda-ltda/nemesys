@@ -47,8 +47,8 @@ func (a *Amqph) GetRTSData(r models.MetricRequest) (d amqp091.Delivery, err erro
 	return d, nil
 }
 
-// listenRTSMetricData listen to rts metric data.
-func (a *Amqph) listenRTSMetricData() {
+// ListenRTSMetricData listen to rts metric data.
+func (a *Amqph) ListenRTSMetricData() {
 	// open socket channel
 	ch, err := a.conn.Channel()
 	if err != nil {
@@ -130,8 +130,8 @@ func (a *Amqph) listenRTSMetricData() {
 	}
 }
 
-// listenRTSMetricDataRequests listen to rts metric data requets.
-func (a *Amqph) listenRTSMetricDataRequests() {
+// ListenRTSMetricDataRequests listen to rts metric data requets.
+func (a *Amqph) ListenRTSMetricDataRequests() {
 	// open socket channel
 	ch, err := a.conn.Channel()
 	if err != nil {
