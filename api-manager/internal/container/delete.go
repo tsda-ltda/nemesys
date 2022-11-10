@@ -40,8 +40,9 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
-
 		api.Log.Debug("container deleted, id: " + rawId)
+		api.Amqph.NotifyContainerDeleted(int32(id))
+
 		c.Status(http.StatusNoContent)
 	}
 }

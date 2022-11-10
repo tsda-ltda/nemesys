@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/fernandotsda/nemesys/api-manager/internal/amqph"
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
+	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/cache"
 	"github.com/fernandotsda/nemesys/shared/db"
 	"github.com/fernandotsda/nemesys/shared/env"
@@ -16,8 +16,6 @@ import (
 )
 
 type API struct {
-	// Amqp is the amqp connection.
-	Amqp *amqp091.Connection
 	// Amqph is the amqp handler.
 	Amqph *amqph.Amqph
 	// Postgresql connection.
@@ -67,15 +65,21 @@ func New(conn *amqp091.Connection, log *logger.Logger) (*API, error) {
 	// create validator
 	validate := validator.New()
 
+	// create and run amqp handler
+	amqph := amqph.New(conn, log)
+	go amqph.MetricNotifier()
+	go amqph.ContainerNotifier()
+	go amqph.ListenRTSMetricData()
+	go amqph.ListenRTSMetricDataRequests()
+
 	return &API{
-		Amqp:     conn,
 		PgConn:   pgConn,
 		Router:   r,
 		Auth:     auth,
 		Validate: validate,
 		Log:      log,
 		Cache:    cache.New(),
-		Amqph:    amqph.New(conn, log),
+		Amqph:    amqph,
 	}, nil
 }
 
@@ -91,5 +95,5 @@ func (api *API) Close() {
 	api.PgConn.Close(context.Background())
 	api.Auth.Close()
 	api.Cache.Close()
-	api.Amqp.Close()
+	api.Amqph.Close()
 }

@@ -113,7 +113,7 @@ func UpdateSNMPv2cHandler(api *api.API, ct types.ContainerType) func(c *gin.Cont
 			return
 		}
 		api.Log.Debug("metric updated, name" + metric.Base.Name)
-		api.Amqph.NotifyMetric(metric)
+		api.Amqph.NotifyMetricUpdated(metric.Base, metric.Protocol, types.CTSNMPv2c)
 
 		c.Status(http.StatusOK)
 	}

@@ -86,7 +86,7 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		api.Log.Debug("snmp metric created, name" + metric.Base.Name)
-		api.Amqph.NotifyMetric(metric)
+		api.Amqph.NotifyMetricCreated(metric.Base, metric.Protocol, types.CTSNMPv2c)
 
 		c.Status(http.StatusOK)
 	}
