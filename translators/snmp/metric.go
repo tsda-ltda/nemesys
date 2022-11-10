@@ -22,8 +22,6 @@ type Metric struct {
 	TTL time.Duration
 	// Ticker is the TTL ticker controller.
 	Ticker *time.Ticker
-	// Closed is the channel to closed the connectio n.
-	Closed chan any
 	// OnClose is a callback used when connection is closed.
 	OnClose func(c *Metric)
 }
@@ -56,7 +54,6 @@ func (s *SNMPService) RegisterMetrics(ctx context.Context, req []models.MetricBa
 			Id:         conf.Id,
 			TTL:        ttl,
 			Ticker:     time.NewTicker(ttl),
-			Closed:     make(chan any),
 		}
 
 		// run ttl handler
@@ -93,7 +90,6 @@ func (s *SNMPService) RegisterMetric(ctx context.Context, id int64, t types.Metr
 		Type:       t,
 		TTL:        ttl,
 		Ticker:     time.NewTicker(ttl),
-		Closed:     make(chan any),
 	}
 
 	// run ttl handler
@@ -109,9 +105,8 @@ func (s *SNMPService) RegisterMetric(ctx context.Context, id int64, t types.Metr
 	return metric, nil
 }
 
-// Close closes Closed chan.
+// Close closes the metric.
 func (m *Metric) Close() {
-	close(m.Closed)
 	m.OnClose(m)
 }
 
@@ -124,13 +119,8 @@ func (m *Metric) Reset() {
 func (c *Metric) RunTTL() {
 	c.Ticker = time.NewTicker(c.TTL)
 	defer c.Ticker.Stop()
-	for {
-		select {
-		case <-c.Closed:
-			return
-		case <-c.Ticker.C:
-			c.Close()
-			return
-		}
+	for range c.Ticker.C {
+		c.Close()
+		return
 	}
 }

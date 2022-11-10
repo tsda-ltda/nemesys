@@ -2,6 +2,7 @@ package snmp
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/logger"
@@ -95,8 +96,9 @@ func (s *SNMPService) getMetricListener() {
 				s.Log.Error("fail to unmarshal amqp message body", logger.ErrField(err))
 				continue
 			}
+			s.Log.Debug("get metric data request received, metric id: " + strconv.FormatInt(int64(r.MetricId), 10))
 
-			// check if agent connection exists
+			// check if container connection exists
 			c, ok := s.conns[r.ContainerId]
 			if !ok {
 				c, err = s.RegisterAgent(ctx, r.ContainerId, r.ContainerType)
@@ -241,6 +243,7 @@ func (s *SNMPService) getMetricsListener() {
 				s.Log.Error("fail to unmarshal amqp message body", logger.ErrField(err))
 				continue
 			}
+			s.Log.Debug("get metrics data request received, container id: " + strconv.FormatInt(int64(r.ContainerId), 10))
 
 			// check if agent connection exists
 			c, ok := s.conns[r.ContainerId]

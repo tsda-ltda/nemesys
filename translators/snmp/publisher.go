@@ -91,6 +91,7 @@ func (s *SNMPService) metricDataPublisher() {
 				// fetch data
 				pdus, err := s.Get(req.Info.Conn, []string{req.Info.OID})
 				if err != nil {
+					r.Info.Conn.Close()
 					s.Log.Debug("fail to fetch data", logger.ErrField(err))
 					p.Type = amqp.FromMessageType(amqp.Failed)
 					return
@@ -218,6 +219,7 @@ func (s *SNMPService) metricsDataPublisher() {
 				// fetch data
 				pdus, err := s.Get(req.Info.Conn, oids)
 				if err != nil {
+					r.Info.Conn.Close()
 					s.Log.Debug("fail to fetch data", logger.ErrField(err))
 					p.Type = amqp.FromMessageType(amqp.Failed)
 					return

@@ -15,11 +15,7 @@ func ParsePDU(pdu gosnmp.SnmpPDU) (any, error) {
 		}
 		return string(b), nil
 	case gosnmp.Integer:
-		b, ok := pdu.Value.(byte)
-		if !ok {
-			return nil, errors.New("fail to parse to byte")
-		}
-		return int(b), nil
+		return pdu.Value, nil
 	default:
 		return nil, errors.New("unknown type")
 	}

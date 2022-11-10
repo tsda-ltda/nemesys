@@ -76,6 +76,9 @@ func (s *SNMPService) RegisterAgent(ctx context.Context, containerId int32, t ty
 		return nil, err
 	}
 
+	// set no deadline
+	c.Agent.Conn.SetDeadline(time.Time{})
+
 	// run ttl handler
 	go c.RunTTL()
 	c.OnClose = func(c *Conn) {
@@ -92,7 +95,7 @@ func (s *SNMPService) RegisterAgent(ctx context.Context, containerId int32, t ty
 // Close closes agent connection and Closed chan.
 func (c *Conn) Close() {
 	c.Agent.Conn.Close()
-	close(c.Closed)
+	c.Closed <- struct{}{}
 	c.OnClose(c)
 }
 
