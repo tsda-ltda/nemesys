@@ -1,6 +1,6 @@
 package models
 
-type RTSMetricInfo struct {
+type RTSMetricConfig struct {
 	// PullingTimes is how many times will pull the data.
 	PullingTimes int16
 	// Cache duration is the cached data durantion in miliseconds.

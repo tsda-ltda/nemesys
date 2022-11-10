@@ -4,6 +4,13 @@ import (
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
+type MetricPairId struct {
+	// Id is the metric unique identifier.
+	Id int64
+	// ContainerId is the container unique identtifier.
+	ContainerId int32
+}
+
 type Metric[T any] struct {
 	// Base is the base metric configuration.
 	Base BaseMetric `json:"base" validate:"required"`
