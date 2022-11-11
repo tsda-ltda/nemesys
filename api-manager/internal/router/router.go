@@ -72,7 +72,7 @@ func Set(api *api.API) {
 		{
 			ctxMetric.GET("/", middleware.ParseContextParams(api), ctxmetric.MGet(api))
 			ctxMetric.GET("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.Get(api))
-			ctxMetric.GET("/:metricId/data", middleware.ParseContextualMetricParams(api), ctxmetric.DataHandler(api))
+			ctxMetric.GET("/:metricId/data", middleware.ParseContextualMetricParams(api), middleware.MetricRequest(api), ctxmetric.DataHandler(api))
 			ctxMetric.POST("/", middleware.ParseContextParams(api), ctxmetric.CreateHandler(api))
 			ctxMetric.PATCH("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.UpdateHandler(api))
 			ctxMetric.DELETE("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.DeleteHandler(api))
@@ -101,9 +101,9 @@ func Set(api *api.API) {
 
 		// metric
 		SNMPv2c.GET("/:containerId/metrics", metric.MGet(api, types.CTSNMPv2c))
-		SNMPv2c.GET("/:containerId/metrics/:metricId", metric.GetSNMPv2cHandler(api, types.CTSNMPv2c))
+		SNMPv2c.GET("/:containerId/metrics/:metricId", metric.GetSNMPv2cHandler(api))
 		SNMPv2c.POST("/:containerId/metrics", metric.CreateSNMPv2cHandler(api))
-		SNMPv2c.PATCH("/:containerId/metrics/:metricId", metric.UpdateSNMPv2cHandler(api, types.CTSNMPv2c))
+		SNMPv2c.PATCH("/:containerId/metrics/:metricId", metric.UpdateSNMPv2cHandler(api))
 		SNMPv2c.DELETE("/:containerId/metrics/:metricId", metric.DeleteHandler(api))
 	}
 }
