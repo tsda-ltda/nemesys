@@ -68,7 +68,7 @@ func (s *RTS) MetricDataRequestPublisher() {
 		return
 	}
 
-	// declare snmp exchange
+	// declare exchange
 	err = ch.ExchangeDeclare(
 		amqp.ExchangeGetMetricData, // name
 		"direct",                   // type
@@ -126,7 +126,7 @@ func (s *RTS) MetricsDataRequestPublisher() {
 		return
 	}
 
-	// declare snmp exchange
+	// declare exchange
 	err = ch.ExchangeDeclare(
 		amqp.ExchangeGetMetricsData, // name
 		"direct",                    // type
