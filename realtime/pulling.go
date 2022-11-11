@@ -24,7 +24,7 @@ type MetricPulling struct {
 }
 
 type ContainerPulling struct {
-	models.RTSContainerInfo
+	models.RTSContainerConfig
 	// Id is the unique identifier.
 	Id int32
 	// Type is the container type.
@@ -36,7 +36,8 @@ type ContainerPulling struct {
 	// rch is the channel for requests.
 	rch chan models.AMQPCorrelated[[]byte]
 	// RTS is the RTS server.
-	RTS *RTS
+	RTS     *RTS
+	OnClose func(*ContainerPulling)
 }
 
 // restartMetricPulling restarts a pulling for a metric if is running, otherwise will do nothing.
@@ -66,38 +67,38 @@ func (s *RTS) startMetricPulling(r models.MetricRequest, config models.RTSMetric
 		// check if container exists
 		c, ok := s.pulling[r.ContainerId]
 		if !ok {
-			e, info, err := s.pgConn.Containers.GetRTSInfo(context.Background(), r.ContainerId)
+			res, err := s.pgConn.Containers.GetRTSConfig(context.Background(), r.ContainerId)
 			if err != nil {
 				s.Log.Error("fail to get containers's RTS info", logger.ErrField(err))
 				return
 			}
 
 			// check if container exists
-			if !e {
+			if !res.Exists {
 				s.Log.Warn("fail to start metric pulling, container does not exists")
 				return
 			}
 
 			// create new container pulling
 			c = &ContainerPulling{
-				Id:               r.ContainerId,
-				Type:             r.ContainerType,
-				RTSContainerInfo: info,
-				Metrics:          make(map[int64]*MetricPulling),
-				stopCh:           make(chan any, 1),
-				rch:              s.metricsDataRequestCh,
-				RTS:              s,
+				Id:                 r.ContainerId,
+				Type:               r.ContainerType,
+				RTSContainerConfig: res.Config,
+				Metrics:            make(map[int64]*MetricPulling),
+				stopCh:             make(chan any, 1),
+				rch:                s.metricsDataRequestCh,
+				RTS:                s,
 			}
 
 			// save container
 			s.pulling[r.ContainerId] = c
+			c.OnClose = func(cp *ContainerPulling) {
+				delete(s.pulling, cp.Id)
+				s.Log.Debug("container pulling stoped, id: " + strconv.FormatInt(int64(cp.Id), 10))
+			}
 
 			// run container
-			go func(k int32) {
-				defer delete(s.pulling, k)
-				defer s.Log.Debug("container pulling stoped, id: " + strconv.FormatInt(int64(k), 10))
-				c.Run()
-			}(r.ContainerId)
+			go c.Run()
 
 			s.Log.Debug("container pulling started, id: " + strconv.FormatInt(int64(r.ContainerId), 10))
 		}
@@ -125,8 +126,8 @@ func (c *ContainerPulling) Run() {
 	for {
 		select {
 		case <-ticker.C:
-			if len(c.Metrics) == 0 {
-				c.Stop()
+			if len(c.Metrics) < 1 {
+				c.Close()
 				continue
 			}
 
@@ -145,8 +146,8 @@ func (c *ContainerPulling) Run() {
 
 				i++
 				m.pullingRemaining--
-				if m.pullingRemaining == 0 {
-					c.Remove(k)
+				if m.pullingRemaining < 1 {
+					c.remove(k)
 					continue
 				}
 				c.Metrics[k] = m
@@ -155,7 +156,7 @@ func (c *ContainerPulling) Run() {
 			// encode request
 			b, err := amqp.Encode(r)
 			if err != nil {
-				c.Stop()
+				c.Close()
 				continue
 			}
 
@@ -177,18 +178,15 @@ func (c *ContainerPulling) AddMetric(m MetricPulling) {
 }
 
 // Remove removes a metric.
-func (c *ContainerPulling) Remove(metricId int64) {
+func (c *ContainerPulling) remove(metricId int64) {
 	delete(c.Metrics, metricId)
-}
-
-// Stop stops the container pulling.
-func (c *ContainerPulling) Stop() {
-	c.stopCh <- struct{}{}
+	c.RTS.Log.Debug("metric removed from pulling, metric id: " + strconv.FormatInt(metricId, 10))
 }
 
 // Close closes the container pulling.
 func (c *ContainerPulling) Close() {
-	c.Stop()
+	c.stopCh <- struct{}{}
+	c.OnClose(c)
 }
 
 // Stop sets the remaining pulling times to 0.
