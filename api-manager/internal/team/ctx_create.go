@@ -52,7 +52,7 @@ func CreateContextHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// get ident existence
-		te, ie, err := api.PgConn.Contexts.ExistsTeamAndIdent(ctx, int32(teamId), context.Ident, -1)
+		r, err := api.PgConn.Contexts.ExistsTeamAndIdent(ctx, int32(teamId), context.Ident, -1)
 		if err != nil {
 			api.Log.Error("fail to get context existence", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
@@ -60,19 +60,19 @@ func CreateContextHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if team exists
-		if !te {
+		if !r.TeamExists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTeamNotFound))
 			return
 		}
 
 		// check if ident exists
-		if ie {
+		if r.IdentExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}
 
 		// create context
-		err = api.PgConn.Contexts.Create(ctx, models.Context{
+		_, err = api.PgConn.Contexts.Create(ctx, models.Context{
 			TeamId: int32(teamId),
 			Name:   context.Name,
 			Ident:  context.Ident,

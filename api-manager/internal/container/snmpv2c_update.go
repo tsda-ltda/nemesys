@@ -47,7 +47,7 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		// assign values
 		container.Base.Type = types.CTSNMPv2c
 		container.Base.Id = int32(id)
-		container.Protocol.ContainerId = int32(id)
+		container.Protocol.Id = int32(id)
 
 		// get target port existence
 		tpe, err := api.PgConn.SNMPv2cContainers.AvailableTargetPort(ctx,

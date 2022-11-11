@@ -61,7 +61,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// create data policy
-		err = api.PgConn.DataPolicy.Create(ctx, dp)
+		_, err = api.PgConn.DataPolicy.Create(ctx, dp)
 		if err != nil {
 			api.Log.Error("fail to create new data policy", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)

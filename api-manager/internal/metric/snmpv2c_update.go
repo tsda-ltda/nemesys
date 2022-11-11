@@ -18,7 +18,7 @@ import (
 //   - 400 If json fields are invalid.
 //   - 404 If container or metric not found.
 //   - 200 If succeeded.
-func UpdateSNMPv2cHandler(api *api.API, ct types.ContainerType) func(c *gin.Context) {
+func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
@@ -59,7 +59,7 @@ func UpdateSNMPv2cHandler(api *api.API, ct types.ContainerType) func(c *gin.Cont
 		metric.Base.ContainerId = int32(containerId)
 
 		// get if container and data policy exists
-		e, ce, dpe, err := api.PgConn.Metrics.ExistsContainerAndDataPolicy(ctx, metric.Base.ContainerId, types.CTSNMPv2c, metric.Base.DataPolicyId, id)
+		r, err := api.PgConn.Metrics.ExistsContainerAndDataPolicy(ctx, metric.Base.ContainerId, metric.Base.DataPolicyId, id)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check container and data policy existence", logger.ErrField(err))
@@ -67,25 +67,25 @@ func UpdateSNMPv2cHandler(api *api.API, ct types.ContainerType) func(c *gin.Cont
 		}
 
 		// check metric if exists
-		if !e {
+		if !r.Exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
 			return
 		}
 
 		// check if data policy exists
-		if !dpe {
+		if !r.DataPolicyExists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgDataPolicyNotFound))
 			return
 		}
 
 		// check if container exists
-		if !ce {
+		if !r.ContainerExists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
 
 		// create SNMP metric
-		e, err = api.PgConn.SNMPv2cMetrics.Update(ctx, metric.Protocol)
+		exists, err := api.PgConn.SNMPv2cMetrics.Update(ctx, metric.Protocol)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to update snmp metric", logger.ErrField(err))
@@ -93,13 +93,13 @@ func UpdateSNMPv2cHandler(api *api.API, ct types.ContainerType) func(c *gin.Cont
 		}
 
 		// check if exists
-		if !e {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
 			return
 		}
 
 		// update metric
-		e, err = api.PgConn.Metrics.Update(ctx, metric.Base)
+		exists, err = api.PgConn.Metrics.Update(ctx, metric.Base)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to update base update", logger.ErrField(err))
@@ -107,7 +107,7 @@ func UpdateSNMPv2cHandler(api *api.API, ct types.ContainerType) func(c *gin.Cont
 		}
 
 		// check if metric exists
-		if !e {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
 			api.Log.Error("snmp metric exist but base metric don't")
 			return

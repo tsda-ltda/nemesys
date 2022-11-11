@@ -27,7 +27,7 @@ func CreateDefaultUser(ctx context.Context, api *api.API) error {
 	}
 
 	// save user
-	err = api.PgConn.Users.Create(ctx, models.User{
+	_, err = api.PgConn.Users.Create(ctx, models.User{
 		Role:     roles.Master,
 		Name:     "Default Master",
 		Username: env.DefaultUsername,

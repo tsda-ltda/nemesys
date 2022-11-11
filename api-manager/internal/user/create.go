@@ -38,7 +38,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if username and email exists
-		ue, ee, err := api.PgConn.Users.ExistsUsernameEmail(ctx, user.Username, user.Email)
+		r, err := api.PgConn.Users.ExistsUsernameEmail(ctx, user.Username, user.Email, -1)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if username and email exists", logger.ErrField(err))
@@ -46,13 +46,13 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if username is in use
-		if ue {
+		if r.UsernameExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgUsernameExists))
 			return
 		}
 
 		// check if email is in use
-		if ee {
+		if r.EmailExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgUsernameExists))
 			return
 		}
@@ -66,7 +66,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// save user in database
-		err = api.PgConn.Users.Create(ctx, models.User{
+		_, err = api.PgConn.Users.Create(ctx, models.User{
 			Role:     user.Role,
 			Name:     user.Name,
 			Username: user.Username,

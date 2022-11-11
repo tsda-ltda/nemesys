@@ -2,7 +2,6 @@ package ctxmetric
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -19,26 +18,11 @@ import (
 //   - 200 If succeeded.
 func DataHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		ctx := c.Request.Context()
-
-		// get metric id
-		id, err := strconv.ParseInt(c.Param("metricId"), 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
-			return
-		}
-
 		// get metric request
-		e, r, err := api.PgConn.ContextualMetrics.GetMetricRequestById(ctx, id)
+		r, err := tools.GetMetricRequest(c)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get contextual metric, team and context id on database", logger.ErrField(err))
-			return
-		}
-
-		// check if exists
-		if !e {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgContextualMetricNotFound))
+			api.Log.Error("fail to get metric request", logger.ErrField(err))
 			return
 		}
 

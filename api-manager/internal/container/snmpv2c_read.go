@@ -27,7 +27,7 @@ func GetSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// get container base information
-		e, base, err := api.PgConn.Containers.Get(ctx, int32(id))
+		base, err := api.PgConn.Containers.Get(ctx, int32(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get container", logger.ErrField(err))
@@ -35,13 +35,13 @@ func GetSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if exists
-		if !e {
+		if !base.Exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
 
 		// get snmp container
-		e, snmp, err := api.PgConn.SNMPv2cContainers.Get(ctx, int32(id))
+		protocol, err := api.PgConn.SNMPv2cContainers.Get(ctx, int32(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get SNMP container", logger.ErrField(err))
@@ -49,14 +49,14 @@ func GetSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if exists
-		if !e {
+		if !protocol.Exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
 
 		container := models.Container[models.SNMPv2cContainer]{
-			Base:     base,
-			Protocol: snmp,
+			Base:     base.Container,
+			Protocol: protocol.Container,
 		}
 
 		c.JSON(http.StatusOK, container)

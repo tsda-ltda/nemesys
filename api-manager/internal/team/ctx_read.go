@@ -22,12 +22,12 @@ func GetContextHandler(api *api.API) func(c *gin.Context) {
 		// context id
 		contextId, err := strconv.ParseInt(c.Param("ctxId"), 10, 32)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
 		// get contexts
-		e, context, err := api.PgConn.Contexts.Get(ctx, int32(contextId))
+		r, err := api.PgConn.Contexts.Get(ctx, int32(contextId))
 		if err != nil {
 			api.Log.Error("fail to get contexts", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
@@ -35,12 +35,12 @@ func GetContextHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if not exists
-		if !e {
-			c.Status(http.StatusNotFound)
+		if !r.Exists {
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, context)
+		c.JSON(http.StatusOK, r.Context)
 	}
 }
 

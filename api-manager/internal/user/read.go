@@ -27,7 +27,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// get user
-		user, e, err := api.PgConn.Users.GetWithoutPW(ctx, int32(id))
+		r, err := api.PgConn.Users.GetWithoutPW(ctx, int32(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if user exists", logger.ErrField(err))
@@ -35,12 +35,12 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if user exists
-		if !e {
+		if !r.Exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, user)
+		c.JSON(http.StatusOK, r.User)
 	}
 }
 

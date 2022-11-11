@@ -74,18 +74,18 @@ func (s *SNMPService) RegisterMetrics(ctx context.Context, req []models.MetricBa
 // RegisterMetric register a metric.
 func (s *SNMPService) RegisterMetric(ctx context.Context, id int64, t types.MetricType, ttl time.Duration) (metric *Metric, err error) {
 	// get metric configuration
-	e, conf, err := s.pgConn.SNMPv2cMetrics.Get(ctx, id)
+	r, err := s.pgConn.SNMPv2cMetrics.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	// check if exists
-	if !e {
+	if !r.Exists {
 		return nil, errors.New("snmp metric not found")
 	}
 
 	metric = &Metric{
-		SNMPMetric: conf,
+		SNMPMetric: r.Metric,
 		Id:         id,
 		Type:       t,
 		TTL:        ttl,

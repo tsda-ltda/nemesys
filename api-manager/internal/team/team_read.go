@@ -21,12 +21,12 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		// get team id
 		id, err := strconv.ParseInt(c.Param("id"), 10, 32)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
 		// get team
-		e, team, err := api.PgConn.Teams.Get(ctx, int32(id))
+		r, err := api.PgConn.Teams.Get(ctx, int32(id))
 		if err != nil {
 			api.Log.Error("fail to get team", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
@@ -34,12 +34,12 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if team  exists
-		if !e {
-			c.Status(http.StatusNotFound)
+		if !r.Exists {
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTeamNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, team)
+		c.JSON(http.StatusOK, r.Team)
 	}
 }
 

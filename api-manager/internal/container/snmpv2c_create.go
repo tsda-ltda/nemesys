@@ -66,7 +66,7 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// assign id
-		container.Protocol.ContainerId = int32(id)
+		container.Protocol.Id = int32(id)
 
 		// create snmp container
 		err = api.PgConn.SNMPv2cContainers.Create(ctx, container.Protocol)

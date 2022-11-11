@@ -10,13 +10,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Get multi contextual metrics on database
-// Params:
-//   - "limit" Limit of metrics returned. Default is 30, max is 30, min is 0.
-//   - "offset" Offset for searching. Default is 0, min is 0.
-//
+// Get a contextual metric.
 // Responses:
 //   - 400 If invalid params.
+//   - 404 If not found.
 //   - 200 If succeeded.
 func Get(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
@@ -30,7 +27,7 @@ func Get(api *api.API) func(c *gin.Context) {
 		}
 
 		// get metric
-		e, metric, err := api.PgConn.ContextualMetrics.Get(ctx, int64(id))
+		r, err := api.PgConn.ContextualMetrics.Get(ctx, int64(id))
 		if err != nil {
 			api.Log.Error("fail to get metrics", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
@@ -38,16 +35,16 @@ func Get(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if exists
-		if !e {
+		if !r.Exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, metric)
+		c.JSON(http.StatusOK, r.ContextualMetric)
 	}
 }
 
-// Get multi contextual metrics on database
+// Get multi contextual metrics.
 // Params:
 //   - "limit" Limit of metrics returned. Default is 30, max is 30, min is 0.
 //   - "offset" Offset for searching. Default is 0, min is 0.

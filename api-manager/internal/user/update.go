@@ -46,7 +46,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// get username and email availability
-		ue, ee, err := api.PgConn.Users.UsernameEmailAvailableToUpdate(ctx, int32(id), user.Username, user.Email)
+		r, err := api.PgConn.Users.ExistsUsernameEmail(ctx, user.Username, user.Email, int32(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if username and email exists", logger.ErrField(err))
@@ -54,13 +54,13 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if username exists
-		if ue {
+		if r.UsernameExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgUsernameExists))
 			return
 		}
 
 		// check if email exists
-		if ee {
+		if r.EmailExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgEmailExists))
 			return
 		}

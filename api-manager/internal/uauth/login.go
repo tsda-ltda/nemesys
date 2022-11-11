@@ -57,7 +57,7 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check password
-		if !auth.CheckHash(form.Password, li.PW) {
+		if !auth.CheckHash(form.Password, li.Password) {
 			c.JSON(http.StatusUnauthorized, tools.JSONMSG(tools.MsgWrongUsernameOrPW))
 			return
 		}

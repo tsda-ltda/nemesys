@@ -8,7 +8,6 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
-	"github.com/fernandotsda/nemesys/shared/types"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,7 +16,7 @@ import (
 //   - 400 If invalid params.
 //   - 404 If not found.
 //   - 200 If succeeded.
-func GetSNMPv2cHandler(api *api.API, ct types.ContainerType) func(c *gin.Context) {
+func GetSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
@@ -29,7 +28,7 @@ func GetSNMPv2cHandler(api *api.API, ct types.ContainerType) func(c *gin.Context
 		}
 
 		// get metric base information
-		e, base, err := api.PgConn.Metrics.Get(ctx, metricId)
+		base, err := api.PgConn.Metrics.Get(ctx, metricId)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get metric", logger.ErrField(err))
@@ -37,13 +36,13 @@ func GetSNMPv2cHandler(api *api.API, ct types.ContainerType) func(c *gin.Context
 		}
 
 		// check if exists
-		if !e {
+		if !base.Exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
 			return
 		}
 
 		// get snmp metric
-		e, snmp, err := api.PgConn.SNMPv2cMetrics.Get(ctx, metricId)
+		protocol, err := api.PgConn.SNMPv2cMetrics.Get(ctx, metricId)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get SNMP metric", logger.ErrField(err))
@@ -51,14 +50,14 @@ func GetSNMPv2cHandler(api *api.API, ct types.ContainerType) func(c *gin.Context
 		}
 
 		// check if exists
-		if !e {
+		if !protocol.Exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
 			return
 		}
 
 		metric := models.Metric[models.SNMPMetric]{
-			Base:     base,
-			Protocol: snmp,
+			Base:     base.Metric,
+			Protocol: protocol.Metric,
 		}
 
 		c.JSON(http.StatusOK, metric)

@@ -49,7 +49,7 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		metric.Base.ContainerType = types.CTSNMPv2c
 
 		// get if container and data policy exists
-		_, ce, dpe, err := api.PgConn.Metrics.ExistsContainerAndDataPolicy(ctx, metric.Base.ContainerId, types.CTSNMPv2c, metric.Base.DataPolicyId, -1)
+		r, err := api.PgConn.Metrics.ExistsContainerAndDataPolicy(ctx, metric.Base.ContainerId, metric.Base.DataPolicyId, -1)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check container and data policy existence", logger.ErrField(err))
@@ -57,13 +57,13 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if data policy exists
-		if !dpe {
+		if !r.DataPolicyExists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgDataPolicyNotFound))
 			return
 		}
 
 		// check if container exists
-		if !ce {
+		if !r.ContainerExists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}

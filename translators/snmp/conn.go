@@ -34,28 +34,28 @@ func (s *SNMPService) RegisterAgent(ctx context.Context, containerId int32, t ty
 	switch t {
 	case types.CTSNMPv2c:
 		// get snmpv2c protocol configuration
-		e, conf, err := s.pgConn.SNMPv2cContainers.Get(ctx, containerId)
+		r, err := s.pgConn.SNMPv2cContainers.Get(ctx, containerId)
 		if err != nil {
 			return nil, err
 		}
 
 		// check if container exists
-		if !e {
+		if !r.Exists {
 			return nil, errors.New("snmpv2c container does not exists")
 		}
 
 		// set ttl
-		ttl = conf.CacheDuration
+		ttl = r.Container.CacheDuration
 
 		// fill agent
 		agent = &g.GoSNMP{
-			Target:    conf.Target,
-			Port:      uint16(conf.Port),
-			Community: conf.Community,
-			Transport: conf.Transport,
-			Timeout:   time.Millisecond * time.Duration(conf.Timeout),
-			MaxOids:   int(conf.MaxOids),
-			Retries:   int(conf.Retries),
+			Target:    r.Container.Target,
+			Port:      uint16(r.Container.Port),
+			Community: r.Container.Community,
+			Transport: r.Container.Transport,
+			Timeout:   time.Millisecond * time.Duration(r.Container.Timeout),
+			MaxOids:   int(r.Container.MaxOids),
+			Retries:   int(r.Container.Retries),
 			Version:   g.Version2c,
 		}
 	default:
@@ -66,7 +66,7 @@ func (s *SNMPService) RegisterAgent(ctx context.Context, containerId int32, t ty
 	c := &Conn{
 		Id:     containerId,
 		TTL:    time.Millisecond * time.Duration(ttl),
-		Closed: make(chan any),
+		Closed: make(chan any, 1),
 		Agent:  agent,
 	}
 

@@ -101,7 +101,6 @@ func (s *RTS) MetricDataRequestListener() {
 
 			// parse metric id to string
 			metricIdString := strconv.FormatInt(int64(r.ContainerId), 10)
-
 			s.Log.Debug("get metric data request received, container id: " + metricIdString)
 
 			// get data on cache
@@ -113,20 +112,20 @@ func (s *RTS) MetricDataRequestListener() {
 				}
 
 				// get metric container type and RTS configuration
-				e, info, err := s.pgConn.Metrics.GetRTSConfig(ctx, r.MetricId)
+				res, err := s.pgConn.Metrics.GetRTSConfig(ctx, r.MetricId)
 				if err != nil {
 					s.Log.Error("fail to get metric rts information", logger.ErrField(err))
 					continue
 				}
 
 				// check if configuration does not exists
-				if !e {
+				if !res.Exists {
 					s.Log.Warn("fail to get metric rts information, metric does not exist")
 					continue
 				}
 
 				// start pulling
-				s.startMetricPulling(r, info)
+				s.startMetricPulling(r, res.RTSConfig)
 
 				// publish data when available
 				go func(correlationId string, r models.MetricRequest) {
@@ -138,7 +137,7 @@ func (s *RTS) MetricDataRequestListener() {
 					}
 
 					// set pending request
-					s.pendingMetricData[correlationId] = info
+					s.pendingMetricData[correlationId] = res.RTSConfig
 
 					// delete channel
 					defer func(correlationId string) {

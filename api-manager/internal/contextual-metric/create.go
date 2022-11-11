@@ -47,7 +47,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		// assign id
 		cmetric.ContextId = int32(contextId)
 
-		ce, me, ie, err := api.PgConn.ContextualMetrics.ExistsContextMetricAndIdent(ctx, cmetric.ContextId, cmetric.MetricId, cmetric.Ident, -1)
+		r, err := api.PgConn.ContextualMetrics.ExistsContextMetricAndIdent(ctx, cmetric.ContextId, cmetric.MetricId, cmetric.Ident, -1)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if context, metric and ident exists", logger.ErrField(err))
@@ -55,25 +55,25 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if context exists
-		if !ce {
+		if !r.ContextExists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextNotFound))
 			return
 		}
 
 		// check if metric exists
-		if !me {
+		if !r.MetricExists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
 			return
 		}
 
 		// check if ident exists
-		if ie {
+		if r.IdentExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}
 
 		// create contextual metric
-		err = api.PgConn.ContextualMetrics.Create(ctx, cmetric)
+		_, err = api.PgConn.ContextualMetrics.Create(ctx, cmetric)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			return

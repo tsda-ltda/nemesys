@@ -25,7 +25,7 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 		// get team id
 		teamId, err := strconv.ParseInt(c.Param("id"), 10, 32)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
@@ -33,19 +33,19 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 		var userId models.AddMemberReq
 		err = c.ShouldBind(&userId)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
 			return
 		}
 
 		// validate userid
 		err = api.Validate.Struct(userId)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
 		// get realation, user and team existence
-		re, ue, te, err := api.PgConn.Teams.ExistsRelUserTeam(ctx, userId.UserId, int32(teamId))
+		r, err := api.PgConn.Teams.ExistsRelUserTeam(ctx, userId.UserId, int32(teamId))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get realation, user and team existence", logger.ErrField(err))
@@ -53,14 +53,20 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if realation already exists
-		if re {
-			c.Status(http.StatusBadRequest)
+		if r.RelationExist {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgRelationExists))
 			return
 		}
 
-		// check if team or user doesn't exists
-		if !te || !ue {
-			c.Status(http.StatusNotFound)
+		// check if user exists
+		if !r.UserExists {
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
+			return
+		}
+
+		// check if team exists
+		if !r.TeamExists {
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTeamNotFound))
 			return
 		}
 
@@ -92,14 +98,14 @@ func RemoveMemberHandler(api *api.API) func(c *gin.Context) {
 		// get team teamId
 		teamId, err := strconv.ParseInt(rawTeamId, 10, 32)
 		if err != nil {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
 		// get user id
 		userId, err := strconv.ParseInt(rawUserId, 10, 32)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
@@ -113,7 +119,7 @@ func RemoveMemberHandler(api *api.API) func(c *gin.Context) {
 
 		// check if relation exists
 		if !e {
-			c.Status(http.StatusNotFound)
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMemberNotFound))
 			return
 		}
 

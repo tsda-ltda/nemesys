@@ -59,7 +59,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// save team in database
-		err = api.PgConn.Teams.Create(ctx, models.Team{
+		_, err = api.PgConn.Teams.Create(ctx, models.Team{
 			Name:  team.Name,
 			Ident: team.Ident,
 			Descr: team.Descr,

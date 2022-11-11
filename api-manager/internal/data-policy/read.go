@@ -44,7 +44,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// get data policies
-		e, dp, err := api.PgConn.DataPolicy.Get(ctx, int16(id))
+		r, err := api.PgConn.DataPolicy.Get(ctx, int16(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to read data policy", logger.ErrField(err))
@@ -52,11 +52,11 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if exists
-		if !e {
+		if !r.Exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgDataPolicyNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, dp)
+		c.JSON(http.StatusOK, r.DataPolicy)
 	}
 }

@@ -11,71 +11,90 @@ type Users struct {
 	*pgx.Conn
 }
 
-type LoginInfo struct {
-	Id     int
-	Role   int
-	PW     string
+// UsersExistsUsernameEmailResponse is the response for ExistsUsernameEmailResponse handler.
+type UsersExistsUsernameEmailResponse struct {
+	// UsernameExists is the username existence.
+	UsernameExists bool
+	// EmailExists is the email existence.
+	EmailExists bool
+}
+
+// UsersLoginInfoResponse is the response for GetLoginInfo handler.
+type UsersLoginInfoResponse struct {
+	// Exists is the user existence.
 	Exists bool
+	// Id is the user id.
+	Id int
+	// Role is the user role.
+	Role int
+	// Password is the user password.
+	Password string
+}
+
+// UsersGetWithoutPWResponse is the response for GetWithoutPW handler.
+type UsersGetWithoutPWResponse struct {
+	// Exists is the user existence.
+	Exists bool
+	// User is the user.
+	User models.UserWithoutPW
+}
+
+// UsersGetRoleResponse is the response for GetRole handler.
+type UsersGetRoleResponse struct {
+	// Exists is the user existence.
+	Exists bool
+	// Role is the user role
+	Role int16
 }
 
 const (
-	sqlUsersExists              = `SELECT EXISTS(SELECT 1 FROM users WHERE id = $1);`
-	sqlUsersExistsUsername      = `SELECT EXISTS(SELECT 1 FROM users WHERE username = $1);`
-	sqlUsersExistsUsernameEmail = `SELECT EXISTS (
-		SELECT 1 FROM users WHERE username = $1
-		) as EX1, EXISTS (
-			SELECT 1 FROM users WHERE email = $2
-		) as EX2;`
-	sqlUsersCreate         = `INSERT INTO users (role, name, username, password, email) VALUES($1, $2, $3, $4, $5);`
+	sqlUsersExistsUsernameEmail = `SELECT 
+		EXISTS (SELECT 1 FROM users WHERE username = $2 AND id != $1), 
+		EXISTS (SELECT 1 FROM users WHERE email = $3 AND id != $1);`
+	sqlUsersExistsUsername = `SELECT EXISTS(SELECT 1 FROM users WHERE username = $1);`
+	sqlUsersExists         = `SELECT EXISTS(SELECT 1 FROM users WHERE id = $1);`
+	sqlUsersCreate         = `INSERT INTO users (role, name, username, password, email) VALUES($1, $2, $3, $4, $5) RETURNING id;`
 	sqlUsersUpdate         = `UPDATE users SET (role, name, username, password, email) = ($1, $2, $3, $4, $5) WHERE id = $6`
 	sqlUsersDelete         = `DELETE FROM users WHERE id=$1;`
 	sqlUsersMGetSimplified = `SELECT id, username, name FROM users LIMIT $1 OFFSET $2;`
 	sqlUsersGetWithoutPW   = `SELECT username, name, email, role FROM users WHERE id = $1;`
 	sqlUsersLoginInfo      = `SELECT id, role, password FROM users WHERE username = $1;`
 	sqlUsersGetRole        = `SELECT role FROM users WHERE id = $1;`
-
-	sqlUsersUsernameEmailAvailableUpdate = `SELECT 
-		EXISTS (SELECT 1 FROM users WHERE  id != $1 AND username = $2),
-		EXISTS (SELECT 1 FROM users WHERE id != $1 AND username = $3);`
-	sqlUsersTeams = `SELECT id, name, ident, descr FROM teams t 
+	sqlUsersTeams          = `SELECT id, name, ident, descr FROM teams t 
 		LEFT JOIN users_teams ut ON ut.team_id = t.id 
 		WHERE ut.user_id = $1 LIMIT $2 OFFSET $3;`
 )
 
-// Exists return the existence of user. Returns an error if fails to check.
-func (c *Users) Exists(ctx context.Context, id int32) (e bool, err error) {
-	err = c.QueryRow(ctx, sqlUsersExists, id).Scan(&e)
-	return e, err
+// Exists return the existence of user.
+func (c *Users) Exists(ctx context.Context, id int32) (exists bool, err error) {
+	return exists, c.QueryRow(ctx, sqlUsersExists, id).Scan(&exists)
 }
 
 // ExistsUsername returns the existence of a user's username.
-// Returns an error if fails to check.
-func (c *Users) ExistsUsername(ctx context.Context, username string) (e bool, err error) {
-	err = c.QueryRow(ctx, sqlUsersExistsUsername, username).Scan(&e)
-	return e, err
+func (c *Users) ExistsUsername(ctx context.Context, username string) (exists bool, err error) {
+	return exists, c.QueryRow(ctx, sqlUsersExistsUsername, username).Scan(&exists)
 }
 
 // ExistsUsernameEmail returns the existence of a user's username and email.
-// Returns an error if fails to check.
-func (c *Users) ExistsUsernameEmail(ctx context.Context, username string, email string) (ue bool, ee bool, err error) {
-	err = c.QueryRow(ctx, sqlUsersExistsUsernameEmail, username, email).Scan(&ue, &ee)
-	return ue, ee, err
+func (c *Users) ExistsUsernameEmail(ctx context.Context, username string, email string, userId int32) (r UsersExistsUsernameEmailResponse, err error) {
+	return r, c.QueryRow(ctx, sqlUsersExistsUsernameEmail, userId, username, email).Scan(
+		&r.UsernameExists,
+		&r.EmailExists,
+	)
 }
 
-// Create saves an user in database. Returns an err if fails to create.
-func (c *Users) Create(ctx context.Context, user models.User) error {
-	_, err := c.Exec(ctx, sqlUsersCreate, user.Role, user.Name, user.Username, user.Password, user.Email)
-	return err
+// Create saves an user in database.
+func (c *Users) Create(ctx context.Context, user models.User) (id int32, err error) {
+	return id, c.QueryRow(ctx, sqlUsersCreate, user.Role, user.Name, user.Username, user.Password, user.Email).Scan(&id)
 }
 
-// Delete deletes a user by id if exists. Returns an error if fails to delete.
+// Delete deletes a user by id if exists.
 func (c *Users) Delete(ctx context.Context, id int32) (e bool, err error) {
 	t, err := c.Exec(ctx, sqlUsersDelete, id)
 	return t.RowsAffected() != 0, err
 }
 
 // MGetSimplified returns simplified users with a limit and a offset.
-// Returns an error if fails to get users.
 func (c *Users) MGetSimplified(ctx context.Context, limit int, offset int) (users []models.UserSimplified, err error) {
 	users = []models.UserSimplified{}
 	rows, err := c.Query(ctx, sqlUsersMGetSimplified, limit, offset)
@@ -95,38 +114,30 @@ func (c *Users) MGetSimplified(ctx context.Context, limit int, offset int) (user
 }
 
 // GetWithout returns a user without password and it's existence.
-// Returns an error if fail to get user.
-func (c *Users) GetWithoutPW(ctx context.Context, id int32) (user models.UserWithoutPW, e bool, err error) {
+func (c *Users) GetWithoutPW(ctx context.Context, id int32) (r UsersGetWithoutPWResponse, err error) {
 	rows, err := c.Query(ctx, sqlUsersGetWithoutPW, id)
 	if err != nil {
-		return user, false, err
+		return r, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&user.Username,
-			&user.Name,
-			&user.Email,
-			&user.Role,
+			&r.User.Username,
+			&r.User.Name,
+			&r.User.Email,
+			&r.User.Role,
 		)
 		if err != nil {
-			return user, false, err
+			return r, err
 		}
-		user.Id = id
-		e = true
+		r.User.Id = id
+		r.Exists = true
 	}
-	return user, e, nil
+	return r, nil
 }
 
-// UsernameEmailAvailableToUpdate returns if a username and a email is available to update.
-// Returns an error if fail to check.
-func (c *Users) UsernameEmailAvailableToUpdate(ctx context.Context, id int32, username string, email string) (ue bool, ee bool, err error) {
-	err = c.QueryRow(ctx, sqlUsersUsernameEmailAvailableUpdate, id, username, email).Scan(&ue, &ee)
-	return ue, ee, err
-}
-
-// Update updates a user if exists. Returns an error if fail to update user.
-func (c *Users) Update(ctx context.Context, user models.User) (e bool, err error) {
+// Update updates a user if exists.
+func (c *Users) Update(ctx context.Context, user models.User) (exists bool, err error) {
 	t, err := c.Exec(ctx, sqlUsersUpdate,
 		user.Role,
 		user.Name,
@@ -142,43 +153,44 @@ func (c *Users) Update(ctx context.Context, user models.User) (e bool, err error
 }
 
 // LoginInfo returns the information necessary to check a login attempt.
-// Returns an error if fails to get the information.
-func (c *Users) LoginInfo(ctx context.Context, username string) (li LoginInfo, err error) {
+func (c *Users) LoginInfo(ctx context.Context, username string) (r UsersLoginInfoResponse, err error) {
 	rows, err := c.Query(ctx, sqlUsersLoginInfo, username)
 	if err != nil {
-		return li, err
+		return r, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err = rows.Scan(&li.Id, &li.Role, &li.PW)
+		err = rows.Scan(
+			&r.Id,
+			&r.Role,
+			&r.Password,
+		)
 		if err != nil {
-			return li, err
+			return r, err
 		}
-		li.Exists = true
+		r.Exists = true
 	}
-	return li, nil
+	return r, nil
 }
 
 // GetRole returns an user's role if the user exists.
-// Returns an error if fails to get role.
-func (c *Users) GetRole(ctx context.Context, id int32) (e bool, role int, err error) {
+func (c *Users) GetRole(ctx context.Context, id int32) (r UsersGetRoleResponse, err error) {
 	rows, err := c.Query(ctx, sqlUsersGetRole, id)
 	if err != nil {
-		return false, role, err
+		return r, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err = rows.Scan(&role)
+		err = rows.Scan(&r.Role)
 		if err != nil {
-			return false, role, err
+			return r, err
 		}
-		e = true
+		r.Exists = true
 	}
-	return e, role, nil
+	return r, nil
 }
 
 // Teams returns all user's teams with a limit and offset.
-// Returns an error if fail to get teams.
 func (c *Users) Teams(ctx context.Context, userId int32, limit int, offset int) (teams []models.Team, err error) {
 	teams = []models.Team{}
 	rows, err := c.Query(ctx, sqlUsersTeams, userId, limit, offset)

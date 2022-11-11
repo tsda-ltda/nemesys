@@ -33,7 +33,7 @@ func Logout(api *api.API) func(c *gin.Context) {
 		// remove session
 		err = api.Auth.RemoveSession(ctx, meta.UserId)
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgSessionAlreadyRemoved))
 			return
 		}
 		api.Log.Debug(fmt.Sprintf("user '%d' logout with success", meta.UserId))
@@ -68,7 +68,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 		}
 
 		// get user role
-		e, role, err := api.PgConn.Users.GetRole(ctx, int32(id))
+		r, err := api.PgConn.Users.GetRole(ctx, int32(id))
 		if err != nil {
 			api.Log.Error("fail to get user role", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
@@ -76,13 +76,13 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if user exists
-		if !e {
+		if !r.Exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
 			return
 		}
 
 		// check if target's role is superior
-		if uint8(role) > meta.Role {
+		if uint8(r.Role) > meta.Role {
 			c.Status(http.StatusForbidden)
 			return
 		}

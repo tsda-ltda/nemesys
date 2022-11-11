@@ -36,14 +36,14 @@ func ParseContextParams(api *api.API) func(c *gin.Context) {
 		}
 
 		// get ids
-		e, cid, tid, err := api.PgConn.Contexts.GetIdsByIdent(ctx, ctxRawId, teamRawId)
+		r, err := api.PgConn.Contexts.GetIdsByIdent(ctx, ctxRawId, teamRawId)
 		if err != nil {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 
 		// check if exists
-		if !e {
+		if !r.Exists {
 			c.AbortWithStatusJSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextNotFound))
 			return
 		}
@@ -54,12 +54,12 @@ func ParseContextParams(api *api.API) func(c *gin.Context) {
 			case "ctxId":
 				c.Params[i] = gin.Param{
 					Key:   "ctxId",
-					Value: strconv.FormatInt(int64(cid), 10),
+					Value: strconv.FormatInt(int64(r.ContextId), 10),
 				}
 			case "id":
 				c.Params[i] = gin.Param{
 					Key:   "id",
-					Value: strconv.FormatInt(int64(tid), 10),
+					Value: strconv.FormatInt(int64(r.TeamId), 10),
 				}
 			}
 		}
@@ -95,7 +95,7 @@ func ParseContextualMetricParams(api *api.API) func(c *gin.Context) {
 		}
 
 		// fetch ids on database
-		e, mid, cid, tid, err := api.PgConn.ContextualMetrics.GetIdByIdent(ctx, metricRawId, ctxRawId, teamRawId)
+		r, err := api.PgConn.ContextualMetrics.GetIdsByIdent(ctx, metricRawId, ctxRawId, teamRawId)
 		if err != nil {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			api.Log.Error("fail to get ids on database", logger.ErrField(err))
@@ -103,7 +103,7 @@ func ParseContextualMetricParams(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if exists
-		if !e {
+		if !r.Exists {
 			c.AbortWithStatusJSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
 			return
 		}
@@ -111,20 +111,20 @@ func ParseContextualMetricParams(api *api.API) func(c *gin.Context) {
 		// set params
 		for i, v := range c.Params {
 			switch v.Key {
+			case "id":
+				c.Params[i] = gin.Param{
+					Key:   "id",
+					Value: strconv.FormatInt(int64(r.TeamId), 10),
+				}
 			case "metricId":
 				c.Params[i] = gin.Param{
 					Key:   "metricId",
-					Value: strconv.FormatInt(mid, 10),
+					Value: strconv.FormatInt(r.ContextualMetricId, 10),
 				}
 			case "ctxId":
 				c.Params[i] = gin.Param{
 					Key:   "ctxId",
-					Value: strconv.FormatInt(int64(cid), 10),
-				}
-			case "id":
-				c.Params[i] = gin.Param{
-					Key:   "id",
-					Value: strconv.FormatInt(int64(tid), 10),
+					Value: strconv.FormatInt(int64(r.ContextId), 10),
 				}
 			}
 		}
