@@ -49,6 +49,7 @@ var sqlCommands []string = []string{
 		name VARCHAR (50) NOT NULL,
 		descr VARCHAR (255) NOT NULL,
 		type INT2 NOT NULL,
+		enabled BOOLEAN NOT NULL,
 		rts_pulling_interval INT4 NOT NULL
 	);`,
 
@@ -63,6 +64,7 @@ var sqlCommands []string = []string{
 		type INT2 NOT NULL,
 		name VARCHAR (50) NOT NULL,
 		descr VARCHAR (255) NOT NULL,
+		enabled BOOLEAN NOT NULL,
 		data_policy_id INT4 NOT NULL,
 		rts_pulling_times INT2 NOT NULL,
 		rts_cache_duration INT4 NOT NULL,

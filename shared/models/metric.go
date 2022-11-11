@@ -29,6 +29,8 @@ type BaseMetricSimplified struct {
 	Name string `json:"name" validate:"required,max=50"`
 	// Descr is the metric description.
 	Descr string `json:"descr" validate:"required,max=255"`
+	// Enabled is the metric enable state.
+	Enabled bool `json:"enabled" validade:"-"`
 }
 
 type BaseMetric struct {
@@ -44,6 +46,8 @@ type BaseMetric struct {
 	Name string `json:"name" validate:"required,max=50"`
 	// Descr is the metric description.
 	Descr string `json:"descr" validate:"required,max=255"`
+	// Enabled is the metric enable state.
+	Enabled bool `json:"enabled" validade:"-"`
 	// DataPolicyId is the metric data policy identifier.
 	DataPolicyId int16 `json:"data-policy-id" validate:"required"`
 	// RTSPullingTimes is how many times will pull the data.

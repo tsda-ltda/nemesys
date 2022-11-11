@@ -7,7 +7,7 @@ type RTSMetricConfig struct {
 	CacheDuration int32
 }
 
-type RTSContainerInfo struct {
+type RTSContainerConfig struct {
 	// PullingInterval is the interval between each data request in miliseconds.
 	PullingInterval int32
 }

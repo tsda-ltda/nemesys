@@ -1,8 +1,8 @@
 package models
 
 type SNMPv2cContainer struct {
-	// ContainerId is the container id.
-	ContainerId int32 `json:"container-id" validate:"-"`
+	// Id is the container id.
+	Id int32 `json:"container-id" validate:"-"`
 
 	// CacheDuration is the cache duration in miliseconds of this configuration on the SNMP service.
 	CacheDuration int32 `json:"cache-duration" validate:"required"`

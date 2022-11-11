@@ -18,6 +18,8 @@ type BaseContainer struct {
 	Descr string `json:"descr" validate:"required,max=255"`
 	// Type is the container type.
 	Type types.ContainerType `json:"type" validate:"-"`
+	// Enabled is the enable state.
+	Enabled bool `json:"enabled" validate:"-"`
 	// RTSPullingInterval is the interval in miliseconds between each metric data pull. Max is one hour.
 	RTSPullingInterval int32 `json:"rts-pulling-interval" validate:"required,min=100,max=3600000"`
 }
