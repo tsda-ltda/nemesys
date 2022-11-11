@@ -135,7 +135,7 @@ func (s *RTS) setupNotificationHandler() {
 		c.Close()
 	})
 
-	// update metric type and RTS info on update
+	// stop metric pulling on update
 	s.amqph.Notifications.Subscribe(amqph.MetricUpdated, "", func(d any) {
 		n := d.(amqph.MetricNotification)
 		c, ok := s.pulling[n.Base.ContainerId]
@@ -146,11 +146,7 @@ func (s *RTS) setupNotificationHandler() {
 		if !ok {
 			return
 		}
-		m.Type = n.Base.Type
-		m.RTSMetricConfig = models.RTSMetricConfig{
-			PullingTimes:  n.Base.RTSPullingTimes,
-			CacheDuration: n.Base.RTSCacheDuration,
-		}
+		m.Stop()
 	})
 
 	// stop metric pulling on metric delete
