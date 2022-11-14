@@ -8,6 +8,7 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/fernandotsda/nemesys/shared/types"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,6 +35,7 @@ func GetSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("fail to get metric", logger.ErrField(err))
 			return
 		}
+		base.Metric.ContainerType = types.CTSNMPv2c
 
 		// check if exists
 		if !base.Exists {
@@ -41,7 +43,7 @@ func GetSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// get snmp metric
+		// get metric
 		protocol, err := api.PgConn.SNMPv2cMetrics.Get(ctx, metricId)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
