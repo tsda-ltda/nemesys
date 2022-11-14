@@ -102,7 +102,7 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		exists, err = api.PgConn.Metrics.Update(ctx, metric.Base)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to update base update", logger.ErrField(err))
+			api.Log.Error("fail to update base metric", logger.ErrField(err))
 			return
 		}
 

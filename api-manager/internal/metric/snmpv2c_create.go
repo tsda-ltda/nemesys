@@ -74,7 +74,6 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("fail to create base metric", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("base metric created, name: " + metric.Base.Name)
 
 		// assign id
 		metric.Protocol.Id = id
@@ -85,7 +84,7 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("fail to create snmp metric", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("snmp metric created, name" + metric.Base.Name)
+		api.Log.Debug("snmp metric created, name: " + metric.Base.Name)
 		api.Amqph.NotifyMetricCreated(metric.Base, metric.Protocol, types.CTSNMPv2c)
 
 		c.Status(http.StatusOK)
