@@ -10,6 +10,8 @@ import (
 	g "github.com/gosnmp/gosnmp"
 )
 
+var ErrContainerNotExists = errors.New("container does not exists")
+
 // Conn is the SNMP connection representation.
 type Conn struct {
 	// Id is the connection id.
@@ -41,7 +43,33 @@ func (s *SNMPService) RegisterAgent(ctx context.Context, containerId int32, t ty
 
 		// check if container exists
 		if !r.Exists {
-			return nil, errors.New("snmpv2c container does not exists")
+			return nil, ErrContainerNotExists
+		}
+
+		// set ttl
+		ttl = r.Container.CacheDuration
+
+		// fill agent
+		agent = &g.GoSNMP{
+			Target:    r.Container.Target,
+			Port:      uint16(r.Container.Port),
+			Community: r.Container.Community,
+			Transport: r.Container.Transport,
+			Timeout:   time.Millisecond * time.Duration(r.Container.Timeout),
+			MaxOids:   int(r.Container.MaxOids),
+			Retries:   int(r.Container.Retries),
+			Version:   g.Version2c,
+		}
+	case types.CTFlexLegacy:
+		// get flex legacy protocol configuration
+		r, err := s.pgConn.FlexLegacyContainers.GetSNMPConfig(ctx, containerId)
+		if err != nil {
+			return nil, err
+		}
+
+		// check if container exists
+		if !r.Exists {
+			return nil, ErrContainerNotExists
 		}
 
 		// set ttl

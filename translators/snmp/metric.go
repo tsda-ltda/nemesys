@@ -10,6 +10,8 @@ import (
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
+var ErrMetricNotFound = errors.New("snmp metric not found")
+
 // Metric is a models.SNMPMetric extention.
 type Metric struct {
 	models.SNMPMetric
@@ -26,17 +28,29 @@ type Metric struct {
 	OnClose func(c *Metric)
 }
 
-func (s *SNMPService) RegisterMetrics(ctx context.Context, req []models.MetricBasicRequestInfo, ttl time.Duration) (metrics []*Metric, err error) {
+func (s *SNMPService) RegisterMetrics(ctx context.Context, req []models.MetricBasicRequestInfo, containerType types.ContainerType, ttl time.Duration) (metrics []*Metric, err error) {
+	// get metrics ids
 	ids := make([]int64, len(req))
 	for i, m := range req {
 		ids[i] = m.Id
 	}
 
-	// get metrics configuration
-	confs, err := s.pgConn.SNMPv2cMetrics.GetByIds(ctx, ids)
+	// get SNMP config
+	confs := make([]models.SNMPMetric, 0, len(req))
+	switch containerType {
+	case types.CTSNMPv2c:
+		confs, err = s.pgConn.SNMPv2cMetrics.GetByIds(ctx, ids)
+
+	case types.CTFlexLegacy:
+		confs, err = s.pgConn.FlexLegacyMetrics.GetByIdsAsSNMPMetric(ctx, ids)
+	}
+
+	// check errs
 	if err != nil {
 		return metrics, err
 	}
+
+	// create metrics
 	metrics = make([]*Metric, len(ids))
 	for i, conf := range confs {
 		// find type
@@ -72,22 +86,37 @@ func (s *SNMPService) RegisterMetrics(ctx context.Context, req []models.MetricBa
 }
 
 // RegisterMetric register a metric.
-func (s *SNMPService) RegisterMetric(ctx context.Context, id int64, t types.MetricType, ttl time.Duration) (metric *Metric, err error) {
-	// get metric configuration
-	r, err := s.pgConn.SNMPv2cMetrics.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
+func (s *SNMPService) RegisterMetric(ctx context.Context, request models.MetricRequest, ttl time.Duration) (metric *Metric, err error) {
+	var snmpMetric models.SNMPMetric
 
-	// check if exists
-	if !r.Exists {
-		return nil, errors.New("snmp metric not found")
+	// get metric configuration
+	switch request.ContainerType {
+	case types.CTSNMPv2c:
+		r, err := s.pgConn.SNMPv2cMetrics.Get(ctx, request.MetricId)
+		if err != nil {
+			return nil, err
+		}
+		if !r.Exists {
+			return nil, ErrMetricNotFound
+		}
+
+		snmpMetric = r.Metric
+	case types.CTFlexLegacy:
+		r, err := s.pgConn.FlexLegacyMetrics.GetAsSNMPMetric(ctx, request.MetricId)
+		if err != nil {
+			return nil, err
+		}
+		if !r.Exists {
+			return nil, ErrMetricNotFound
+		}
+
+		snmpMetric = r.Metric
 	}
 
 	metric = &Metric{
-		SNMPMetric: r.Metric,
-		Id:         id,
-		Type:       t,
+		SNMPMetric: snmpMetric,
+		Id:         request.MetricId,
+		Type:       request.MetricType,
 		TTL:        ttl,
 		Ticker:     time.NewTicker(ttl),
 	}
@@ -101,7 +130,7 @@ func (s *SNMPService) RegisterMetric(ctx context.Context, id int64, t types.Metr
 	}
 
 	// save connection
-	s.metrics[id] = metric
+	s.metrics[request.MetricId] = metric
 	return metric, nil
 }
 

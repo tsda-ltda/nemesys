@@ -113,7 +113,7 @@ func (s *SNMPService) getMetricListener() {
 			// get metric oid
 			metric, ok := s.metrics[r.MetricId]
 			if !ok {
-				metric, err = s.RegisterMetric(ctx, r.MetricId, r.MetricType, c.TTL)
+				metric, err = s.RegisterMetric(ctx, r, c.TTL)
 				if err != nil {
 					s.Log.Error("fail to register metric", logger.ErrField(err))
 					continue
@@ -276,7 +276,7 @@ func (s *SNMPService) getMetricsListener() {
 
 			if len(metricsToRegister) > 0 {
 				// register metrics
-				newMetrics, err := s.RegisterMetrics(ctx, metricsToRegister, c.TTL)
+				newMetrics, err := s.RegisterMetrics(ctx, metricsToRegister, r.ContainerType, c.TTL)
 				if err != nil {
 					s.Log.Error("fail to register metrics", logger.ErrField(err))
 					continue

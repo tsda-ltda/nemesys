@@ -96,16 +96,50 @@ var sqlCommands []string = []string{
 				ON DELETE CASCADE
 	);`,
 
-	// Create SNMP container index on container id
-	`CREATE INDEX snmpv2c_containers_container_id_index ON snmpv2c_containers (container_id);`,
-
-	// Create unique SNMP container index on target and port
+	// Create index on target and port
 	`CREATE UNIQUE INDEX snmpv2c_containers_target_port_index ON snmpv2c_containers (target, port);`,
+
+	// Create Flex Legacy container
+	`CREATE TABLE flex_legacy_containers (
+		container_id INT4 UNIQUE NOT NULL,
+		target VARCHAR (15) NOT NULL,
+		port INT4 NOT NULL,
+		transport VARCHAR (3) NOT NULL,
+		community VARCHAR (50) NOT NULL,
+		retries INT2 NOT NULL,
+		max_oids INT2 NOT NULL,
+		timeout INT4 NOT NULL,
+		cache_duration INT4 NOT NULL,
+		serial_number INT4 UNIQUE NOT NULL,
+		model INT2 NOT NULL,
+		city VARCHAR (50) NOT NULL,
+		region VARCHAR (50) NOT NULL,
+		country VARCHAR (50) NOT NULL,
+		CONSTRAINT fk_container_id
+			FOREIGN KEY(container_id)
+				REFERENCES containers(id)
+				ON DELETE CASCADE
+	);`,
+
+	// Create index on target and port
+	`CREATE UNIQUE INDEX flex_legacy_target_port_index ON flex_legacy_containers (target, port);`,
 
 	// SNMP metrics table
 	`CREATE TABLE snmpv2c_metrics (
 		metric_id INT8 UNIQUE NOT NULL,
 		oid VARCHAR (128) NOT NULL,
+		CONSTRAINT fk_metric_id
+			FOREIGN KEY(metric_id)
+				REFERENCES metrics(id)
+				ON DELETE CASCADE
+	);`,
+
+	// Flex Legacy metrics table
+	`CREATE TABLE flex_legacy_metrics (
+		metric_id INT8 UNIQUE NOT NULL,
+		oid VARCHAR (128) NOT NULL,
+		port INT2 NOT NULL,
+		port_type INT2 NOT NULL,
 		CONSTRAINT fk_metric_id
 			FOREIGN KEY(metric_id)
 				REFERENCES metrics(id)

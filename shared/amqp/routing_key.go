@@ -6,6 +6,8 @@ func GetDataRoutingKey(t types.ContainerType) string {
 	switch t {
 	case types.CTSNMPv2c:
 		return "snmp"
+	case types.CTFlexLegacy:
+		return "snmp"
 	default:
 		return "snmp"
 	}

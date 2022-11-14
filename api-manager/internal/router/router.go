@@ -68,14 +68,14 @@ func Set(api *api.API) {
 		}
 
 		// contextual metrics
-		ctxMetric := ctx.Group("/:ctxId/metrics")
+		ctxMetrics := ctx.Group("/:ctxId/metrics")
 		{
-			ctxMetric.GET("/", middleware.ParseContextParams(api), ctxmetric.MGet(api))
-			ctxMetric.GET("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.Get(api))
-			ctxMetric.GET("/:metricId/data", middleware.ParseContextualMetricParams(api), middleware.MetricRequest(api), ctxmetric.DataHandler(api))
-			ctxMetric.POST("/", middleware.ParseContextParams(api), ctxmetric.CreateHandler(api))
-			ctxMetric.PATCH("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.UpdateHandler(api))
-			ctxMetric.DELETE("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.DeleteHandler(api))
+			ctxMetrics.GET("/", middleware.ParseContextParams(api), ctxmetric.MGet(api))
+			ctxMetrics.GET("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.Get(api))
+			ctxMetrics.GET("/:metricId/data", middleware.ParseContextualMetricParams(api), middleware.MetricRequest(api), ctxmetric.DataHandler(api))
+			ctxMetrics.POST("/", middleware.ParseContextParams(api), ctxmetric.CreateHandler(api))
+			ctxMetrics.PATCH("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.UpdateHandler(api))
+			ctxMetrics.DELETE("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.DeleteHandler(api))
 		}
 	}
 
@@ -99,11 +99,31 @@ func Set(api *api.API) {
 		SNMPv2c.PATCH("/:containerId", container.UpdateSNMPv2cHandler(api))
 		SNMPv2c.DELETE("/:containerId", container.DeleteHandler(api))
 
-		// metric
-		SNMPv2c.GET("/:containerId/metrics", metric.MGet(api, types.CTSNMPv2c))
-		SNMPv2c.GET("/:containerId/metrics/:metricId", metric.GetSNMPv2cHandler(api))
-		SNMPv2c.POST("/:containerId/metrics", metric.CreateSNMPv2cHandler(api))
-		SNMPv2c.PATCH("/:containerId/metrics/:metricId", metric.UpdateSNMPv2cHandler(api))
-		SNMPv2c.DELETE("/:containerId/metrics/:metricId", metric.DeleteHandler(api))
+		metrics := SNMPv2c.Group("/:containerId/metrics")
+		{
+			metrics.GET("/", metric.MGet(api, types.CTSNMPv2c))
+			metrics.GET("/:metricId", metric.GetSNMPv2cHandler(api))
+			metrics.POST("/", metric.CreateSNMPv2cHandler(api))
+			metrics.PATCH("/:metricId", metric.UpdateSNMPv2cHandler(api))
+			metrics.DELETE("/:metricId", metric.DeleteHandler(api))
+		}
+	}
+
+	flexLegacy := r.Group("/containers/flex-legacy", middleware.Protect(api, roles.Admin))
+	{
+		flexLegacy.GET("/", container.MGet(api, types.CTFlexLegacy))
+		flexLegacy.GET("/:containerId", container.GetFlexLegacyHandler(api))
+		flexLegacy.POST("/", container.CreateFlexLegacy(api))
+		flexLegacy.PATCH("/:containerId", container.UpdateFlexLegacy(api))
+		flexLegacy.DELETE(":containerId", container.DeleteHandler(api))
+
+		metrics := flexLegacy.Group("/:containerId/metrics")
+		{
+			metrics.GET("/", metric.MGet(api, types.CTFlexLegacy))
+			metrics.GET("/:metricId", metric.GetFlexLegacyHandler(api))
+			metrics.POST("/", metric.CreateFlexLegacyHandler(api))
+			metrics.PATCH("/:metricId", metric.UpdateFlexLegacyHandler(api))
+			metrics.DELETE("/:metricId", metric.DeleteHandler(api))
+		}
 	}
 }

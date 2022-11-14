@@ -5,4 +5,5 @@ type ContainerType byte
 const (
 	CTUnknown ContainerType = iota
 	CTSNMPv2c
+	CTFlexLegacy
 )
