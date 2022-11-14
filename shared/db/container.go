@@ -48,7 +48,7 @@ const (
 )
 
 // Create crates a container returning it's id.
-func (c *BaseContainers) Create(ctx context.Context, container models.BaseContainer) (id int, err error) {
+func (c *BaseContainers) Create(ctx context.Context, container models.BaseContainer) (id int32, err error) {
 	return id, c.QueryRow(ctx, sqlContainersCreate,
 		container.Name,
 		container.Descr,

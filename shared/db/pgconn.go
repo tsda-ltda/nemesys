@@ -10,15 +10,17 @@ import (
 
 type PgConn struct {
 	*pgx.Conn
-	Users             Users
-	Teams             Teams
-	DataPolicy        DataPolicy
-	Contexts          Contexts
-	ContextualMetrics ContextualMetrics
-	Metrics           Metrics
-	Containers        BaseContainers
-	SNMPv2cContainers SNMPv2cContainers
-	SNMPv2cMetrics    SNMPv2cMetrics
+	Users                Users
+	Teams                Teams
+	DataPolicy           DataPolicy
+	Contexts             Contexts
+	ContextualMetrics    ContextualMetrics
+	Metrics              Metrics
+	Containers           BaseContainers
+	SNMPv2cContainers    SNMPv2cContainers
+	SNMPv2cMetrics       SNMPv2cMetrics
+	FlexLegacyContainers FlexLegacyContainers
+	FlexLegacyMetrics    FlexLegacyMetrics
 }
 
 // Connects to a Postgresql database server
@@ -38,15 +40,17 @@ func ConnectToPG() (*PgConn, error) {
 	}
 
 	return &PgConn{
-		Conn:              conn,
-		Users:             Users{Conn: conn},
-		Teams:             Teams{Conn: conn},
-		Contexts:          Contexts{Conn: conn},
-		ContextualMetrics: ContextualMetrics{Conn: conn},
-		Metrics:           Metrics{Conn: conn},
-		DataPolicy:        DataPolicy{Conn: conn},
-		Containers:        BaseContainers{Conn: conn},
-		SNMPv2cContainers: SNMPv2cContainers{Conn: conn},
-		SNMPv2cMetrics:    SNMPv2cMetrics{Conn: conn},
+		Conn:                 conn,
+		Users:                Users{Conn: conn},
+		Teams:                Teams{Conn: conn},
+		Contexts:             Contexts{Conn: conn},
+		ContextualMetrics:    ContextualMetrics{Conn: conn},
+		Metrics:              Metrics{Conn: conn},
+		DataPolicy:           DataPolicy{Conn: conn},
+		Containers:           BaseContainers{Conn: conn},
+		SNMPv2cContainers:    SNMPv2cContainers{Conn: conn},
+		SNMPv2cMetrics:       SNMPv2cMetrics{Conn: conn},
+		FlexLegacyContainers: FlexLegacyContainers{Conn: conn},
+		FlexLegacyMetrics:    FlexLegacyMetrics{Conn: conn},
 	}, nil
 }

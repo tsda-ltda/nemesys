@@ -75,7 +75,7 @@ const (
 		container_id, container_type, name, descr, enabled, data_policy_id, 
 		rts_pulling_times, rts_cache_duration, type, ev_expression FROM metrics WHERE id = $1;`
 	sqlMetricsDelete                 = `DELETE FROM metrics WHERE id = $1;`
-	sqlMetricsMGetSimplified         = `SELECT id, container_id, name, descr, enabled FROM metrics WHERE container_id = $1 LIMIT $2 OFFSET $3;`
+	sqlMetricsMGetSimplified         = `SELECT id, container_id, name, descr, enabled FROM metrics WHERE container_id = $1 AND container_type = $2 LIMIT $3 OFFSET $4;`
 	sqlMetricsGetEvaluableExpression = `SELECT ev_expression FROM metrics WHERE id = $1;`
 	sqlMetricsEnabled                = `WITH 
 		m AS (SELECT enabled, container_id FROM metrics WHERE id = $1),
@@ -132,7 +132,7 @@ func (c *Metrics) Get(ctx context.Context, id int64) (r MetricsGetResponse, err 
 // MGetSimplified returns all simplified metrics of a container type with a limit and offset.
 func (c *Metrics) MGetSimplified(ctx context.Context, containerType types.ContainerType, containerId int32, limit int, offset int) (metrics []models.BaseMetricSimplified, err error) {
 	metrics = []models.BaseMetricSimplified{}
-	rows, err := c.Query(ctx, sqlMetricsMGetSimplified, containerId, limit, offset)
+	rows, err := c.Query(ctx, sqlMetricsMGetSimplified, containerId, containerType, limit, offset)
 	if err != nil {
 		return metrics, err
 	}
