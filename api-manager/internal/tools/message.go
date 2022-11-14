@@ -1,18 +1,6 @@
 package tools
 
 const (
-	MsgIdentIsNumber            = "Identification must not be number as text."
-	MsgRequestTimeout           = "Request timeout."
-	MsgParamsNotSameType        = "Params must have same type. Use only numbers or only text."
-	MsgInvalidParams            = "Invalid route params."
-	MsgInvalidBody              = "Invalid body."
-	MsgInvalidJSONFields        = "Invalid JSON fields."
-	MsgIdentExists              = "Identification already exists."
-	MsgTargetPortExists         = "Target and port combination already exists."
-	MsgMaxDataPolicy            = "Max number of data policies reached."
-	MsgWrongUsernameOrPW        = "Wrong username or password."
-	MsgUsernameExists           = "Username already exists."
-	MsgEmailExists              = "Email already exists."
 	MsgContainerNotFound        = "Container does not exists."
 	MsgMetricNotFound           = "Metric does not exists."
 	MsgDataPolicyNotFound       = "Data policy does not exists."
@@ -20,7 +8,27 @@ const (
 	MsgContextNotFound          = "Context does not exists."
 	MsgContextualMetricNotFound = "Contextual metric does not exists."
 	MsgUserNotFound             = "User does not exists."
-	MsgSessionAlreadyRemoved    = "Session already removed."
+	MsgMemberNotFound           = "Member not found."
+
+	MsgParamsNotSameType     = "Params must have same type. Use only numbers or only text."
+	MsgIdentIsNumber         = "Identification must not be number as text."
+	MsgRequestTimeout        = "Request timeout."
+	MsgMaxDataPolicy         = "Max number of data policies reached."
+	MsgWrongUsernameOrPW     = "Wrong username or password."
+	MsgSessionAlreadyRemoved = "Session already removed."
+	MsgMetricDisabled        = "Metric is not enabled."
+	MsgContainerDisabled     = "Container is not enabled."
+
+	MsgInvalidParams     = "Invalid route params."
+	MsgInvalidBody       = "Invalid body."
+	MsgInvalidJSONFields = "Invalid JSON fields."
+
+	MsgIdentExists        = "Identification already exists."
+	MsgTargetPortExists   = "Target and port combination already exists."
+	MsgEmailExists        = "Email already exists."
+	MsgUsernameExists     = "Username already exists."
+	MsgRelationExists     = "User is already a member."
+	MsgSerialNumberExists = "Flex serial-number already exists. "
 )
 
 type Message struct {
