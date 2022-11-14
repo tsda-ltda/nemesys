@@ -16,7 +16,7 @@ import (
 // Responses:
 //   - 400 If invalid body.
 //   - 400 If json fields are invalid.
-//   - 400 If ident or target:port is in use.
+//   - 400 If target:port is in use.
 //   - 200 If succeeded.
 func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
@@ -50,7 +50,7 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		container.Protocol.Id = int32(id)
 
 		// get target port existence
-		tpe, err := api.PgConn.SNMPv2cContainers.AvailableTargetPort(ctx,
+		exists, err := api.PgConn.SNMPv2cContainers.AvailableTargetPort(ctx,
 			container.Protocol.Target,
 			container.Protocol.Port,
 			container.Base.Id,
@@ -62,12 +62,12 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if target port exists
-		if tpe {
+		if exists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTargetPortExists))
 		}
 
 		// create container
-		e, err := api.PgConn.Containers.Update(ctx, container.Base)
+		exists, err = api.PgConn.Containers.Update(ctx, container.Base)
 		if err != nil {
 			api.Log.Error("fail to update container", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
@@ -75,19 +75,19 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if container exists
-		if !e {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
 
 		// update snmp container
-		e, err = api.PgConn.SNMPv2cContainers.Update(ctx, container.Protocol)
+		exists, err = api.PgConn.SNMPv2cContainers.Update(ctx, container.Protocol)
 		if err != nil {
 			api.Log.Error("fail to update snmp container", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		if !e {
+		if !exists {
 			api.Log.Error("base container exists but snmp container don't")
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return

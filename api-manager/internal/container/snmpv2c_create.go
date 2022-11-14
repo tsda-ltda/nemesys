@@ -15,7 +15,7 @@ import (
 // Responses:
 //   - 400 If invalid body.
 //   - 400 If json fields are invalid.
-//   - 400 If ident or target:port is in use.
+//   - 400 If target:port is in use.
 //   - 200 If succeeded.
 func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
@@ -40,7 +40,7 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		container.Base.Type = types.CTSNMPv2c
 
 		// get target port existence
-		tpe, err := api.PgConn.SNMPv2cContainers.AvailableTargetPort(ctx,
+		exists, err := api.PgConn.SNMPv2cContainers.AvailableTargetPort(ctx,
 			container.Protocol.Target,
 			container.Protocol.Port,
 			-1,
@@ -52,7 +52,7 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if target port exists
-		if tpe {
+		if exists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTargetPortExists))
 			return
 		}
