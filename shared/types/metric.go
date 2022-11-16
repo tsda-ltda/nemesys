@@ -4,11 +4,8 @@ type MetricType byte
 
 const (
 	MTUnknown MetricType = iota
-	MTInt8
-	MTInt16
-	MTInt32
-	MTInt64
-	MTFloat64
+	MTInt
+	MTFloat
 	MTString
 	MTBool
 	MTInvalid
@@ -20,7 +17,7 @@ func ParseAsn1BER(b byte) MetricType {
 	case 0x01:
 		return MTBool
 	case 0x02:
-		return MTInt32
+		return MTInt
 	case 0x03:
 		return MTString
 	case 0x04:
@@ -32,23 +29,23 @@ func ParseAsn1BER(b byte) MetricType {
 	case 0x40:
 		return MTString
 	case 0x41:
-		return MTInt32
+		return MTInt
 	case 0x42:
-		return MTInt32
+		return MTInt
 	case 0x43:
-		return MTInt32
+		return MTInt
 	case 0x44:
-		return MTInt32
+		return MTInt
 	case 0x45:
 		return MTString
 	case 0x46:
-		return MTInt64
+		return MTInt
 	case 0x47:
-		return MTInt32
+		return MTInt
 	case 0x78:
-		return MTInt32
+		return MTInt
 	case 0x79:
-		return MTInt64
+		return MTInt
 	default:
 		return MTInvalid
 	}

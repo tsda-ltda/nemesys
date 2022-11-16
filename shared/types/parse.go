@@ -52,15 +52,9 @@ func ParseBool(b bool, t MetricType) (any, error) {
 		} else {
 			return "false", nil
 		}
-	case MTInt8:
-		return int8(n), nil
-	case MTInt16:
-		return int16(n), nil
-	case MTInt32:
-		return int32(n), nil
-	case MTInt64:
+	case MTInt:
 		return int64(n), nil
-	case MTFloat64:
+	case MTFloat:
 		return float64(n), nil
 	default:
 		return nil, ErrInvalidParseType
@@ -77,15 +71,9 @@ func ParseFloat64(f float64, t MetricType) (any, error) {
 		}
 	case MTString:
 		return strconv.FormatFloat(f, 'f', -1, 32), nil
-	case MTInt8:
-		return int8(f), nil
-	case MTInt16:
-		return int16(f), nil
-	case MTInt32:
-		return int32(f), nil
-	case MTInt64:
+	case MTInt:
 		return int64(f), nil
-	case MTFloat64:
+	case MTFloat:
 		return f, nil
 	default:
 		return nil, ErrInvalidParseType
@@ -102,15 +90,9 @@ func ParseInt(i int, t MetricType) (any, error) {
 		}
 	case MTString:
 		return strconv.FormatInt(int64(i), 10), nil
-	case MTInt8:
-		return int8(i), nil
-	case MTInt16:
-		return int16(i), nil
-	case MTInt32:
-		return int32(i), nil
-	case MTInt64:
+	case MTInt:
 		return int64(i), nil
-	case MTFloat64:
+	case MTFloat:
 		return float64(i), nil
 	default:
 		return nil, ErrInvalidParseType
@@ -123,15 +105,9 @@ func ParseString(s string, t MetricType) (any, error) {
 	switch t {
 	case MTString:
 		return s, nil
-	case MTInt8:
-		return int8(math.Round(f)), err
-	case MTInt16:
-		return int16(math.Round(f)), err
-	case MTInt32:
-		return int32(math.Round(f)), err
-	case MTInt64:
+	case MTInt:
 		return int64(math.Round(f)), err
-	case MTFloat64:
+	case MTFloat:
 		return f, err
 	case MTBool:
 		lower := strings.ToLower(s)
