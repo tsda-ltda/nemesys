@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
-	"github.com/fernandotsda/nemesys/shared/db"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/fernandotsda/nemesys/shared/rdb"
 	"github.com/go-redis/redis/v8"
 	"github.com/rabbitmq/amqp091-go"
 )
@@ -104,7 +104,7 @@ func (s *RTS) MetricDataRequestListener() {
 			s.Log.Debug("get metric data request received, container id: " + metricIdString)
 
 			// get data on cache
-			bytes, err := s.cache.Get(ctx, db.RDBCacheMetricDataKey(r.MetricId))
+			bytes, err := s.cache.Get(ctx, rdb.RDBCacheMetricDataKey(r.MetricId))
 			if err != nil {
 				if err != redis.Nil {
 					s.Log.Error("fail to get metric data on redis", logger.ErrField(err))
@@ -279,7 +279,7 @@ func (s *RTS) MetricDataListener() {
 			}
 
 			// save on cache
-			err = s.cache.Set(ctx, d.Body, db.RDBCacheMetricDataKey(m.Id), time.Millisecond*time.Duration(info.CacheDuration))
+			err = s.cache.Set(ctx, d.Body, rdb.RDBCacheMetricDataKey(m.Id), time.Millisecond*time.Duration(info.CacheDuration))
 			if err != nil {
 				s.Log.Error("fail to save metric data on cache", logger.ErrField(err))
 				continue
@@ -409,7 +409,7 @@ func (s *RTS) MetricsDataListener() {
 				}
 
 				// save on cache
-				err = s.cache.Set(ctx, b, db.RDBCacheMetricDataKey(v.Id), time.Millisecond*time.Duration(mp.CacheDuration))
+				err = s.cache.Set(ctx, b, rdb.RDBCacheMetricDataKey(v.Id), time.Millisecond*time.Duration(mp.CacheDuration))
 				if err != nil {
 					s.Log.Error("fail to save metric data on cache", logger.ErrField(err))
 					continue

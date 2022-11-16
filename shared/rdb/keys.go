@@ -1,17 +1,17 @@
-package db
+package rdb
 
 import (
 	"fmt"
 	"strconv"
 )
 
-// RDBAuthSessionKey returns a RDB key for sessions.
-func RDBAuthSessionKey(session string) string {
+// AuthSessionKey returns a RDB key for sessions.
+func AuthSessionKey(session string) string {
 	return "auth:sessions:" + session
 }
 
-// RDBAuthReverseSessionKey returns a RDB key for user current session.
-func RDBAuthReverseSessionKey(userId int32) string {
+// AuthReverseSessionKey returns a RDB key for user current session.
+func AuthReverseSessionKey(userId int32) string {
 	return "auth:users:sessions:" + strconv.FormatInt(int64(userId), 10)
 }
 

@@ -1,4 +1,4 @@
-package db
+package pg
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type PgConn struct {
+type Conn struct {
 	*pgx.Conn
 	Users                Users
 	Teams                Teams
@@ -24,7 +24,7 @@ type PgConn struct {
 }
 
 // Connects to a Postgresql database server
-func ConnectToPG() (*PgConn, error) {
+func Connect() (*Conn, error) {
 	ctx := context.Background()
 
 	// connect to pg db
@@ -39,7 +39,7 @@ func ConnectToPG() (*PgConn, error) {
 		return nil, err
 	}
 
-	return &PgConn{
+	return &Conn{
 		Conn:                 conn,
 		Users:                Users{Conn: conn},
 		Teams:                Teams{Conn: conn},

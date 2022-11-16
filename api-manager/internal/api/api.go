@@ -7,9 +7,10 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
 	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/cache"
-	"github.com/fernandotsda/nemesys/shared/db"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/logger"
+	"github.com/fernandotsda/nemesys/shared/pg"
+	"github.com/fernandotsda/nemesys/shared/rdb"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/rabbitmq/amqp091-go"
@@ -19,7 +20,7 @@ type API struct {
 	// Amqph is the amqp handler.
 	Amqph *amqph.Amqph
 	// Postgresql connection.
-	PgConn *db.PgConn
+	PgConn *pg.Conn
 	// Cache is the cache handler.
 	Cache *cache.Cache
 	// Gin web fremework engine.
@@ -39,14 +40,14 @@ type API struct {
 // Create a new API instance.
 func New(conn *amqp091.Connection, log *logger.Logger) (*API, error) {
 	// connect to postgresql
-	pgConn, err := db.ConnectToPG()
+	pgConn, err := pg.Connect()
 	if err != nil {
 		return nil, err
 	}
 	log.Info("connected to postgresql")
 
 	// connect to redis auth
-	rdbAuth, err := db.RDBAuthConnect()
+	rdbAuth, err := rdb.NewAuthClient()
 	if err != nil {
 		return nil, err
 	}

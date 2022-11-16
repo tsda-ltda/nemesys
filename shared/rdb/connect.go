@@ -1,4 +1,4 @@
-package db
+package rdb
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 )
 
 // Connects to Redis auth database.
-func RDBAuthConnect() (c *redis.Client, err error) {
+func NewAuthClient() (c *redis.Client, err error) {
 	ctx := context.Background()
 
 	// get redis auth database number
@@ -35,7 +35,7 @@ func RDBAuthConnect() (c *redis.Client, err error) {
 }
 
 // Connects to Redis cache database.
-func RDBCacheConnect() (c *redis.Client, err error) {
+func NewCacheClient() (c *redis.Client, err error) {
 	ctx := context.Background()
 
 	// get redis cache db number

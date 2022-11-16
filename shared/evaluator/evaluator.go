@@ -6,16 +6,16 @@ import (
 
 	"github.com/Knetic/govaluate"
 	"github.com/fernandotsda/nemesys/shared/cache"
-	"github.com/fernandotsda/nemesys/shared/db"
+	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
 type Evaluator struct {
-	pgConn *db.PgConn
+	pgConn *pg.Conn
 	cache  *cache.Cache
 }
 
-func New(pgConn *db.PgConn) *Evaluator {
+func New(pgConn *pg.Conn) *Evaluator {
 	return &Evaluator{
 		pgConn: pgConn,
 		cache:  cache.New(),

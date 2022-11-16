@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
-	"github.com/fernandotsda/nemesys/shared/db"
+	"github.com/fernandotsda/nemesys/shared/rdb"
 	"github.com/go-redis/redis/v8"
 )
 
@@ -22,7 +22,7 @@ type Cache struct {
 // New returns a prepared Cache struct.
 func New() *Cache {
 	// connect to redis
-	c, err := db.RDBCacheConnect()
+	c, err := rdb.NewCacheClient()
 	if err != nil {
 		panic("fail to connect to redis cache database")
 	}

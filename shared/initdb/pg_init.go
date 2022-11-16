@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/fernandotsda/nemesys/shared/db"
 	"github.com/fernandotsda/nemesys/shared/env"
+	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -38,7 +38,7 @@ func PG() (initialized bool, err error) {
 		return false, fmt.Errorf("fail to create database, err: %s", err)
 	}
 
-	newConn, err := db.ConnectToPG()
+	newConn, err := pg.Connect()
 	if err != nil {
 		return false, fmt.Errorf("fail to connect to db, err:%s", err)
 	}

@@ -8,10 +8,10 @@ import (
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/cache"
-	"github.com/fernandotsda/nemesys/shared/db"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/rabbitmq/amqp091-go"
 )
 
@@ -20,7 +20,7 @@ type RTS struct {
 	// cache is the cache handler
 	cache *cache.Cache
 	// pgConn is the postgresql connection.
-	pgConn *db.PgConn
+	pgConn *pg.Conn
 	// amqp is the amqp connection.
 	amqp *amqp091.Connection
 	// amqph is the amqp handler for common taks.
@@ -70,7 +70,7 @@ func New() *RTS {
 	}
 
 	// connect to postgres
-	pg, err := db.ConnectToPG()
+	pg, err := pg.Connect()
 	if err != nil {
 		l.Panic("fail to connect postgres", logger.ErrField(err))
 	}

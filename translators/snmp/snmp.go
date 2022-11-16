@@ -5,11 +5,11 @@ import (
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/amqph"
-	"github.com/fernandotsda/nemesys/shared/db"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/evaluator"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/rabbitmq/amqp091-go"
 )
 
@@ -21,7 +21,7 @@ type SNMPService struct {
 	// amqph is the amqp handler for common tasks.
 	amqph *amqph.Amqph
 	// pgConn is the postgresql connection.
-	pgConn *db.PgConn
+	pgConn *pg.Conn
 	// evaluator is the metric evaluator
 	evaluator *evaluator.Evaluator
 	// conns is a cache map of container id and snmp agent configuration and connection.
@@ -59,7 +59,7 @@ func New() *SNMPService {
 	}
 
 	// connect to postgres
-	pgConn, err := db.ConnectToPG()
+	pgConn, err := pg.Connect()
 	if err != nil {
 		l.Fatal("fail to connect to posgres", logger.ErrField(err))
 	}
