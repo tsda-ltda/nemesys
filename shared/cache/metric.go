@@ -8,17 +8,42 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
+// GetMetricRequestByIdentResponse is the response for the GetMetricRequestByIdent handler.
+type GetMetricRequestByIdentResponse struct {
+	// Exists is the cache existence.
+	Exists bool
+	// Request is the metric request.
+	Request models.MetricRequest
+}
+
+// GetMetricEvExpressionResponse is the response for the GetMetricEvExpression handler.
+type GetMetricEvExpressionResponse struct {
+	// Exists is the cache existence.
+	Exists bool
+	// Expression is the metric evaluate expression.
+	Expression string
+}
+
+// GetMetricDataPolicyIdResponse is the respose for GetMetricDataPolicyId handler.
+type GetMetricDataPolicyIdResponse struct {
+	// Exists is the cache existence.
+	Exists bool
+	// DataPolicyId is the data policy id
+	DataPolicyId int16
+}
+
 // GetMetricRequestByIdent returns a metric request information.
-func (c *Cache) GetMetricRequestByIdent(ctx context.Context, teamIdent string, contextIdent string, metricIdent string) (e bool, r models.MetricRequest, err error) {
+func (c *Cache) GetMetricRequestByIdent(ctx context.Context, teamIdent string, contextIdent string, metricIdent string) (r GetMetricRequestByIdentResponse, err error) {
 	bytes, err := c.redis.Get(ctx, rdb.RDBCacheMetricIdContainerIdKey(teamIdent, contextIdent, metricIdent)).Bytes()
 	if err != nil {
 		if err == redis.Nil {
-			return false, r, nil
+			return r, nil
 		}
-		return false, r, err
+		return r, err
 	}
-	err = c.decode(bytes, &r)
-	return true, r, err
+	err = c.decode(bytes, &r.Request)
+	r.Exists = true
+	return r, err
 }
 
 // SetMetricRequestByIdent save a metric request information.
@@ -36,12 +61,36 @@ func (c *Cache) SetMetricEvExpression(ctx context.Context, metricId int64, expre
 }
 
 // GetMetricEvExpression returns a metric evaluate expression.
-func (c *Cache) GetMetricEvExpression(ctx context.Context, metricId int64) (e bool, expression string, err error) {
-	expression, err = c.redis.Get(ctx, rdb.RDBCacheMetricEvExpressionKey(metricId)).Result()
-	if err == redis.Nil {
-		err = nil
-	} else if err == nil {
-		e = true
+func (c *Cache) GetMetricEvExpression(ctx context.Context, metricId int64) (r GetMetricEvExpressionResponse, err error) {
+	expression, err := c.redis.Get(ctx, rdb.RDBCacheMetricEvExpressionKey(metricId)).Result()
+	if err != nil {
+		if err == redis.Nil {
+			return r, nil
+		} else {
+			return r, err
+		}
 	}
-	return e, expression, err
+	r.Exists = true
+	r.Expression = expression
+	return r, err
+}
+
+// SetMetricDataPolicyId saves a metric data policy id.
+func (c *Cache) SetMetricDataPolicyId(ctx context.Context, metricId int64, dataPolicyId int16) (err error) {
+	return c.redis.Set(ctx, rdb.RDBCacheMetricDataPolicyId(metricId), dataPolicyId, c.metricDataPolicyIdExp).Err()
+}
+
+// GetMetricDataPolicyId returns a metric data policy id.
+func (c *Cache) GetMetricDataPolicyId(ctx context.Context, metricId int64) (r GetMetricDataPolicyIdResponse, err error) {
+	id, err := c.redis.Get(ctx, rdb.RDBCacheMetricDataPolicyId(metricId)).Int()
+	if err != nil {
+		if err == redis.Nil {
+			return r, nil
+		} else {
+			return r, err
+		}
+	}
+	r.Exists = true
+	r.DataPolicyId = int16(id)
+	return r, nil
 }

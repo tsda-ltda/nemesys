@@ -17,6 +17,8 @@ type Cache struct {
 	metricIdContainerIdExp time.Duration
 	// metricEvExpressionExp is the time expire the evaluate expression.
 	metricEvExpressionExp time.Duration
+	// metricEvExpressionExp is the time expire the evaluate expression.
+	metricDataPolicyIdExp time.Duration
 }
 
 // New returns a prepared Cache struct.
@@ -31,6 +33,7 @@ func New() *Cache {
 		redis:                  c,
 		metricIdContainerIdExp: time.Minute,
 		metricEvExpressionExp:  time.Minute,
+		metricDataPolicyIdExp:  time.Minute,
 	}
 }
 
