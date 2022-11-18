@@ -9,6 +9,7 @@ import (
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
+	"github.com/rabbitmq/amqp091-go"
 )
 
 type MetricPulling struct {
@@ -33,8 +34,6 @@ type ContainerPulling struct {
 	Metrics map[int64]*MetricPulling
 	// stopCh is the channel to stop the container pulling.
 	stopCh chan any
-	// rch is the channel for requests.
-	rch chan models.AMQPCorrelated[[]byte]
 	// RTS is the RTS server.
 	RTS     *RTS
 	OnClose func(*ContainerPulling)
@@ -69,13 +68,13 @@ func (s *RTS) startMetricPulling(r models.MetricRequest, config models.RTSMetric
 		if !ok {
 			res, err := s.pgConn.Containers.GetRTSConfig(context.Background(), r.ContainerId)
 			if err != nil {
-				s.Log.Error("fail to get containers's RTS info", logger.ErrField(err))
+				s.log.Error("fail to get containers's RTS info", logger.ErrField(err))
 				return
 			}
 
 			// check if container exists
 			if !res.Exists {
-				s.Log.Warn("fail to start metric pulling, container does not exists")
+				s.log.Warn("fail to start metric pulling, container does not exists")
 				return
 			}
 
@@ -86,7 +85,6 @@ func (s *RTS) startMetricPulling(r models.MetricRequest, config models.RTSMetric
 				RTSContainerConfig: res.Config,
 				Metrics:            make(map[int64]*MetricPulling),
 				stopCh:             make(chan any, 1),
-				rch:                s.metricsDataRequestCh,
 				RTS:                s,
 			}
 
@@ -94,13 +92,13 @@ func (s *RTS) startMetricPulling(r models.MetricRequest, config models.RTSMetric
 			s.pulling[r.ContainerId] = c
 			c.OnClose = func(cp *ContainerPulling) {
 				delete(s.pulling, cp.Id)
-				s.Log.Debug("container pulling stoped, id: " + strconv.FormatInt(int64(cp.Id), 10))
+				s.log.Debug("container pulling stoped, id: " + strconv.FormatInt(int64(cp.Id), 10))
 			}
 
 			// run container
 			go c.Run()
 
-			s.Log.Debug("container pulling started, id: " + strconv.FormatInt(int64(r.ContainerId), 10))
+			s.log.Debug("container pulling started, id: " + strconv.FormatInt(int64(r.ContainerId), 10))
 		}
 
 		// check if metric already exists in container
@@ -160,11 +158,14 @@ func (c *ContainerPulling) Run() {
 				continue
 			}
 
-			// send request
-			c.rch <- models.AMQPCorrelated[[]byte]{
-				CorrelationId: "",
-				RoutingKey:    amqp.GetDataRoutingKey(c.Type),
-				Info:          b,
+			c.RTS.amqph.PublisherCh <- models.DetailedPublishing{
+				Exchange:   amqp.ExchangeMetricsDataRequest,
+				RoutingKey: amqp.GetDataRoutingKey(r.ContainerType),
+				Publishing: amqp091.Publishing{
+					Expiration: amqp.DefaultExp,
+					Headers:    amqp.RouteHeader("rts"),
+					Body:       b,
+				},
 			}
 		case <-c.stopCh:
 			return
@@ -180,7 +181,7 @@ func (c *ContainerPulling) AddMetric(m MetricPulling) {
 // Remove removes a metric.
 func (c *ContainerPulling) remove(metricId int64) {
 	delete(c.Metrics, metricId)
-	c.RTS.Log.Debug("metric removed from pulling, metric id: " + strconv.FormatInt(metricId, 10))
+	c.RTS.log.Debug("metric removed from pulling, metric id: " + strconv.FormatInt(metricId, 10))
 }
 
 // Close closes the container pulling.

@@ -75,7 +75,7 @@ func (s *SNMPService) RegisterMetrics(ctx context.Context, req []models.MetricBa
 		metric.OnClose = func(m *Metric) {
 			// remove connection
 			delete(s.metrics, m.Id)
-			s.Log.Debug("metric removed, id: " + fmt.Sprint(m.Id))
+			s.log.Debug("metric removed, id: " + fmt.Sprint(m.Id))
 		}
 
 		// save connection
@@ -126,7 +126,7 @@ func (s *SNMPService) RegisterMetric(ctx context.Context, request models.MetricR
 	metric.OnClose = func(m *Metric) {
 		// remove connection
 		delete(s.metrics, m.Id)
-		s.Log.Debug("metric removed, id: " + fmt.Sprint(m.Id))
+		s.log.Debug("metric removed, id: " + fmt.Sprint(m.Id))
 	}
 
 	// save connection

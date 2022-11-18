@@ -12,8 +12,8 @@ import (
 
 var ErrContainerNotExists = errors.New("container does not exists")
 
-// Conn is the SNMP connection representation.
-type Conn struct {
+// ContainerConn is the container connection representation.
+type ContainerConn struct {
 	// Id is the connection id.
 	Id int32
 	// TTL is the connection time to live.
@@ -25,11 +25,11 @@ type Conn struct {
 	// Closed is the channel to closed the connection.
 	Closed chan any
 	// OnClose is a callback used when connection is closed.
-	OnClose func(c *Conn)
+	OnClose func(c *ContainerConn)
 }
 
-// RegisterConn register a connection.
-func (s *SNMPService) RegisterAgent(ctx context.Context, containerId int32, t types.ContainerType) (*Conn, error) {
+// CreateContainerConnection creates a container connection.
+func (s *SNMPService) CreateContainerConnection(ctx context.Context, containerId int32, t types.ContainerType) (*ContainerConn, error) {
 	var agent *g.GoSNMP
 	var ttl int32
 
@@ -91,7 +91,7 @@ func (s *SNMPService) RegisterAgent(ctx context.Context, containerId int32, t ty
 	}
 
 	// create connection
-	c := &Conn{
+	c := &ContainerConn{
 		Id:     containerId,
 		TTL:    time.Millisecond * time.Duration(ttl),
 		Closed: make(chan any, 1),
@@ -109,10 +109,10 @@ func (s *SNMPService) RegisterAgent(ctx context.Context, containerId int32, t ty
 
 	// run ttl handler
 	go c.RunTTL()
-	c.OnClose = func(c *Conn) {
+	c.OnClose = func(c *ContainerConn) {
 		// remove connection
 		delete(s.conns, c.Id)
-		s.Log.Debug("conn removed, addr: " + c.Agent.Target)
+		s.log.Debug("conn removed, addr: " + c.Agent.Target)
 	}
 
 	// save connection
@@ -121,19 +121,19 @@ func (s *SNMPService) RegisterAgent(ctx context.Context, containerId int32, t ty
 }
 
 // Close closes agent connection and Closed chan.
-func (c *Conn) Close() {
+func (c *ContainerConn) Close() {
 	c.Agent.Conn.Close()
 	c.Closed <- struct{}{}
 	c.OnClose(c)
 }
 
 // Reset TTL ticker. Will panic if called before RunTTL.
-func (c *Conn) Reset() {
+func (c *ContainerConn) Reset() {
 	c.Ticker.Reset(c.TTL)
 }
 
 // RunTTL will set the connection ticker and close in the end.
-func (c *Conn) RunTTL() {
+func (c *ContainerConn) RunTTL() {
 	c.Ticker = time.NewTicker(c.TTL)
 	defer c.Ticker.Stop()
 	for {

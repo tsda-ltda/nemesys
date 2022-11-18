@@ -25,8 +25,8 @@ type RTS struct {
 	amqp *amqp091.Connection
 	// amqph is the amqp handler for common taks.
 	amqph *amqph.Amqph
-	// Log is the logger handler.
-	Log *logger.Logger
+	// log is the logger handler.
+	log *logger.Logger
 	// plumber is the custom amqp message plumber
 	// for deal with request responses cases.
 	plumber *models.AMQPPlumber
@@ -36,12 +36,6 @@ type RTS struct {
 	pulling map[int32]*ContainerPulling
 	// pendingMetricData is a map of pending data requests.
 	pendingMetricData map[string]models.RTSMetricConfig
-	// metricDataRequestCh is the channel to request metric data.
-	metricDataRequestCh chan models.AMQPCorrelated[[]byte]
-	// metricDataRequestCh is the channel to request metric data.
-	metricsDataRequestCh chan models.AMQPCorrelated[[]byte]
-	// metricDataPublisherCh is the channel to publish metric data.
-	metricDataPublisherCh chan amqp091.Publishing
 	// closed is the filled when rts is closed.
 	closed chan any
 }
@@ -80,94 +74,35 @@ func New() *RTS {
 	amqph := amqph.New(amqpConn, l)
 
 	return &RTS{
-		Log:                   l,
-		pgConn:                pg,
-		amqp:                  amqpConn,
-		amqph:                 amqph,
-		cache:                 cache.New(),
-		plumber:               models.NewAMQPPlumber(),
-		pendingMetricData:     make(map[string]models.RTSMetricConfig),
-		pulling:               make(map[int32]*ContainerPulling),
-		metricDataPublisherCh: make(chan amqp091.Publishing),
-		metricDataRequestCh:   make(chan models.AMQPCorrelated[[]byte]),
-		metricsDataRequestCh:  make(chan models.AMQPCorrelated[[]byte]),
-		closed:                make(chan any),
+		log:               l,
+		pgConn:            pg,
+		amqp:              amqpConn,
+		amqph:             amqph,
+		cache:             cache.New(),
+		plumber:           models.NewAMQPPlumber(),
+		pendingMetricData: make(map[string]models.RTSMetricConfig),
+		pulling:           make(map[int32]*ContainerPulling),
+		closed:            make(chan any),
 	}
 }
 
 func (s *RTS) Run() {
-	s.setupNotificationHandler()
 
-	s.Log.Info("starting listeners...")
-	go s.amqph.ContainerListener()   // listen to container notifications
-	go s.amqph.MetricListener()      // listen to metric notification
-	go s.MetricDataRequestListener() // listen to data requests
-	go s.MetricDataListener()        // listen to new data
-	go s.MetricsDataListener()       // listen to new data
+	s.log.Info("starting listeners...")
+	go s.containerListener()         // listen to container changes
+	go s.metricListener()            // listen to metric changes
+	go s.metricDataRequestListener() // listen to data requests
+	go s.metricDataListener()        // listen to new data
+	go s.metricsDataListener()       // listen to new data
 
-	s.Log.Info("starting publishers...")
-	go s.MetricDataRequestPublisher()  // publish metric data requests fro translators
-	go s.MetricsDataRequestPublisher() // publish metrics data requests fro translators
-	go s.MetricDataPublisher()         // publish data responses
-
-	s.Log.Info("service is ready!")
+	s.log.Info("service is ready!")
 	<-s.closed
-}
-
-func (s *RTS) setupNotificationHandler() {
-	// close container pulling on update
-	s.amqph.Notifications.Subscribe(amqph.ContainerUpdated, "", func(d any) {
-		n := d.(amqph.ContainerNotification)
-		c, ok := s.pulling[n.Base.Id]
-		if !ok {
-			return
-		}
-		c.Close()
-	})
-
-	// close container pulling on delete
-	s.amqph.Notifications.Subscribe(amqph.ContainerDeleted, "", func(d any) {
-		id := d.(int32)
-		c, ok := s.pulling[id]
-		if !ok {
-			return
-		}
-		c.Close()
-	})
-
-	// stop metric pulling on update
-	s.amqph.Notifications.Subscribe(amqph.MetricUpdated, "", func(d any) {
-		n := d.(amqph.MetricNotification)
-		c, ok := s.pulling[n.Base.ContainerId]
-		if !ok {
-			return
-		}
-		m, ok := c.Metrics[n.Base.Id]
-		if !ok {
-			return
-		}
-		m.Stop()
-	})
-
-	// stop metric pulling on metric delete
-	s.amqph.Notifications.Subscribe(amqph.MetricDeleted, "", func(d any) {
-		mp := d.(models.MetricPairId)
-		cp, ok := s.pulling[mp.ContainerId]
-		if !ok {
-			return
-		}
-		m, ok := cp.Metrics[mp.Id]
-		if !ok {
-			return
-		}
-		m.Stop()
-	})
 }
 
 // Close connections.
 func (s *RTS) Close() {
 	// Close logger
-	s.Log.Close()
+	s.log.Close()
 	// Close amqp connection
 	s.amqp.Close()
 	// close postgresql
