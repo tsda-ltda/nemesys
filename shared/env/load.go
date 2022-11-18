@@ -46,6 +46,9 @@ func Init() {
 	set("LOG_CONSOLE_LEVEL_RTS", &LogConsoleLevelRTS)
 	set("LOG_BROADCAST_LEVEL_RTS", &LogBroadcastLevelRTS)
 
+	set("LOG_CONSOLE_LEVEL_DHS", &LogConsoleLevelDHS)
+	set("LOG_BROADCAST_LEVEL_DHS", &LogBroadcastLevelDHS)
+
 	set("DEFAULT_USERNAME", &DefaultUsername)
 	set("DEFAULT_PASSWORD", &DefaultPassword)
 
@@ -61,6 +64,13 @@ func Init() {
 	set("PG_USERNAME", &PGUsername)
 	set("PG_PASSWORD", &PGPassword)
 	set("PG_DB_NAME", &PGDBName)
+
+	set("INFLUX_HOST", &InfluxHost)
+	set("INFLUX_PORT", &InfluxPort)
+	set("INFLUX_ORG", &InfluxOrg)
+	set("INFLUX_TOKEN", &InfluxToken)
+	set("INFLUX_TLS_CERT_FILE_PATH", &InfluxTLSCertFilePath)
+	set("INFLUX_TLS_KEY_FILE_PATH", &InfluxTLSKeyFilePath)
 
 	set("RDB_AUTH_HOST", &RDBAuthHost)
 	set("RDB_AUTH_PORT", &RDBAuthPort)

@@ -19,6 +19,11 @@ var (
 	// LogBroadcastLevelRTS is the log level for broadcast in Real Time service. Default is info.
 	LogBroadcastLevelRTS = "info"
 
+	// LogConsoleLevelDHS is the log level for console in Data History service. Default is debug.
+	LogConsoleLevelDHS = "debug"
+	// LogBroadcastLevelDHS is the log level for broadcast in Data History service. Default is info.
+	LogBroadcastLevelDHS = "info"
+
 	// DefaultUsername is the default user's username. Default is "master".
 	DefaultUsername = "master"
 	// DefaultPassword is the default user's password (is strongly recommended to not use the default value). Default is "master".
@@ -46,6 +51,19 @@ var (
 	PGPassword = "postgres"
 	// PGDBName is the database name. Default is "namesys".
 	PGDBName = "namesys"
+
+	// InfluxHost is the influxdb host. Default is "localhost".
+	InfluxHost = "localhost"
+	// InfluxPort is the influxdb port. Default is "8086".
+	InfluxPort = "8086"
+	// InfluxOrg is the organization where data will be stored. Default is "nemesys".
+	InfluxOrg = "nemesys"
+	// InfluxToken is the influxdb token. Default is "".
+	InfluxToken = ""
+	// InfluxTLSCertFilePath is the path for the TLS certification file. Default is "".
+	InfluxTLSCertFilePath = ""
+	// InfluxTLSKeyFilePath is the path for the TLS key file. Default is "".
+	InfluxTLSKeyFilePath = ""
 
 	// RDBAuthHost is redis for auth host. Default is "localhost".
 	RDBAuthHost = "localhost"
