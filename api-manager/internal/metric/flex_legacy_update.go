@@ -57,9 +57,10 @@ func UpdateFlexLegacyHandler(api *api.API) func(c *gin.Context) {
 		metric.Base.Id = id
 		metric.Protocol.Id = id
 		metric.Base.ContainerId = int32(containerId)
+		metric.Base.ContainerType = types.CTFlexLegacy
 
 		// get if container and data policy exists
-		r, err := api.PgConn.Metrics.ExistsContainerAndDataPolicy(ctx, metric.Base.ContainerId, metric.Base.DataPolicyId, id)
+		r, err := api.PgConn.Metrics.ExistsContainerAndDataPolicy(ctx, metric.Base)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check container and data policy existence", logger.ErrField(err))
