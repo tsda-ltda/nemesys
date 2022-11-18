@@ -60,20 +60,20 @@ type MetricsEnabledResponse struct {
 
 const (
 	sqlMetricsCreate = `INSERT INTO metrics 
-		(container_id, container_type, name, descr, enabled, data_policy_id, rts_pulling_times, rts_cache_duration, type, ev_expression)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id;`
+		(container_id, container_type, name, descr, enabled, data_policy_id, rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id;`
 	sqlMetricsUpdate = `UPDATE metrics SET 
-		(name, descr, enabled, data_policy_id, rts_pulling_times, rts_cache_duration, type, ev_expression) 
-		= ($1, $2, $3, $4, $5, $6, $7, $8) WHERE id = $9;`
-	sqlMetricsGetRTSConfig = `SELECT rts_pulling_times, rts_cache_duration
+		(name, descr, enabled, data_policy_id, rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression) 
+		= ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) WHERE id = $11;`
+	sqlMetricsGetRTSConfig = `SELECT rts_pulling_times, rts_data_cache_duration
 		FROM metrics WHERE id = $1;`
 	sqlMetricsExistsContainerAndDataPolicy = `SELECT 
-		EXISTS (SELECT 1 FROM metrics WHERE id = $3),
-		EXISTS (SELECT 1 FROM containers WHERE id = $1),
-		EXISTS (SELECT 1 FROM data_policies WHERE id = $2);`
+		EXISTS (SELECT 1 FROM metrics WHERE id = $4),
+		EXISTS (SELECT 1 FROM containers WHERE id = $1 AND type = $2),
+		EXISTS (SELECT 1 FROM data_policies WHERE id = $3);`
 	sqlMetricsGet = `SELECT 
 		container_id, container_type, name, descr, enabled, data_policy_id, 
-		rts_pulling_times, rts_cache_duration, type, ev_expression FROM metrics WHERE id = $1;`
+		rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression FROM metrics WHERE id = $1;`
 	sqlMetricsDelete                 = `DELETE FROM metrics WHERE id = $1;`
 	sqlMetricsMGetSimplified         = `SELECT id, container_id, name, descr, enabled FROM metrics WHERE container_id = $1 AND container_type = $2 LIMIT $3 OFFSET $4;`
 	sqlMetricsGetEvaluableExpression = `SELECT ev_expression FROM metrics WHERE id = $1;`
@@ -117,6 +117,8 @@ func (c *Metrics) Get(ctx context.Context, id int64) (r MetricsGetResponse, err 
 			&r.Metric.DataPolicyId,
 			&r.Metric.RTSPullingTimes,
 			&r.Metric.RTSCacheDuration,
+			&r.Metric.DHSEnabled,
+			&r.Metric.DHSInterval,
 			&r.Metric.Type,
 			&r.Metric.EvaluableExpression,
 		)
@@ -166,6 +168,8 @@ func (c *Metrics) Create(ctx context.Context, metric models.BaseMetric) (id int6
 		metric.DataPolicyId,
 		metric.RTSPullingTimes,
 		metric.RTSCacheDuration,
+		metric.DHSEnabled,
+		metric.DHSInterval,
 		metric.Type,
 		metric.EvaluableExpression,
 	).Scan(&id)
@@ -181,6 +185,8 @@ func (c *Metrics) Update(ctx context.Context, metric models.BaseMetric) (exists 
 		metric.DataPolicyId,
 		metric.RTSPullingTimes,
 		metric.RTSCacheDuration,
+		metric.DHSEnabled,
+		metric.DHSInterval,
 		metric.Type,
 		metric.EvaluableExpression,
 		metric.Id,
@@ -215,8 +221,8 @@ func (c *Metrics) GetRTSConfig(ctx context.Context, id int64) (r MetricsGetRTSCo
 }
 
 // ExistsContainerAndDataPolicy check if exists a metric, container and data policy exists.
-func (c *Metrics) ExistsContainerAndDataPolicy(ctx context.Context, containerId int32, dataPolicyId int16, id int64) (r MetricsExistsContainerAndDataPolicyResponse, err error) {
-	return r, c.QueryRow(ctx, sqlMetricsExistsContainerAndDataPolicy, containerId, dataPolicyId, id).Scan(
+func (c *Metrics) ExistsContainerAndDataPolicy(ctx context.Context, base models.BaseMetric) (r MetricsExistsContainerAndDataPolicyResponse, err error) {
+	return r, c.QueryRow(ctx, sqlMetricsExistsContainerAndDataPolicy, base.ContainerId, base.ContainerType, base.DataPolicyId, base.Id).Scan(
 		&r.Exists,
 		&r.ContainerExists,
 		&r.DataPolicyExists,

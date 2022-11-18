@@ -25,14 +25,16 @@ func New(pgConn *pg.Conn) *Evaluator {
 func (e *Evaluator) Evaluate(v any, metricId int64, mt types.MetricType) (any, error) {
 	ctx := context.Background()
 
+	var expression string
+
 	// get on cache
-	exists, evexp, err := e.cache.GetMetricEvExpression(ctx, metricId)
+	cacheRes, err := e.cache.GetMetricEvExpression(ctx, metricId)
 	if err != nil {
 		return nil, err
 	}
 
 	// check if exists
-	if !exists {
+	if !cacheRes.Exists {
 		// get on database
 		r, err := e.pgConn.Metrics.GetEvaluableExpression(ctx, metricId)
 		if err != nil {
@@ -45,20 +47,20 @@ func (e *Evaluator) Evaluate(v any, metricId int64, mt types.MetricType) (any, e
 		}
 
 		// save cache
-		evexp = r.Expression
-		err = e.cache.SetMetricEvExpression(ctx, metricId, evexp)
+		expression = r.Expression
+		err = e.cache.SetMetricEvExpression(ctx, metricId, expression)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// check if is empty
-	if evexp == "" {
+	if expression == "" {
 		return v, nil
 	}
 
 	// get expression struct
-	exp, err := govaluate.NewEvaluableExpression(evexp)
+	exp, err := govaluate.NewEvaluableExpression(expression)
 	if err != nil {
 		return nil, err
 	}

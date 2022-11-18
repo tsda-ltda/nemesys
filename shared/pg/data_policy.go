@@ -58,6 +58,7 @@ func (c *DataPolicy) Update(ctx context.Context, dp models.DataPolicy) (exists b
 		dp.UseAggregation,
 		dp.AggregationRetention,
 		dp.AggregationInterval,
+		dp.Id,
 	)
 	return t.RowsAffected() != 0, err
 }
