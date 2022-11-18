@@ -2,12 +2,15 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
 	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/cache"
 	"github.com/fernandotsda/nemesys/shared/env"
+	"github.com/fernandotsda/nemesys/shared/influxdb"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/fernandotsda/nemesys/shared/rdb"
@@ -21,6 +24,8 @@ type API struct {
 	Amqph *amqph.Amqph
 	// Postgresql connection.
 	PgConn *pg.Conn
+	// Influx is the influxdb client.
+	Influx *influxdb.Client
 	// Cache is the cache handler.
 	Cache *cache.Cache
 	// Gin web fremework engine.
@@ -59,6 +64,19 @@ func New(conn *amqp091.Connection, log *logger.Logger) (*API, error) {
 		return nil, err
 	}
 
+	// connect to influxdb
+	influxClient, err := influxdb.Connect()
+	if err != nil {
+		return nil, err
+	}
+	log.Info("connected to influxdb")
+
+	// parse bcrypt coast
+	bcryptCost, err := strconv.Atoi(env.UserPWBcryptCost)
+	if err != nil {
+		return nil, errors.New("fail to parse env.UserPWBcryptCost, err: " + err.Error())
+	}
+
 	// create gin engine
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
@@ -68,19 +86,17 @@ func New(conn *amqp091.Connection, log *logger.Logger) (*API, error) {
 
 	// create and run amqp handler
 	amqph := amqph.New(conn, log)
-	go amqph.MetricNotifier()
-	go amqph.ContainerNotifier()
-	go amqph.ListenRTSMetricData()
-	go amqph.ListenRTSMetricDataRequests()
-
 	return &API{
-		PgConn:   pgConn,
-		Router:   r,
-		Auth:     auth,
-		Validate: validate,
-		Log:      log,
-		Cache:    cache.New(),
-		Amqph:    amqph,
+		PgConn:           pgConn,
+		Influx:           &influxClient,
+		Router:           r,
+		Auth:             auth,
+		Validate:         validate,
+		Log:              log,
+		Cache:            cache.New(),
+		Amqph:            amqph,
+		UserPWBcryptCost: bcryptCost,
+		Closed:           make(chan any),
 	}, nil
 }
 

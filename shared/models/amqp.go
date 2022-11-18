@@ -44,3 +44,36 @@ func (p *AMQPPlumber) Listen(key string, timeout time.Duration) (amqp091.Deliver
 		return amqp091.Delivery{}, errors.New("response timeout")
 	}
 }
+
+type DetailedPublishing struct {
+	Exchange   string
+	RoutingKey string
+	Mandatory  bool
+	Immediate  bool
+	Publishing amqp091.Publishing
+}
+
+type QueueConsumeOptions struct {
+	Consumer  string
+	ManualAck bool
+	Exclusive bool
+	NoLocal   bool
+	NoWait    bool
+	Args      amqp091.Table
+}
+
+type QueueBindOptions struct {
+	RoutingKey string
+	NoWait     bool
+	Args       amqp091.Table
+}
+
+type ListenerOptions struct {
+	Durable     bool
+	AutoDelete  bool
+	NoExclusive bool
+	NoWait      bool
+	Args        amqp091.Table
+	Consume     QueueConsumeOptions
+	Bind        QueueBindOptions
+}

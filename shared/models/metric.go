@@ -54,6 +54,10 @@ type BaseMetric struct {
 	RTSPullingTimes int16 `json:"rts-pulling-times" validate:"min=0,max=1000000"`
 	// RTSCacheDuration is the data duration in miliseconds on RTS cache. Max is one hour.
 	RTSCacheDuration int32 `json:"rts-cache-duration" validate:"min=1000,max=3600000"`
+	// DHSEnabled is the enabled state of for the data history service.
+	DHSEnabled bool `json:"dhs-enabled" validate:"-"`
+	// DHSInterval is the interval in seconds of the data pulling of the data history service.
+	DHSInterval int32 `json:"dhs-interval" validate:"-"`
 	// EvaluableExpression is the a evaluable expression for the metric value.
 	EvaluableExpression string `json:"evaluable-expression" validate:"max=255"`
 }

@@ -37,7 +37,7 @@ var sqlCommands []string = []string{
 	`CREATE TABLE data_policies (
 		id SERIAL2  PRIMARY KEY,
 		descr VARCHAR (255) NOT NULL,
-		use_aggregation BOOL NOT NULL,
+		use_aggregation BOOLEAN NOT NULL,
 		retention INT4 NOT NULL,
 		aggregation_retention INT4 NOT NULL,
 		aggregation_interval INT4 NOT NULL
@@ -67,7 +67,9 @@ var sqlCommands []string = []string{
 		enabled BOOLEAN NOT NULL,
 		data_policy_id INT4 NOT NULL,
 		rts_pulling_times INT2 NOT NULL,
-		rts_cache_duration INT4 NOT NULL,
+		rts_data_cache_duration INT4 NOT NULL,
+		dhs_enabled BOOLEAN NOT NULL,
+		dhs_interval INT4 NOT NULL,
 		ev_expression VARCHAR (255) NOT NULL,
 		CONSTRAINT fk_container_id
 			FOREIGN KEY(container_id)

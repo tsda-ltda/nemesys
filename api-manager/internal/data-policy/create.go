@@ -60,13 +60,25 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// create data policy
-		_, err = api.PgConn.DataPolicy.Create(ctx, dp)
+		// create data policy on postgres
+		id, err := api.PgConn.DataPolicy.Create(ctx, dp)
 		if err != nil {
-			api.Log.Error("fail to create new data policy", logger.ErrField(err))
+			api.Log.Error("fail to create data policy on postgres", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
+
+		// assign id
+		dp.Id = id
+
+		// create datapolicy on influxdb
+		err = api.Influx.CreateDataPolicy(ctx, dp)
+		if err != nil {
+			api.Log.Error("fail to create data policy on influxdb", logger.ErrField(err))
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
 		api.Log.Info("data policy created")
 		c.Status(http.StatusOK)
 	}

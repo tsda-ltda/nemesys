@@ -45,18 +45,27 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// update data policy
+		// update data policy on influxdb
 		dp.Id = int16(id)
 		e, err := api.PgConn.DataPolicy.Update(ctx, dp)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to update data policy", logger.ErrField(err))
+			api.Log.Error("fail to update data policy on influxdb", logger.ErrField(err))
 			return
 		}
 		if !e {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgDataPolicyNotFound))
 			return
 		}
+
+		// update data policy on influxdb
+		err = api.Influx.UpdateDataPolicy(ctx, dp)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			api.Log.Error("fail to update data policy on influxdb", logger.ErrField(err))
+			return
+		}
+
 		api.Log.Info("data policy updated, id: " + fmt.Sprint(id))
 
 		c.Status(http.StatusOK)

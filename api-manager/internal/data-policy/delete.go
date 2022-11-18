@@ -27,11 +27,11 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// delete data policy
+		// delete data policy from postgres
 		e, err := api.PgConn.DataPolicy.Delete(ctx, int16(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to delete data policy", logger.ErrField(err))
+			api.Log.Error("fail to delete data policy from postgres", logger.ErrField(err))
 			return
 		}
 
@@ -40,6 +40,15 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgDataPolicyNotFound))
 			return
 		}
+
+		// delete data policy from postgres
+		err = api.Influx.DeleteDataPolicy(ctx, int16(id))
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			api.Log.Error("fail to delete data policy from influxdb", logger.ErrField(err))
+			return
+		}
+
 		api.Log.Info("data policy deleted, id: " + fmt.Sprint(id))
 		c.Status(http.StatusNoContent)
 	}
