@@ -4,9 +4,6 @@ type SNMPv2cContainer struct {
 	// Id is the container id.
 	Id int32 `json:"container-id" validate:"-"`
 
-	// CacheDuration is the cache duration in miliseconds of this configuration on the SNMP service.
-	CacheDuration int32 `json:"cache-duration" validate:"required"`
-
 	// Target is an ipv4 address.
 	Target string `json:"target" validate:"required,max=15"`
 
@@ -29,9 +26,3 @@ type SNMPv2cContainer struct {
 	MaxOids int16 `json:"max-oids" validate:"required"`
 }
 
-type SNMPMetric struct {
-	// Id is the metric identifier.
-	Id int64 `json:"-" validate:"-"`
-	// OID is the snmp object identifier.
-	OID string `json:"oid" validate:"required,max=128"`
-}

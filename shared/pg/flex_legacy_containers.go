@@ -39,16 +39,16 @@ type FlexLegacyContainerExistsContainerTargetPortAndSerialNumberRespose struct {
 
 const (
 	sqlFlexLegacyContainersCreate = `INSERT INTO flex_legacy_containers 
-		(container_id, target, port, transport, community, retries, max_oids, timeout, cache_duration, serial_number, model, city, region, country) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);`
+		(container_id, target, port, transport, community, retries, max_oids, timeout, serial_number, model, city, region, country) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);`
 	sqlFlexLegacyContainersUpdate = `UPDATE flex_legacy_containers SET 
-		(target, port, transport, community, retries, max_oids, timeout, cache_duration, serial_number, model, city, region, country) = 
-		($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) WHERE container_id = $14;`
+		(target, port, transport, community, retries, max_oids, timeout, serial_number, model, city, region, country) = 
+		($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) WHERE container_id = $13;`
 	sqlFlexLegacyContainersGet = `SELECT 
-		target, port, transport, community, retries, max_oids, timeout, cache_duration, serial_number, model, city, region, country
+		target, port, transport, community, retries, max_oids, timeout, serial_number, model, city, region, country
 		FROM flex_legacy_containers WHERE container_id = $1;`
 	sqlFlexLegacyContainersGetSNMPConfig = `SELECT
-		target, port, transport, community, retries, max_oids, timeout, cache_duration FROM flex_legacy_containers WHERE container_id = $1;`
+		target, port, transport, community, retries, max_oids, timeout FROM flex_legacy_containers WHERE container_id = $1;`
 	sqlFlexLegacyContainersExistsContainerTargetPortAndSerialNumber = `SELECT
 		EXISTS (SELECT 1 FROM containers WHERE id = $1),
 		EXISTS (SELECT 1 FROM flex_legacy_containers WHERE target = $2 AND port = $3 AND container_id != $1),
@@ -66,7 +66,6 @@ func (c *FlexLegacyContainers) Create(ctx context.Context, container models.Flex
 		container.Retries,
 		container.MaxOids,
 		container.Timeout,
-		container.CacheDuration,
 		container.SerialNumber,
 		container.Model,
 		container.City,
@@ -86,7 +85,6 @@ func (c *FlexLegacyContainers) Update(ctx context.Context, container models.Flex
 		container.Retries,
 		container.MaxOids,
 		container.Timeout,
-		container.CacheDuration,
 		container.SerialNumber,
 		container.Model,
 		container.City,
@@ -113,7 +111,6 @@ func (c *FlexLegacyContainers) Get(ctx context.Context, id int32) (r FlexLegacyC
 			&r.Container.Retries,
 			&r.Container.MaxOids,
 			&r.Container.Timeout,
-			&r.Container.CacheDuration,
 			&r.Container.SerialNumber,
 			&r.Container.Model,
 			&r.Container.City,
@@ -144,7 +141,6 @@ func (c *FlexLegacyContainers) GetSNMPConfig(ctx context.Context, id int32) (r F
 			&r.Container.Retries,
 			&r.Container.MaxOids,
 			&r.Container.Timeout,
-			&r.Container.CacheDuration,
 		)
 		if err != nil {
 			return r, err

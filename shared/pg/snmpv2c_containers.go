@@ -19,13 +19,13 @@ type SNMPv2cContainersGetResponse struct {
 }
 
 const (
-	sqlSNMPv2cContainerGet = `SELECT target, port, cache_duration, transport, community, 
+	sqlSNMPv2cContainerGet = `SELECT target, port, transport, community,
 		retries, max_oids, timeout FROM snmpv2c_containers WHERE container_id = $1; `
 	sqlSNMPv2cContainerExistsTargetPort = `SELECT EXISTS (SELECT 1 FROM snmpv2c_containers WHERE target = $1 AND port = $2 AND container_id != $3);`
-	sqlSNMPv2cContainerCreate           = `INSERT INTO snmpv2c_containers (container_id, target, port, cache_duration, transport, community,
-		retries, max_oids, timeout) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`
-	sqlSNMPv2cContainerUpdate = `UPDATE snmpv2c_containers SET (target, port, cache_duration, transport, community,
-		retries, max_oids, timeout) = ($1, $2, $3, $4, $5, $6, $7, $8) WHERE container_id = $9;`
+	sqlSNMPv2cContainerCreate           = `INSERT INTO snmpv2c_containers (container_id, target, port, transport, community,
+		retries, max_oids, timeout) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`
+	sqlSNMPv2cContainerUpdate = `UPDATE snmpv2c_containers SET (target, port, transport, community,
+		retries, max_oids, timeout) = ($1, $2, $3, $4, $5, $6, $7) WHERE container_id = $8;`
 )
 
 // Create creates a SNMPv2c container.
@@ -34,7 +34,6 @@ func (c *SNMPv2cContainers) Create(ctx context.Context, container models.SNMPv2c
 		container.Id,
 		container.Target,
 		container.Port,
-		container.CacheDuration,
 		container.Transport,
 		container.Community,
 		container.Retries,
@@ -49,7 +48,6 @@ func (c *SNMPv2cContainers) Update(ctx context.Context, container models.SNMPv2c
 	t, err := c.Exec(ctx, sqlSNMPv2cContainerUpdate,
 		container.Target,
 		container.Port,
-		container.CacheDuration,
 		container.Transport,
 		container.Community,
 		container.Retries,
@@ -71,7 +69,6 @@ func (c *SNMPv2cContainers) Get(ctx context.Context, containerId int32) (r SNMPv
 		err = rows.Scan(
 			&r.Container.Target,
 			&r.Container.Port,
-			&r.Container.CacheDuration,
 			&r.Container.Transport,
 			&r.Container.Community,
 			&r.Container.Retries,

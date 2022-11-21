@@ -3,8 +3,6 @@ package models
 type FlexLegacyContainer struct {
 	// Id is the unique indentifier.
 	Id int32 `json:"id" validate:"-"`
-	// CacheDuration is the cache duration in miliseconds of this configuration on the SNMP service.
-	CacheDuration int32 `json:"cache-duration" validate:"required"`
 	// Target is an ipv4 address.
 	Target string `json:"target" validate:"required,max=15"`
 	// Port is a port.
