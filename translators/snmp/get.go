@@ -1,6 +1,7 @@
 package snmp
 
 import (
+	"context"
 	"fmt"
 	"math"
 
@@ -12,7 +13,7 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-func (s *SNMPService) GetMetric(conn *ContainerConn, request models.MetricRequest, oid string, correlationId string, routingKey string) {
+func (s *SNMPService) getMetric(agent models.SNMPAgent, request models.MetricRequest, correlationId string, routingKey string) {
 	p := amqp091.Publishing{
 		Headers:       amqp.RouteHeader(routingKey),
 		CorrelationId: correlationId,
@@ -27,10 +28,50 @@ func (s *SNMPService) GetMetric(conn *ContainerConn, request models.MetricReques
 		}
 	}()
 
-	// fetch data
-	pdus, err := s.Get(conn, []string{oid})
+	gosnmp := &gosnmp.GoSNMP{
+		Context:            context.Background(),
+		Target:             agent.Target,
+		Port:               agent.Port,
+		Transport:          agent.Transport,
+		Community:          agent.Community,
+		Version:            agent.Version,
+		Timeout:            agent.Timeout,
+		Retries:            agent.Retries,
+		MaxOids:            agent.MaxOids,
+		MsgFlags:           agent.MsgFlags,
+		SecurityModel:      agent.SecurityModel,
+		SecurityParameters: agent.SecurityParameters,
+		ContextEngineID:    agent.ContextEngineID,
+		ContextName:        agent.ContextName,
+	}
+
+	// open connection
+	err := gosnmp.Connect()
 	if err != nil {
-		conn.Close()
+		s.log.Error("fail to connect agent", logger.ErrField(err))
+		return
+	}
+	defer gosnmp.Conn.Close()
+
+	// get metric
+	metrics, err := s.getSNMPMetrics(models.MetricsRequest{
+		ContainerId:   request.ContainerId,
+		ContainerType: request.ContainerType,
+		Metrics: []models.MetricBasicRequestInfo{{
+			Id:           request.MetricId,
+			Type:         request.MetricType,
+			DataPolicyId: request.DataPolicyId,
+		}},
+	})
+	if err != nil {
+		s.log.Error("fail to get snmp metrics", logger.ErrField(err))
+		return
+	}
+	oid := metrics[0].OID
+
+	// fetch data
+	pdus, err := s.get(gosnmp, []string{oid})
+	if err != nil {
 		s.log.Debug("fail to fetch data", logger.ErrField(err))
 		p.Type = amqp.FromMessageType(amqp.Failed)
 		return
@@ -72,9 +113,11 @@ func (s *SNMPService) GetMetric(conn *ContainerConn, request models.MetricReques
 	res := models.MetricDataResponse{
 		ContainerId: request.ContainerId,
 		MetricBasicDataReponse: models.MetricBasicDataReponse{
-			Id:    request.MetricId,
-			Type:  t,
-			Value: v,
+			Id:           request.MetricId,
+			Type:         t,
+			Value:        v,
+			DataPolicyId: request.DataPolicyId,
+			Failed:       false,
 		},
 	}
 
@@ -93,7 +136,7 @@ func (s *SNMPService) GetMetric(conn *ContainerConn, request models.MetricReques
 	s.log.Debug("data published for metric: " + fmt.Sprint(request.MetricId))
 }
 
-func (s *SNMPService) GetMetrics(conn *ContainerConn, request models.MetricsRequest, oids []string, correlationId string, routingKey string) {
+func (s *SNMPService) getMetrics(agent models.SNMPAgent, request models.MetricsRequest, correlationId string, routingKey string) {
 	p := amqp091.Publishing{
 		Headers:       amqp.RouteHeader(routingKey),
 		CorrelationId: correlationId,
@@ -108,10 +151,50 @@ func (s *SNMPService) GetMetrics(conn *ContainerConn, request models.MetricsRequ
 		}
 	}()
 
-	// fetch data
-	pdus, err := s.Get(conn, oids)
+	gosnmp := &gosnmp.GoSNMP{
+		Context:            context.Background(),
+		Target:             agent.Target,
+		Port:               agent.Port,
+		Transport:          agent.Transport,
+		Community:          agent.Community,
+		Version:            agent.Version,
+		Timeout:            agent.Timeout,
+		Retries:            agent.Retries,
+		MaxOids:            agent.MaxOids,
+		MsgFlags:           agent.MsgFlags,
+		SecurityModel:      agent.SecurityModel,
+		SecurityParameters: agent.SecurityParameters,
+		ContextEngineID:    agent.ContextEngineID,
+		ContextName:        agent.ContextName,
+	}
+
+	// connect
+	err := gosnmp.Connect()
 	if err != nil {
-		conn.Close()
+		s.log.Error("fail to connect agent", logger.ErrField(err))
+		return
+	}
+	defer gosnmp.Conn.Close()
+
+	// get metric
+	metrics, err := s.getSNMPMetrics(models.MetricsRequest{
+		ContainerId:   request.ContainerId,
+		ContainerType: request.ContainerType,
+		Metrics:       request.Metrics,
+	})
+	if err != nil {
+		s.log.Error("fail to get snmp metrics", logger.ErrField(err))
+	}
+
+	// get oids
+	oids := make([]string, len(metrics))
+	for i, m := range metrics {
+		oids[i] = m.OID
+	}
+
+	// fetch data
+	pdus, err := s.get(gosnmp, oids)
+	if err != nil {
 		s.log.Debug("fail to fetch data", logger.ErrField(err))
 		p.Type = amqp.FromMessageType(amqp.Failed)
 		return
@@ -125,44 +208,46 @@ func (s *SNMPService) GetMetrics(conn *ContainerConn, request models.MetricsRequ
 
 	for i, pdu := range pdus {
 		for _, r := range request.Metrics {
-			m := s.metrics[r.Id]
-			if m.OID != pdu.Name {
-				continue
-			}
+			for _, _m := range metrics {
+				if _m.Id == r.Id && pdu.Name == _m.OID {
+					res.Metrics[i] = models.MetricBasicDataReponse{
+						Id:           r.Id,
+						Type:         r.Type,
+						Value:        nil,
+						DataPolicyId: r.DataPolicyId,
+						Failed:       false,
+					}
 
-			res.Metrics[i] = models.MetricBasicDataReponse{
-				Id:     m.Id,
-				Type:   m.Type,
-				Value:  nil,
-				Failed: false,
-			}
+					// parse SNMP response
+					v, err := ParsePDU(pdu)
+					if err != nil {
+						s.log.Debug("fail to parse PDU, name "+pdu.Name, logger.ErrField(err))
+						res.Metrics[i].Failed = true
+						continue
+					}
 
-			// parse SNMP response
-			v, err := ParsePDU(pdu)
-			if err != nil {
-				s.log.Debug("fail to parse PDU, name "+pdu.Name, logger.ErrField(err))
-				res.Metrics[i].Failed = true
-				continue
-			}
+					// parse value to metric type
+					v, err = types.ParseValue(v, r.Type)
+					if err != nil {
+						s.log.Warn("fail to parse SNMP value to metric value", logger.ErrField(err))
+						res.Metrics[i].Failed = true
+						continue
+					}
 
-			// parse value to metric type
-			v, err = types.ParseValue(v, m.Type)
-			if err != nil {
-				s.log.Warn("fail to parse SNMP value to metric value", logger.ErrField(err))
-				res.Metrics[i].Failed = true
-				continue
-			}
+					// evaluate value
+					v, err = s.evaluator.Evaluate(v, r.Id, r.Type)
+					if err != nil {
+						s.log.Warn("fail to evaluate value")
+						res.Metrics[i].Failed = true
+						continue
+					}
 
-			// evaluate value
-			v, err = s.evaluator.Evaluate(v, m.Id, m.Type)
-			if err != nil {
-				s.log.Warn("fail to evaluate value")
-				res.Metrics[i].Failed = true
-				continue
+					// set value
+					res.Metrics[i].Value = v
+					break
+				}
+				break
 			}
-
-			// set value
-			res.Metrics[i].Value = v
 			break
 		}
 	}
@@ -181,14 +266,11 @@ func (s *SNMPService) GetMetrics(conn *ContainerConn, request models.MetricsRequ
 }
 
 // Get fetch the OIDs's values. Returns an error only if an error is returned fo the SNMP Get request.
-func (s *SNMPService) Get(c *ContainerConn, oids []string) (res []gosnmp.SnmpPDU, err error) {
-	// get agent
-	a := c.Agent
-
+func (s *SNMPService) get(agent *gosnmp.GoSNMP, oids []string) (res []gosnmp.SnmpPDU, err error) {
 	// oids buffer
 	var oidsBuff []string
-	if len(oids) >= a.MaxOids {
-		oidsBuff = make([]string, a.MaxOids)
+	if len(oids) >= agent.MaxOids {
+		oidsBuff = make([]string, agent.MaxOids)
 	} else {
 		oidsBuff = make([]string, len(oids))
 	}
@@ -196,9 +278,9 @@ func (s *SNMPService) Get(c *ContainerConn, oids []string) (res []gosnmp.SnmpPDU
 	res = []gosnmp.SnmpPDU{}
 
 	var i int
-	for k := 0; k < int(math.Ceil(float64(len(oids))/float64(a.MaxOids))); k++ {
+	for k := 0; k < int(math.Ceil(float64(len(oids))/float64(agent.MaxOids))); k++ {
 		// recalculate buffer
-		r := len(oids) - k*a.MaxOids
+		r := len(oids) - k*agent.MaxOids
 		if r <= cap(oidsBuff) {
 			oidsBuff = make([]string, r)
 		}
@@ -210,7 +292,7 @@ func (s *SNMPService) Get(c *ContainerConn, oids []string) (res []gosnmp.SnmpPDU
 		}
 
 		// make request
-		_res, _err := a.Get(oidsBuff)
+		_res, _err := agent.Get(oidsBuff)
 		err = _err
 		if err != nil {
 			return res, err

@@ -3,6 +3,7 @@ package snmp
 import (
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/amqph"
+	"github.com/fernandotsda/nemesys/shared/cache"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/evaluator"
 	"github.com/fernandotsda/nemesys/shared/logger"
@@ -21,10 +22,8 @@ type SNMPService struct {
 	pgConn *pg.Conn
 	// evaluator is the metric evaluator
 	evaluator *evaluator.Evaluator
-	// conns is a cache map of container id and snmp agent configuration and connection.
-	conns map[int32]*ContainerConn
-	// metrics is a cache map of metric id and metric.
-	metrics map[int64]*Metric
+	// cache is the cache handler.
+	cache *cache.Cache
 	// closed is the channel to quit.
 	closed chan any
 	// stopGetListener is the channel to stop the getListener
@@ -36,13 +35,13 @@ type SNMPService struct {
 // New returns a configurated SNMPService instance.
 func New() *SNMPService {
 	// connect to amqp server
-	conn, err := amqp.Dial()
+	amqpConn, err := amqp.Dial()
 	if err != nil {
 		panic("fail to connect to amqp server, err: " + err.Error())
 	}
 
 	// create logger
-	log, err := logger.New(conn, logger.Config{
+	log, err := logger.New(amqpConn, logger.Config{
 		Service:        "snmp",
 		ConsoleLevel:   logger.ParseLevelEnv(env.LogConsoleLevelSNMP),
 		BroadcastLevel: logger.ParseLevelEnv(env.LogBroadcastLevelSNMP),
@@ -59,13 +58,12 @@ func New() *SNMPService {
 	log.Info("connected to postgres")
 
 	return &SNMPService{
-		amqph:             amqph.New(conn, log),
-		amqpConn:          conn,
+		amqph:             amqph.New(amqpConn, log),
+		amqpConn:          amqpConn,
 		pgConn:            pgConn,
 		log:               log,
 		evaluator:         evaluator.New(pgConn),
-		conns:             make(map[int32]*ContainerConn, 100),
-		metrics:           make(map[int64]*Metric),
+		cache:             cache.New(),
 		stopGetListener:   make(chan any),
 		stopDataPublisher: make(chan any),
 	}
@@ -74,8 +72,6 @@ func New() *SNMPService {
 // Run sets up all receivers and producers.
 func (s *SNMPService) Run() {
 	s.log.Info("starting listeners...")
-	go s.containerListener()  // listen to container changes
-	go s.metricListener()     // listen to metric changes
 	go s.getMetricListener()  // listen to metric data requests
 	go s.getMetricsListener() // listen to metrics data requests
 
@@ -85,12 +81,6 @@ func (s *SNMPService) Run() {
 
 // Close all connections.
 func (s *SNMPService) Close() {
-	for _, c := range s.conns {
-		if c != nil {
-			c.Close()
-		}
-	}
-
 	s.stopDataPublisher <- nil
 	s.stopGetListener <- nil
 
