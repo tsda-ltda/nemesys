@@ -52,7 +52,7 @@ type CtxMetricsExistsContextMetricAndIdentResponse struct {
 }
 
 const (
-	sqlCtxMetricsGetMetricRequestInfo = `SELECT id, enabled, type, container_id, container_type FROM metrics 
+	sqlCtxMetricsGetMetricRequestInfo = `SELECT id, enabled, type, container_id, container_type, data_policy_id FROM metrics 
 		WHERE id = (SELECT metric_id FROM contextual_metrics WHERE id = $1);`
 	sqlCtxMetricsGetIdsByIdent = `WITH 
 		tid AS (SELECT id FROM teams WHERE ident = $1),
@@ -163,6 +163,7 @@ func (c *ContextualMetrics) GetMetricEnabledAndRequestById(ctx context.Context, 
 			&r.MetricRequest.MetricType,
 			&r.MetricRequest.ContainerId,
 			&r.MetricRequest.ContainerType,
+			&r.MetricRequest.DataPolicyId,
 		)
 		if err != nil {
 			return r, err

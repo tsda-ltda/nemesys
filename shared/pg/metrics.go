@@ -58,6 +58,13 @@ type MetricsEnabledResponse struct {
 	ContainerEnabled bool
 }
 
+type GetMetricsRequestsAndIntervalsResult struct {
+	// MetricRequest is the metric request.
+	MetricRequest models.MetricRequest
+	// Interval is the interval in seconds
+	Interval int32
+}
+
 const (
 	sqlMetricsCreate = `INSERT INTO metrics 
 		(container_id, container_type, name, descr, enabled, data_policy_id, rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression)
@@ -81,24 +88,8 @@ const (
 		m AS (SELECT enabled, container_id FROM metrics WHERE id = $1),
 		c AS (SELECT enabled FROM containers WHERE id = (SELECT container_id FROM m))
 		SELECT (SELECT enabled FROM m), (SELECT enabled FROM c);`
+	sqlMetricsGetMetricsRequestsAndIntervals = `SELECT id, type, container_id, container_type, data_policy_id, dhs_interval FROM metrics WHERE dhs_enabled = true LIMIT $1 OFFSET $2;`
 )
-
-// GetEvaluableExpression returns the metric evaluable expression if exists.
-func (c *Metrics) GetEvaluableExpression(ctx context.Context, id int64) (r MetricsGetEvaluableExpressionResponse, err error) {
-	rows, err := c.Query(ctx, sqlMetricsGetEvaluableExpression, id)
-	if err != nil {
-		return r, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		err = rows.Scan(&r.Expression)
-		if err != nil {
-			return r, err
-		}
-		r.Exists = true
-	}
-	return r, err
-}
 
 // Get returns a metric.
 func (c *Metrics) Get(ctx context.Context, id int64) (r MetricsGetResponse, err error) {
@@ -200,6 +191,23 @@ func (c *Metrics) Delete(ctx context.Context, id int64) (exists bool, err error)
 	return t.RowsAffected() != 0, err
 }
 
+// GetEvaluableExpression returns the metric evaluable expression if exists.
+func (c *Metrics) GetEvaluableExpression(ctx context.Context, id int64) (r MetricsGetEvaluableExpressionResponse, err error) {
+	rows, err := c.Query(ctx, sqlMetricsGetEvaluableExpression, id)
+	if err != nil {
+		return r, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(&r.Expression)
+		if err != nil {
+			return r, err
+		}
+		r.Exists = true
+	}
+	return r, err
+}
+
 // GetRTSConfig returns the metric's RTS configuration.
 func (c *Metrics) GetRTSConfig(ctx context.Context, id int64) (r MetricsGetRTSConfigResponse, err error) {
 	rows, err := c.Query(ctx, sqlMetricsGetRTSConfig, id)
@@ -253,5 +261,32 @@ func (c *Metrics) Enabled(ctx context.Context, id int32) (r MetricsEnabledRespon
 		r.Enabled = *me
 	}
 
+	return r, nil
+}
+
+// GetMetricsRequestsAndIntervals returns ax MetricRequest and the DHS interval.
+func (c *Metrics) GetMetricsRequestsAndIntervals(ctx context.Context, limit int, offset int) (r []GetMetricsRequestsAndIntervalsResult, err error) {
+	rows, err := c.Query(ctx, sqlMetricsGetMetricsRequestsAndIntervals, limit, offset)
+	if err != nil {
+		return r, err
+	}
+	defer rows.Close()
+	results := make([]GetMetricsRequestsAndIntervalsResult, 0, limit)
+	for rows.Next() {
+		var result GetMetricsRequestsAndIntervalsResult
+		err = rows.Scan(
+			&result.MetricRequest.MetricId,
+			&result.MetricRequest.MetricType,
+			&result.MetricRequest.ContainerId,
+			&result.MetricRequest.ContainerType,
+			&result.MetricRequest.DataPolicyId,
+			&result.Interval,
+		)
+		if err != nil {
+			return r, err
+		}
+		results = append(results, result)
+	}
+	r = results
 	return r, nil
 }

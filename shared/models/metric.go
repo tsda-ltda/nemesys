@@ -71,6 +71,8 @@ type MetricRequest struct {
 	MetricId int64
 	// MetricType is the metric type.
 	MetricType types.MetricType
+	// DataPolicyId is the data policy id.
+	DataPolicyId int16
 }
 
 type MetricsRequest struct {
@@ -87,6 +89,8 @@ type MetricBasicRequestInfo struct {
 	Id int64
 	// Type is the metric type.
 	Type types.MetricType
+	// DataPolicyId is the data policy id.
+	DataPolicyId int16
 }
 
 type MetricDataResponse struct {
@@ -109,6 +113,8 @@ type MetricBasicDataReponse struct {
 	Type types.MetricType
 	// Value is the metric data as MetricType.
 	Value any
+	// DataPolicyId is the data policy id.
+	DataPolicyId int16
 	// Failed is the failed status.
 	Failed bool
 }

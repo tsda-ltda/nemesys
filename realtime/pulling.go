@@ -14,10 +14,7 @@ import (
 
 type MetricPulling struct {
 	models.RTSMetricConfig
-	// Id is the metric identifier.
-	Id int64
-	// Type is the data type.
-	Type types.MetricType
+	models.MetricBasicRequestInfo
 	// pullingTimes is the pulling times.
 	pullingTimes int16
 	// pullingRemaining is the pulling counter.
@@ -106,8 +103,11 @@ func (s *RTS) startMetricPulling(r models.MetricRequest, config models.RTSMetric
 		if !ok {
 			// push metric to container's metrics
 			c.AddMetric(MetricPulling{
-				Id:               r.MetricId,
-				Type:             r.MetricType,
+				MetricBasicRequestInfo: models.MetricBasicRequestInfo{
+					Id:           r.MetricId,
+					Type:         r.MetricType,
+					DataPolicyId: r.DataPolicyId,
+				},
 				RTSMetricConfig:  config,
 				pullingRemaining: config.PullingTimes,
 				pullingTimes:     config.PullingTimes,
@@ -138,8 +138,9 @@ func (c *ContainerPulling) Run() {
 			i := 0
 			for k, m := range c.Metrics {
 				r.Metrics[i] = models.MetricBasicRequestInfo{
-					Id:   m.Id,
-					Type: m.Type,
+					Id:           m.Id,
+					Type:         m.Type,
+					DataPolicyId: m.DataPolicyId,
 				}
 
 				i++
