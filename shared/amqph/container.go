@@ -29,7 +29,7 @@ func (a *Amqph) NotifyContainerUpdated(baseContainer models.BaseContainer, proto
 	}
 
 	a.PublisherCh <- models.DetailedPublishing{
-		Exchange: amqp.ExchangeContainerCreated,
+		Exchange: amqp.ExchangeContainerUpdated,
 		Publishing: amqp091.Publishing{
 			Expiration: amqp.DefaultExp,
 			Body:       b,
