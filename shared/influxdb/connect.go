@@ -15,6 +15,8 @@ type Client struct {
 
 	// DefaultOrg is the default organization that will be used by de client.
 	DefaultOrg *domain.Organization
+	// buckets is the a map of bucket name and bucket.
+	buckets map[string]*domain.Bucket
 }
 
 // Connect connects to InfluxDB and create the default organixation if not exists, returning the client.
@@ -60,5 +62,6 @@ func Connect() (c Client, err error) {
 	return Client{
 		Client:     client,
 		DefaultOrg: org,
+		buckets:    make(map[string]*domain.Bucket),
 	}, nil
 }

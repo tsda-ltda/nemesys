@@ -7,7 +7,7 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
-func getBucketName(dataPolicyId int16, aggr bool) string {
+func GetBucketName(dataPolicyId int16, aggr bool) string {
 	var suffix string
 	if aggr {
 		suffix = "aggr"
@@ -25,14 +25,14 @@ func fmtBucketDescription(descr string) *string {
 // CreateDataPolicy creates two buckets on database to represent a data policy.
 func (c *Client) CreateDataPolicy(ctx context.Context, dp models.DataPolicy) (err error) {
 	// create raw bucket
-	err = c.createBucket(ctx, getBucketName(dp.Id, false), dp.Descr, int64(dp.Retention*3600))
+	err = c.createBucket(ctx, GetBucketName(dp.Id, false), dp.Descr, int64(dp.Retention*3600))
 	if err != nil {
 		return err
 	}
 
 	// create aggregation bucket
 	if dp.UseAggregation {
-		err = c.createBucket(ctx, getBucketName(dp.Id, true), dp.Descr, int64(dp.AggregationRetention*3600))
+		err = c.createBucket(ctx, GetBucketName(dp.Id, true), dp.Descr, int64(dp.AggregationRetention*3600))
 		if err != nil {
 			return err
 		}
@@ -47,12 +47,12 @@ func (c *Client) UpdateDataPolicy(ctx context.Context, dp models.DataPolicy) (er
 	api := c.BucketsAPI()
 
 	// update raw bucket
-	err = c.updateBucket(ctx, getBucketName(dp.Id, false), dp.Descr, int64(dp.Retention*3600))
+	err = c.updateBucket(ctx, GetBucketName(dp.Id, false), dp.Descr, int64(dp.Retention*3600))
 	if err != nil {
 		return err
 	}
 
-	aggrName := getBucketName(dp.Id, true)
+	aggrName := GetBucketName(dp.Id, true)
 	aggrRetention := int64(dp.Retention * 3600)
 
 	// find aggregation bucket
@@ -96,17 +96,17 @@ func (c *Client) UpdateDataPolicy(ctx context.Context, dp models.DataPolicy) (er
 func (c *Client) DeleteDataPolicy(ctx context.Context, id int16) (err error) {
 	api := c.BucketsAPI()
 
-	err = c.deleteBucket(ctx, getBucketName(id, false))
+	err = c.deleteBucket(ctx, GetBucketName(id, false))
 	if err != nil {
 		return err
 	}
-	_, err = api.FindBucketByName(ctx, getBucketName(id, true))
+	_, err = api.FindBucketByName(ctx, GetBucketName(id, true))
 	if err == nil {
 		err = c.deleteAggrTask(ctx, id)
 		if err != nil {
 			return err
 		}
-		err = c.deleteBucket(ctx, getBucketName(id, true))
+		err = c.deleteBucket(ctx, GetBucketName(id, true))
 		if err != nil {
 			return err
 		}

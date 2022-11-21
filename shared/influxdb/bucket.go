@@ -21,7 +21,8 @@ func (c *Client) createBucket(ctx context.Context, name string, description stri
 
 	// update description
 	bucket.Description = fmtBucketDescription(description)
-	_, err = api.UpdateBucket(ctx, bucket)
+	bucket, err = api.UpdateBucket(ctx, bucket)
+	c.buckets[name] = bucket
 	return err
 }
 
@@ -53,7 +54,8 @@ func (c *Client) updateBucket(ctx context.Context, name string, description stri
 	bucket.Description = &description
 
 	// update bucket
-	_, err = api.UpdateBucket(ctx, bucket)
+	bucket, err = api.UpdateBucket(ctx, bucket)
+	c.buckets[name] = bucket
 	return err
 }
 
@@ -65,6 +67,7 @@ func (c *Client) deleteBucket(ctx context.Context, name string) (err error) {
 	if err != nil {
 		return err
 	}
+	delete(c.buckets, name)
 
 	// delete bucket
 	return c.BucketsAPI().DeleteBucket(ctx, bucket)

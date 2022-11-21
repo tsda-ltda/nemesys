@@ -25,9 +25,9 @@ func (c *Client) createAggrTask(ctx context.Context, dp models.DataPolicy) (err 
 				|> aggregateWindow(every: %ds, fn: mean)
 				|> to(bucket: "%s")
 		`,
-		getBucketName(dp.Id, false),
+		GetBucketName(dp.Id, false),
 		dp.AggregationInterval,
-		getBucketName(dp.Id, true),
+		GetBucketName(dp.Id, true),
 	)
 
 	_, err = api.CreateTask(ctx, &domain.Task{
@@ -71,9 +71,9 @@ func (c *Client) updateAggrTask(ctx context.Context, dp models.DataPolicy) (err 
 		`,
 		getTaskName(dp.Id),
 		every,
-		getBucketName(dp.Id, false),
+		GetBucketName(dp.Id, false),
 		dp.AggregationInterval,
-		getBucketName(dp.Id, true),
+		GetBucketName(dp.Id, true),
 	)
 
 	_, err = api.UpdateTask(ctx, &task)

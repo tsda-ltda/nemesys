@@ -25,21 +25,31 @@ func getMeasurement(mt types.MetricType) string {
 }
 
 // WritePoint writes a data point into influxdb client buffer.
-func (c *Client) WritePoint(ctx context.Context, data models.MetricDataResponse, bucket *domain.Bucket) {
+func (c *Client) WritePoint(ctx context.Context, data models.MetricDataResponse) error {
 	if data.Failed {
-		return
+		return ErrMetricDataResponseIsFailed
 	}
 
-	api := c.WriteAPI(*c.DefaultOrg.Id, *bucket.Id)
+	// find bucket
+	bucketName := GetBucketName(data.DataPolicyId, false)
+	bucket, ok := c.buckets[bucketName]
+	if !ok {
+		var err error
+		bucket, err = c.BucketsAPI().FindBucketByName(ctx, bucketName)
+		if err != nil {
+			return err
+		}
+		c.buckets[bucketName] = bucket
+	}
 
 	// create point
 	p := influxdb2.NewPointWithMeasurement(getMeasurement(data.Type))
-	p.AddTag("container", strconv.Itoa(int(data.ContainerId)))
-	p.AddField("id", data.Id)
+	p.AddTag("metric_id", strconv.Itoa(int(data.Id)))
 	p.AddField("value", data.Value)
 
 	// write point
-	api.WritePoint(p)
+	c.WriteAPI(*c.DefaultOrg.Id, *bucket.Id).WritePoint(p)
+	return nil
 }
 
 func (c *Client) FlushWrites(bucket *domain.Bucket) {
