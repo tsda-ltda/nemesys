@@ -34,7 +34,7 @@ type GetMetricDataPolicyIdResponse struct {
 
 // GetMetricRequestByIdent returns a metric request information.
 func (c *Cache) GetMetricRequestByIdent(ctx context.Context, teamIdent string, contextIdent string, metricIdent string) (r GetMetricRequestByIdentResponse, err error) {
-	bytes, err := c.redis.Get(ctx, rdb.RDBCacheMetricIdContainerIdKey(teamIdent, contextIdent, metricIdent)).Bytes()
+	bytes, err := c.redis.Get(ctx, rdb.CacheMetricIdContainerIdKey(teamIdent, contextIdent, metricIdent)).Bytes()
 	if err != nil {
 		if err == redis.Nil {
 			return r, nil
@@ -52,17 +52,17 @@ func (c *Cache) SetMetricRequestByIdent(ctx context.Context, teamIdent string, c
 	if err != nil {
 		return err
 	}
-	return c.redis.Set(ctx, rdb.RDBCacheMetricIdContainerIdKey(teamIdent, contextIdent, metricIdent), bytes, c.metricIdContainerIdExp).Err()
+	return c.redis.Set(ctx, rdb.CacheMetricIdContainerIdKey(teamIdent, contextIdent, metricIdent), bytes, c.metricIdContainerIdExp).Err()
 }
 
 // SetMetricEvExpression save a metric evaluate expression.
 func (c *Cache) SetMetricEvExpression(ctx context.Context, metricId int64, expression string) (err error) {
-	return c.redis.Set(ctx, rdb.RDBCacheMetricEvExpressionKey(metricId), expression, c.metricEvExpressionExp).Err()
+	return c.redis.Set(ctx, rdb.CacheMetricEvExpressionKey(metricId), expression, c.metricEvExpressionExp).Err()
 }
 
 // GetMetricEvExpression returns a metric evaluate expression.
 func (c *Cache) GetMetricEvExpression(ctx context.Context, metricId int64) (r GetMetricEvExpressionResponse, err error) {
-	expression, err := c.redis.Get(ctx, rdb.RDBCacheMetricEvExpressionKey(metricId)).Result()
+	expression, err := c.redis.Get(ctx, rdb.CacheMetricEvExpressionKey(metricId)).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return r, nil
@@ -77,12 +77,12 @@ func (c *Cache) GetMetricEvExpression(ctx context.Context, metricId int64) (r Ge
 
 // SetMetricDataPolicyId saves a metric data policy id.
 func (c *Cache) SetMetricDataPolicyId(ctx context.Context, metricId int64, dataPolicyId int16) (err error) {
-	return c.redis.Set(ctx, rdb.RDBCacheMetricDataPolicyId(metricId), dataPolicyId, c.metricDataPolicyIdExp).Err()
+	return c.redis.Set(ctx, rdb.CacheMetricDataPolicyId(metricId), dataPolicyId, c.metricDataPolicyIdExp).Err()
 }
 
 // GetMetricDataPolicyId returns a metric data policy id.
 func (c *Cache) GetMetricDataPolicyId(ctx context.Context, metricId int64) (r GetMetricDataPolicyIdResponse, err error) {
-	id, err := c.redis.Get(ctx, rdb.RDBCacheMetricDataPolicyId(metricId)).Int()
+	id, err := c.redis.Get(ctx, rdb.CacheMetricDataPolicyId(metricId)).Int()
 	if err != nil {
 		if err == redis.Nil {
 			return r, nil

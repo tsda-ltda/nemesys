@@ -13,12 +13,16 @@ type Cache struct {
 	// redis is the redis client used to get and set data.
 	redis *redis.Client
 
-	// metricIdContainerIdExp is the time expire the data.
+	// metricIdContainerIdExp is the time to expire the data.
 	metricIdContainerIdExp time.Duration
-	// metricEvExpressionExp is the time expire the evaluate expression.
+	// metricEvExpressionExp is the time to expire the evaluate expression.
 	metricEvExpressionExp time.Duration
-	// metricEvExpressionExp is the time expire the evaluate expression.
+	// metricEvExpressionExp is the time to expire the data policy id.
 	metricDataPolicyIdExp time.Duration
+	// snmpAgentExp is the time to expire the snmp agent.
+	snmpAgentExp time.Duration
+	// snmpMetricExp is the time to expire the snmp metric.
+	snmpMetricExp time.Duration
 }
 
 // New returns a prepared Cache struct.
@@ -34,6 +38,8 @@ func New() *Cache {
 		metricIdContainerIdExp: time.Minute,
 		metricEvExpressionExp:  time.Minute,
 		metricDataPolicyIdExp:  time.Minute,
+		snmpAgentExp:           time.Minute * 5,
+		snmpMetricExp:          time.Minute * 2,
 	}
 }
 

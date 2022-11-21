@@ -20,13 +20,13 @@ func (s *RTS) containerListener() {
 			// close container pulling on update
 			c, ok := s.pulling[n.Base.Id]
 			if !ok {
-				return
+				continue
 			}
 			c.Close()
 		case id := <-s.amqph.OnContainerDeleted():
 			c, ok := s.pulling[id]
 			if !ok {
-				return
+				continue
 			}
 			c.Close()
 		}
@@ -90,7 +90,7 @@ func (s *RTS) metricDataRequestListener() {
 		s.log.Debug("get metric data request received, container id: " + metricIdString)
 
 		// get data on cache
-		bytes, err := s.cache.Get(ctx, rdb.RDBCacheMetricDataKey(r.MetricId))
+		bytes, err := s.cache.Get(ctx, rdb.CacheMetricDataKey(r.MetricId))
 		if err != nil {
 			if err != redis.Nil {
 				s.log.Error("fail to get metric data on redis", logger.ErrField(err))
@@ -136,7 +136,7 @@ func (s *RTS) metricDataRequestListener() {
 				}(correlationId)
 
 				// wait response
-				res, err := s.plumber.Listen(correlationId, time.Second*5)
+				res, err := s.plumber.Listen(correlationId, time.Second*25)
 				if err != nil {
 					s.log.Warn("plumber timeout, no data response was available")
 					return
@@ -206,7 +206,7 @@ func (s *RTS) metricDataListener() {
 		}
 
 		// save on cache
-		err = s.cache.Set(ctx, d.Body, rdb.RDBCacheMetricDataKey(m.Id), time.Millisecond*time.Duration(info.CacheDuration))
+		err = s.cache.Set(ctx, d.Body, rdb.CacheMetricDataKey(m.Id), time.Millisecond*time.Duration(info.CacheDuration))
 		if err != nil {
 			s.log.Error("fail to save metric data on cache", logger.ErrField(err))
 			continue
@@ -273,7 +273,7 @@ func (s *RTS) metricsDataListener() {
 			}
 
 			// save on cache
-			err = s.cache.Set(ctx, b, rdb.RDBCacheMetricDataKey(v.Id), time.Millisecond*time.Duration(mp.CacheDuration))
+			err = s.cache.Set(ctx, b, rdb.CacheMetricDataKey(v.Id), time.Millisecond*time.Duration(mp.CacheDuration))
 			if err != nil {
 				s.log.Error("fail to save metric data on cache", logger.ErrField(err))
 				continue
