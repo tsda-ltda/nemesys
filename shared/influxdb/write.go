@@ -10,8 +10,8 @@ import (
 	"github.com/influxdata/influxdb-client-go/v2/domain"
 )
 
-// getMeasurement returns a measurement name for a metric type.
-func getMeasurement(mt types.MetricType) string {
+// getField returns a field name for a metric type.
+func getField(mt types.MetricType) string {
 	switch mt {
 	case types.MTBool:
 		return "boolean-metrics"
@@ -43,9 +43,9 @@ func (c *Client) WritePoint(ctx context.Context, data models.MetricDataResponse)
 	}
 
 	// create point
-	p := influxdb2.NewPointWithMeasurement(getMeasurement(data.Type))
+	p := influxdb2.NewPointWithMeasurement("metrics")
 	p.AddTag("metric_id", strconv.Itoa(int(data.Id)))
-	p.AddField("value", data.Value)
+	p.AddField(getField(data.Type), data.Value)
 
 	// write point
 	c.WriteAPI(*c.DefaultOrg.Id, *bucket.Id).WritePoint(p)
