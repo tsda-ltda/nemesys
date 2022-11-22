@@ -17,12 +17,12 @@ func getTaskName(dataPolicyId int16) string {
 func getTaskFlux(dp models.DataPolicy) string {
 	return fmt.Sprintf(`
 		option task = {name: "%s", every: %s, offset: %s}
-		from(bucket: "%s")
+		data = from(bucket: "%s")
 			|> range(start: -%s, stop: -%s)
 			|> filter(fn: (r) => r._measurement == "metrics")
+		data
 			|> aggregateWindow(every: %ds, fn: mean, createEmpty: false)
-			|> to(bucket: "%s")
-			`,
+			|> to(bucket: "%s")`,
 		getTaskName(dp.Id),
 		fmt.Sprintf("%ds", dp.AggregationInterval),
 		fmt.Sprintf("%ds", dp.Retention*3600),
@@ -44,7 +44,6 @@ func (c *Client) createAggrTask(ctx context.Context, dp models.DataPolicy) (err 
 // updateAggrTask updates a task of data aggregation.
 func (c *Client) updateAggrTask(ctx context.Context, dp models.DataPolicy) (err error) {
 	api := c.TasksAPI()
-
 	// find task
 	filter := iapi.TaskFilter{
 		Name:  getTaskName(dp.Id),
