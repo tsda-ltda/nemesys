@@ -77,6 +77,7 @@ func CreateFlexLegacyHandler(api *api.API) func(c *gin.Context) {
 
 		// assign id
 		metric.Protocol.Id = id
+		metric.Base.Id = id
 
 		err = api.PgConn.FlexLegacyMetrics.Create(ctx, metric.Protocol)
 		if err != nil {

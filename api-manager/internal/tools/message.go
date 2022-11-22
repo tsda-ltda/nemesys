@@ -8,7 +8,8 @@ const (
 	MsgContextNotFound          = "Context does not exists."
 	MsgContextualMetricNotFound = "Contextual metric does not exists."
 	MsgUserNotFound             = "User does not exists."
-	MsgMemberNotFound           = "Member not found."
+	MsgMemberNotFound           = "Member does not exists."
+	MsgCustomQueryNotFound      = "Custom query does not exists."
 
 	MsgParamsNotSameType     = "Params must have same type. Use only numbers or only text."
 	MsgIdentIsNumber         = "Identification must not be number as text."

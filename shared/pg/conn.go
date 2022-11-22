@@ -21,6 +21,7 @@ type Conn struct {
 	SNMPv2cMetrics       SNMPv2cMetrics
 	FlexLegacyContainers FlexLegacyContainers
 	FlexLegacyMetrics    FlexLegacyMetrics
+	CustomQueries        CustomQueries
 }
 
 // Connects to a Postgresql database server
@@ -52,5 +53,6 @@ func Connect() (*Conn, error) {
 		SNMPv2cMetrics:       SNMPv2cMetrics{Conn: conn},
 		FlexLegacyContainers: FlexLegacyContainers{Conn: conn},
 		FlexLegacyMetrics:    FlexLegacyMetrics{Conn: conn},
+		CustomQueries:        CustomQueries{Conn: conn},
 	}, nil
 }

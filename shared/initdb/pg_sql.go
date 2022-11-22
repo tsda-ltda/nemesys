@@ -91,7 +91,6 @@ var sqlCommands []string = []string{
 		retries INT2 NOT NULL,
 		max_oids INT2 NOT NULL,
 		timeout INT4 NOT NULL,
-		cache_duration INT4 NOT NULL,
 		CONSTRAINT fk_container_id
 			FOREIGN KEY(container_id)
 				REFERENCES containers(id)
@@ -185,4 +184,12 @@ var sqlCommands []string = []string{
 	// Create contextual metrics
 	`CREATE INDEX contextual_metric_ctx_id ON contextual_metrics (ctx_id);`,
 	`CREATE INDEX contextual_metric_ident_id ON contextual_metrics (ident);`,
+
+	// Create custom queries table
+	`CREATE TABLE custom_queries (
+		id SERIAL4 PRIMARY KEY,
+		ident VARCHAR (50) NOT NULL UNIQUE,
+		descr VARCHAR (255) NOT NULL,
+		flux VARCHAR (1000) NOT NULL
+	);`,
 }

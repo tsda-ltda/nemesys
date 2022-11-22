@@ -77,6 +77,7 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 
 		// assign id
 		metric.Protocol.Id = id
+		metric.Base.Id = id
 
 		err = api.PgConn.SNMPv2cMetrics.Create(ctx, metric.Protocol)
 		if err != nil {

@@ -23,6 +23,8 @@ type Cache struct {
 	snmpAgentExp time.Duration
 	// snmpMetricExp is the time to expire the snmp metric.
 	snmpMetricExp time.Duration
+	// customQueryExp is the time to expire the custom query.
+	customQueryExp time.Duration
 }
 
 // New returns a prepared Cache struct.
@@ -40,6 +42,7 @@ func New() *Cache {
 		metricDataPolicyIdExp:  time.Minute,
 		snmpAgentExp:           time.Minute * 5,
 		snmpMetricExp:          time.Minute * 2,
+		customQueryExp:         time.Minute,
 	}
 }
 

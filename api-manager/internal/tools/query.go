@@ -6,6 +6,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// DefaultQuery returns the query value of the context.
+// If query value is empty, returns the default value.
+func DefaultQuery(c *gin.Context, key string, defaultValue string) string {
+	raw := c.Query(key)
+	if len(raw) > 0 {
+		return raw
+	}
+	return defaultValue
+}
+
 // IntQuery returns the int value of a query value.
 // If query value is "", returns default value.
 // If query value is invalid int returns an error.
@@ -44,7 +54,7 @@ func IntRangeQuery(c *gin.Context, key string, defaultValue int, max int, min in
 // IntMaxQuery returns the int value of a query value.
 // If query value is "", returns default value.
 // If query value is invalid returns an error.
-// If query value is less than min value, returns min value.
+// If query value is bigger than max value, returns max value.
 func IntMaxQuery(c *gin.Context, key string, defaultValue int, max int) (int, error) {
 	raw := c.Query(key)
 	if len(raw) == 0 {
@@ -65,7 +75,7 @@ func IntMaxQuery(c *gin.Context, key string, defaultValue int, max int) (int, er
 // IntMinQuery returns the int value of a query value.
 // If query value is "", returns default value.
 // If query value is invalid returns an error.
-// If query value is bigger than max value, returns max value.
+// If query value is less than min value, returns min value.
 func IntMinQuery(c *gin.Context, key string, defaultValue int, min int) (int, error) {
 	raw := c.Query(key)
 	if len(raw) == 0 {

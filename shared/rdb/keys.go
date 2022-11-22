@@ -40,3 +40,10 @@ func CacheGoSNMPConfig(containerId int32) string {
 func CacheSNMPMetric(metricId int64) string {
 	return fmt.Sprintf("cache:metrics:%d:snmp", metricId)
 }
+
+func CacheCustomQuery(cqId int32) string {
+	return "cache:custom-query" + strconv.FormatInt(int64(cqId), 10)
+}
+func CacheCustomQueryByIdent(cqIdent string) string {
+	return "cache:custom-query:" + cqIdent
+}
