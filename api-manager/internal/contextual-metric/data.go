@@ -3,6 +3,7 @@ package ctxmetric
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -76,15 +77,36 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
+		now := time.Now().Unix()
+
 		// query options
 		var opts influxdb.QueryOptions
 		opts.MetricId = r.MetricId
 		opts.MetricType = r.MetricType
 		opts.DataPolicyId = r.DataPolicyId
 
-		opts.Start = tools.DefaultQuery(c, "start", "-1h")
-		opts.Stop = tools.DefaultQuery(c, "stop", "now()")
+		// get start param
+		start, err := strconv.ParseInt(c.Query("start"), 0, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			return
+		}
+		opts.Start = influxdb.DurationFromSeconds(start - now)
 
+		// get stop param
+		rawStop := c.Param("stop")
+		if len(rawStop) > 0 {
+			stop, err := strconv.ParseInt(rawStop, 0, 64)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+				return
+			}
+			opts.Stop = influxdb.DurationFromSeconds(stop - now)
+		} else {
+			opts.Stop = "now()"
+		}
+
+		// get custom query
 		rawCustomQuery := c.Query("custom_query")
 		if len(rawCustomQuery) != 0 {
 			id, err := strconv.ParseInt(rawCustomQuery, 0, 32)
@@ -163,10 +185,14 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 
 		d, err := api.Influx.Query(ctx, opts)
 		if err != nil {
+			if err == influxdb.ErrInvalidQueryOptions {
+				c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to query metric data", logger.ErrField(err))
 			return
 		}
-		c.JSON(http.StatusOK, struct{ Value any }{Value: d})
+		c.JSON(http.StatusOK, d)
 	}
 }

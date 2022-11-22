@@ -2,24 +2,14 @@ package influxdb
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strconv"
-	"strings"
+	"time"
 
 	"github.com/fernandotsda/nemesys/shared/types"
+	"github.com/influxdata/influxdb-client-go/v2/domain"
 )
-
-const defaultQuery = `
-	raw = from(bucket: "$raw_bucket")
-		|> range(start: $start, stop: $stop)
-		|> filter(fn: (r) => r["_measurement"] == "metrics")
-		|> filter(fn: (r) => r["metric_id"] == "$metric_id")
-		|> filter(fn: (r) => r["_field"] == "$field")
-	aggr = from(bucket: "$aggr_bucket")
-		|> range(start: $start, stop: $stop)
-		|> filter(fn: (r) => r["_measurement"] == "metrics")
-		|> filter(fn: (r) => r["metric_id"] == "$metric_id")
-		|> filter(fn: (r) => r["_field"] == "$field")
-	data = union(tables: [aggr, raw])`
 
 type QueryOptions struct {
 	// Start is the start range. Can be ommited.
@@ -39,14 +29,22 @@ type QueryOptions struct {
 func (c *Client) Query(ctx context.Context, opts QueryOptions) (queryPoints *[][]any, err error) {
 	queryApi := c.QueryAPI(*c.DefaultOrg.Id)
 
-	query := replaceQueryVariables(defaultQuery, opts)
+	rawBucket, err := c.getBucketLocal(GetBucketName(opts.DataPolicyId, false))
+	if err != nil {
+		return nil, err
+	}
+
+	query, err := getBaseQuery(opts, rawBucket)
+	if err != nil {
+		return nil, ErrInvalidQueryOptions
+	}
+
 	if opts.CustomQueryFlux != "" {
 		query += opts.CustomQueryFlux
 	} else {
 		query += ` data`
 	}
 
-	// execute query
 	table, err := queryApi.Query(ctx, query)
 	if err != nil {
 		return nil, err
@@ -54,18 +52,61 @@ func (c *Client) Query(ctx context.Context, opts QueryOptions) (queryPoints *[][
 
 	points := make([][]any, 0)
 	for table.Next() {
-		// get record
 		r := table.Record()
 		points = append(points, []any{r.Time().Unix(), r.Value()})
 	}
 	return &points, nil
 }
 
-func replaceQueryVariables(query string, opts QueryOptions) string {
-	query = strings.Replace(query, "$raw_bucket", GetBucketName(opts.DataPolicyId, false), 1)
-	query = strings.Replace(query, "$aggr_bucket", GetBucketName(opts.DataPolicyId, true), 1)
-	query = strings.Replace(query, "$start", opts.Start, 2)
-	query = strings.Replace(query, "$stop", opts.Stop, 2)
-	query = strings.Replace(query, "$field", getField(opts.MetricType), 2)
-	return strings.Replace(query, "$metric_id", strconv.FormatInt(opts.MetricId, 10), 2)
+func getBaseQuery(opts QueryOptions, rawBucket *domain.Bucket) (query string, err error) {
+	if len(rawBucket.RetentionRules) == 0 {
+		return query, errors.New("invalid bucket")
+	}
+
+	retentionSeconds := rawBucket.RetentionRules[0].EverySeconds
+	retention := time.Duration(retentionSeconds) * time.Second
+	start, err := ParseDuration(opts.Start)
+	if err != nil {
+		return query, err
+	}
+
+	if retention+start >= 0 {
+		query = fmt.Sprintf(`
+			data = from(bucket: "%s")
+				|> range(start: %s, stop: %s)
+				|> filter(fn: (r) => r["_measurement"] == "metrics")
+				|> filter(fn: (r) => r["metric_id"] == "%s")
+				|> filter(fn: (r) => r["_field"] == "%s")`,
+			GetBucketName(opts.DataPolicyId, false),
+			opts.Start,
+			opts.Stop,
+			strconv.FormatInt(opts.MetricId, 10),
+			getField(opts.MetricType),
+		)
+	} else {
+		query = fmt.Sprintf(`
+			raw = from(bucket: "%s")
+				|> range(start: %s, stop: %s)
+				|> filter(fn: (r) => r["_measurement"] == "metrics")
+				|> filter(fn: (r) => r["metric_id"] == "%s")
+				|> filter(fn: (r) => r["_field"] == "%s")
+			aggr = from(bucket: "%s")
+				|> range(start: %s, stop: %s)
+				|> filter(fn: (r) => r["_measurement"] == "metrics")
+				|> filter(fn: (r) => r["metric_id"] == "%s")
+				|> filter(fn: (r) => r["_field"] == "%s")
+			data = union(tables: [aggr, raw])`,
+			GetBucketName(opts.DataPolicyId, false),
+			DurationFromSeconds(-retentionSeconds),
+			opts.Stop,
+			strconv.FormatInt(opts.MetricId, 10),
+			getField(opts.MetricType),
+			GetBucketName(opts.DataPolicyId, true),
+			opts.Start,
+			DurationFromSeconds(-retentionSeconds),
+			strconv.FormatInt(opts.MetricId, 10),
+			getField(opts.MetricType),
+		)
+	}
+	return query, nil
 }
