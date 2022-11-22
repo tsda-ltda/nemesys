@@ -32,14 +32,9 @@ func (c *Client) WritePoint(ctx context.Context, data models.MetricDataResponse)
 
 	// find bucket
 	bucketName := GetBucketName(data.DataPolicyId, false)
-	bucket, ok := c.buckets[bucketName]
-	if !ok {
-		var err error
-		bucket, err = c.BucketsAPI().FindBucketByName(ctx, bucketName)
-		if err != nil {
-			return err
-		}
-		c.buckets[bucketName] = bucket
+	bucket, err := c.getBucketLocal(bucketName)
+	if err != nil {
+		return err
 	}
 
 	// create point

@@ -6,6 +6,27 @@ import (
 	"github.com/influxdata/influxdb-client-go/v2/domain"
 )
 
+func (c *Client) saveBucketLocal(bucket *domain.Bucket) {
+	c.buckets[bucket.Name] = bucket
+}
+
+func (c *Client) deleteBucketLocal(name string) {
+	delete(c.buckets, name)
+}
+
+func (c *Client) getBucketLocal(name string) (*domain.Bucket, error) {
+	bucket, ok := c.buckets[name]
+	if !ok {
+		var err error
+		bucket, err = c.BucketsAPI().FindBucketByName(context.Background(), name)
+		if err != nil {
+			return nil, err
+		}
+		c.saveBucketLocal(bucket)
+	}
+	return bucket, nil
+}
+
 func (c *Client) createBucket(ctx context.Context, name string, description string, retentionSeconds int64) (err error) {
 	api := c.BucketsAPI()
 
@@ -22,7 +43,7 @@ func (c *Client) createBucket(ctx context.Context, name string, description stri
 	// update description
 	bucket.Description = fmtBucketDescription(description)
 	bucket, err = api.UpdateBucket(ctx, bucket)
-	c.buckets[name] = bucket
+	c.saveBucketLocal(bucket)
 	return err
 }
 
@@ -55,7 +76,7 @@ func (c *Client) updateBucket(ctx context.Context, name string, description stri
 
 	// update bucket
 	bucket, err = api.UpdateBucket(ctx, bucket)
-	c.buckets[name] = bucket
+	c.saveBucketLocal(bucket)
 	return err
 }
 
@@ -67,7 +88,7 @@ func (c *Client) deleteBucket(ctx context.Context, name string) (err error) {
 	if err != nil {
 		return err
 	}
-	delete(c.buckets, name)
+	c.deleteBucketLocal(name)
 
 	// delete bucket
 	return c.BucketsAPI().DeleteBucket(ctx, bucket)
