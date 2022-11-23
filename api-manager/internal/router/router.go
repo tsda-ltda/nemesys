@@ -1,6 +1,8 @@
 package router
 
 import (
+	"time"
+
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/container"
 	ctxmetric "github.com/fernandotsda/nemesys/api-manager/internal/contextual-metric"
@@ -73,8 +75,6 @@ func Set(api *api.API) {
 		{
 			ctxMetrics.GET("/", middleware.ParseContextParams(api), ctxmetric.MGet(api))
 			ctxMetrics.GET("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.Get(api))
-			ctxMetrics.GET("/:metricId/data", middleware.ParseContextualMetricParams(api), middleware.MetricRequest(api), ctxmetric.DataHandler(api))
-			ctxMetrics.GET("/:metricId/data/history", middleware.ParseContextualMetricParams(api), middleware.MetricRequest(api), ctxmetric.QueryDataHandler(api))
 			ctxMetrics.POST("/", middleware.ParseContextParams(api), ctxmetric.CreateHandler(api))
 			ctxMetrics.PATCH("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.UpdateHandler(api))
 			ctxMetrics.DELETE("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.DeleteHandler(api))
@@ -136,5 +136,23 @@ func Set(api *api.API) {
 		customQuery.POST("/", middleware.Protect(api, roles.TeamsManager), customquery.CreateHandler(api))
 		customQuery.PATCH("/:id", middleware.Protect(api, roles.TeamsManager), customquery.UpdateHandler(api))
 		customQuery.DELETE("/:id", middleware.Protect(api, roles.TeamsManager), customquery.DeleteHandler(api))
+	}
+
+	// metric data
+	{
+		r.GET("/teams/:id/ctx/:ctxId/metrics/:metricId/data",
+			middleware.Limiter(api, time.Millisecond*300),
+			middleware.Protect(api, roles.Viewer),
+			middleware.ParseContextualMetricParams(api),
+			middleware.MetricRequest(api),
+			ctxmetric.DataHandler(api),
+		)
+		r.GET("/teams/:id/ctx/:ctxId/metrics/:metricId/data/history",
+			middleware.Limiter(api, time.Millisecond*650),
+			middleware.Protect(api, roles.Viewer),
+			middleware.ParseContextualMetricParams(api),
+			middleware.MetricRequest(api),
+			ctxmetric.QueryDataHandler(api),
+		)
 	}
 }

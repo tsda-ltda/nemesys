@@ -13,6 +13,10 @@ func AuthReverseSessionKey(userId int32) string {
 	return "auth:users:sessions:" + strconv.FormatInt(int64(userId), 10)
 }
 
+func CacheUserLimited(ip string) string {
+	return "cache:user-limited:" + ip
+}
+
 func CacheMetricRequestByIdent(teamIdent string, contextIdent string, metricIdent string) string {
 	return fmt.Sprintf("cache:metrics:%s_%s_%s", teamIdent, contextIdent, metricIdent)
 }
