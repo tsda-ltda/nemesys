@@ -3,3 +3,5 @@
 launch.json
 */.vscode/*
 _test/*
+log-aggr/*
+rts-tester/*
