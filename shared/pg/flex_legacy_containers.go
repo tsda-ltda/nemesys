@@ -55,16 +55,16 @@ const (
 )
 
 func (pg *PG) CreateFlexLegacyContainer(ctx context.Context, container models.Container[models.FlexLegacyContainer]) (err error) {
-	c, err := pg.pool.Begin(ctx)
+	c, err := pg.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	id, err := pg.createContainer(ctx, c, container.Base)
 	if err != nil {
-		c.Rollback(ctx)
+		c.Rollback()
 		return err
 	}
-	_, err = c.Exec(ctx, sqlFlexLegacyContainersCreate,
+	_, err = pg.db.ExecContext(ctx, sqlFlexLegacyContainersCreate,
 		id,
 		container.Protocol.Target,
 		container.Protocol.Port,
@@ -80,27 +80,27 @@ func (pg *PG) CreateFlexLegacyContainer(ctx context.Context, container models.Co
 		container.Protocol.Coutry,
 	)
 	if err != nil {
-		c.Rollback(ctx)
+		c.Rollback()
 		return err
 	}
 
-	return c.Commit(ctx)
+	return c.Commit()
 }
 
 func (pg *PG) UpdateFlexLegacyContainer(ctx context.Context, container models.Container[models.FlexLegacyContainer]) (exists bool, err error) {
-	c, err := pg.pool.Begin(ctx)
+	c, err := pg.db.BeginTx(ctx, nil)
 	if err != nil {
 		return false, err
 	}
 	exists, err = pg.updateContainer(ctx, c, container.Base)
 	if err != nil {
-		c.Rollback(ctx)
+		c.Rollback()
 		return false, err
 	}
 	if !exists {
 		return false, nil
 	}
-	t, err := c.Exec(ctx, sqlFlexLegacyContainersUpdate,
+	t, err := pg.db.ExecContext(ctx, sqlFlexLegacyContainersUpdate,
 		container.Protocol.Target,
 		container.Protocol.Port,
 		container.Protocol.Transport,
@@ -116,10 +116,11 @@ func (pg *PG) UpdateFlexLegacyContainer(ctx context.Context, container models.Co
 		container.Protocol.Id,
 	)
 	if err != nil {
-		c.Rollback(ctx)
+		c.Rollback()
 		return false, err
 	}
-	return t.RowsAffected() != 0, c.Commit(ctx)
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, c.Commit()
 }
 
 func (pg *PG) DeleteFlexLegacyContainer(ctx context.Context, id int32) (exists bool, err error) {
@@ -142,12 +143,7 @@ func (pg *PG) GetFlexLegacyContainer(ctx context.Context, id int32) (r FlexLegac
 }
 
 func (pg *PG) GetFlexLegacyContainerProtocol(ctx context.Context, id int32) (r FlexLegacyContainersGetProtocolResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlFlexLegacyContainersGetProtocol, id)
+	rows, err := pg.db.QueryContext(ctx, sqlFlexLegacyContainersGetProtocol, id)
 	if err != nil {
 		return r, err
 	}
@@ -177,12 +173,7 @@ func (pg *PG) GetFlexLegacyContainerProtocol(ctx context.Context, id int32) (r F
 }
 
 func (pg *PG) GetFlexLegacyContainerSNMPConfig(ctx context.Context, id int32) (r FlexLegacyContainersGetSNMPConfigResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlFlexLegacyContainersGetSNMPConfig, id)
+	rows, err := pg.db.QueryContext(ctx, sqlFlexLegacyContainersGetSNMPConfig, id)
 	if err != nil {
 		return r, err
 	}
@@ -207,12 +198,7 @@ func (pg *PG) GetFlexLegacyContainerSNMPConfig(ctx context.Context, id int32) (r
 }
 
 func (pg *PG) ExistsFlexLegacyContainerTargetPortAndSerialNumber(ctx context.Context, id int32, target string, port int32, serialNumber int32) (r FlexLegacyContainerExistsContainerTargetPortAndSerialNumberRespose, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	return r, c.QueryRow(ctx, sqlFlexLegacyContainersExistsContainerTargetPortAndSerialNumber, id, target, port, serialNumber).Scan(
+	return r, pg.db.QueryRowContext(ctx, sqlFlexLegacyContainersExistsContainerTargetPortAndSerialNumber, id, target, port, serialNumber).Scan(
 		&r.ContainerExists,
 		&r.TargetPortExists,
 		&r.SerialNumberExists,

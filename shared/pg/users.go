@@ -61,62 +61,33 @@ const (
 )
 
 func (pg *PG) UserExists(ctx context.Context, id int32) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer c.Release()
-	return exists, c.QueryRow(ctx, sqlUsersExists, id).Scan(&exists)
+	return exists, pg.db.QueryRowContext(ctx, sqlUsersExists, id).Scan(&exists)
 }
 
 func (pg *PG) UsernameExists(ctx context.Context, username string) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer c.Release()
-	return exists, c.QueryRow(ctx, sqlUsersExistsUsername, username).Scan(&exists)
+	return exists, pg.db.QueryRowContext(ctx, sqlUsersExistsUsername, username).Scan(&exists)
 }
 
 func (pg *PG) UsernameAndEmailExists(ctx context.Context, username string, email string, userId int32) (r UsersExistsUsernameEmailResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	return r, c.QueryRow(ctx, sqlUsersExistsUsernameEmail, userId, username, email).Scan(
+	return r, pg.db.QueryRowContext(ctx, sqlUsersExistsUsernameEmail, userId, username, email).Scan(
 		&r.UsernameExists,
 		&r.EmailExists,
 	)
 }
 
 func (pg *PG) CreateUser(ctx context.Context, user models.User) (id int32, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return id, err
-	}
-	defer c.Release()
-	return id, c.QueryRow(ctx, sqlUsersCreate, user.Role, user.Name, user.Username, user.Password, user.Email).Scan(&id)
+	return id, pg.db.QueryRowContext(ctx, sqlUsersCreate, user.Role, user.Name, user.Username, user.Password, user.Email).Scan(&id)
 }
 
 func (pg *PG) DeleteUser(ctx context.Context, id int32) (e bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer c.Release()
-	t, err := c.Exec(ctx, sqlUsersDelete, id)
-	return t.RowsAffected() != 0, err
+	t, err := pg.db.ExecContext(ctx, sqlUsersDelete, id)
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) GetUsersSimplified(ctx context.Context, limit int, offset int) (users []models.UserSimplified, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer c.Release()
 	users = []models.UserSimplified{}
-	rows, err := c.Query(ctx, sqlUsersMGetSimplified, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sqlUsersMGetSimplified, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -133,12 +104,7 @@ func (pg *PG) GetUsersSimplified(ctx context.Context, limit int, offset int) (us
 }
 
 func (pg *PG) GetUserWithoutPW(ctx context.Context, id int32) (r UsersGetWithoutPWResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlUsersGetWithoutPW, id)
+	rows, err := pg.db.QueryContext(ctx, sqlUsersGetWithoutPW, id)
 	if err != nil {
 		return r, err
 	}
@@ -160,12 +126,7 @@ func (pg *PG) GetUserWithoutPW(ctx context.Context, id int32) (r UsersGetWithout
 }
 
 func (pg *PG) UpdateUser(ctx context.Context, user models.User) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer c.Release()
-	t, err := c.Exec(ctx, sqlUsersUpdate,
+	t, err := pg.db.ExecContext(ctx, sqlUsersUpdate,
 		user.Role,
 		user.Name,
 		user.Username,
@@ -176,16 +137,12 @@ func (pg *PG) UpdateUser(ctx context.Context, user models.User) (exists bool, er
 	if err != nil {
 		return false, err
 	}
-	return t.RowsAffected() != 0, nil
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) GetLoginInfo(ctx context.Context, username string) (r UsersLoginInfoResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlUsersLoginInfo, username)
+	rows, err := pg.db.QueryContext(ctx, sqlUsersLoginInfo, username)
 	if err != nil {
 		return r, err
 	}
@@ -205,12 +162,7 @@ func (pg *PG) GetLoginInfo(ctx context.Context, username string) (r UsersLoginIn
 }
 
 func (pg *PG) GetUserRole(ctx context.Context, id int32) (r UsersGetRoleResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlUsersGetRole, id)
+	rows, err := pg.db.QueryContext(ctx, sqlUsersGetRole, id)
 	if err != nil {
 		return r, err
 	}
@@ -226,13 +178,8 @@ func (pg *PG) GetUserRole(ctx context.Context, id int32) (r UsersGetRoleResponse
 }
 
 func (pg *PG) GetUserTeams(ctx context.Context, userId int32, limit int, offset int) (teams []models.Team, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer c.Release()
 	teams = []models.Team{}
-	rows, err := c.Query(ctx, sqlUsersTeams, userId, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sqlUsersTeams, userId, limit, offset)
 	if err != nil {
 		return nil, err
 	}

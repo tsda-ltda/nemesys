@@ -14,6 +14,7 @@ const (
 	ExchangeMetricCreated         = "notfication.metric.create"
 	ExchangeMetricUpdated         = "notfication.metric.update"
 	ExchangeMetricDeleted         = "notfication.metric.delete"
+	ExchangeDataPolicyDeleted     = "notfication.data-policy.delete"
 	ExchangeMetricDataRequest     = "global.metric.data_request"
 	ExchangeMetricDataResponse    = "global.metric.data_response"
 	ExchangeMetricsDataRequest    = "global.metrics.data_request"

@@ -56,20 +56,21 @@ func (d *DHS) metricsDataListener() {
 	}
 }
 
-func (d *DHS) containerListener() {
-	for id := range d.amqph.OnContainerDeleted() {
-		for k, dpg := range d.dataPullingGroups {
-			if dpg.ContainerId == id {
-				delete(d.dataPullingGroups, k)
-				break
-			}
-		}
-	}
-}
-
-func (d *DHS) metricListener() {
+func (d *DHS) notificationListener() {
 	for {
 		select {
+		case <-d.amqph.OnDataPolicyDeleted():
+			for _, dpg := range d.dataPullingGroups {
+				dpg.Close()
+			}
+			d.readDatabase(100, 0)
+		case id := <-d.amqph.OnContainerDeleted():
+			for k, dpg := range d.dataPullingGroups {
+				if dpg.ContainerId == id {
+					delete(d.dataPullingGroups, k)
+					break
+				}
+			}
 		case n := <-d.amqph.OnMetricCreated():
 			if !n.Base.DHSEnabled || !n.Base.Enabled {
 				continue

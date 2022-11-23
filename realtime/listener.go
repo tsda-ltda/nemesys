@@ -13,11 +13,14 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-func (s *RTS) containerListener() {
+func (s *RTS) notificationListener() {
 	for {
 		select {
+		case <-s.amqph.OnDataPolicyDeleted():
+			for _, cp := range s.pulling {
+				cp.Close()
+			}
 		case n := <-s.amqph.OnContainerUpdated():
-			// close container pulling on update
 			c, ok := s.pulling[n.Base.Id]
 			if !ok {
 				continue
@@ -29,15 +32,7 @@ func (s *RTS) containerListener() {
 				continue
 			}
 			c.Close()
-		}
-	}
-}
-
-func (s *RTS) metricListener() {
-	for {
-		select {
 		case n := <-s.amqph.OnMetricUpdated():
-			// stop metric pulling on update
 			c, ok := s.pulling[n.Base.ContainerId]
 			if !ok {
 				continue
@@ -48,7 +43,6 @@ func (s *RTS) metricListener() {
 			}
 			m.Stop()
 		case pair := <-s.amqph.OnMetricDeleted():
-			// stop metric pulling on metric delete
 			cp, ok := s.pulling[pair.ContainerId]
 			if !ok {
 				continue

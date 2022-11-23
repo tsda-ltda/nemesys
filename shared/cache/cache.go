@@ -13,8 +13,10 @@ type Cache struct {
 	// redis is the redis client used to get and set data.
 	redis *redis.Client
 
-	// metricIdContainerIdExp is the time to expire the data.
-	metricIdContainerIdExp time.Duration
+	// metricRequestByIdentExp is the time to expire the metric request by ident.
+	metricRequestByIdentExp time.Duration
+	// metricRequestExp is the time to expire the metric request.
+	metricRequestExp time.Duration
 	// metricEvExpressionExp is the time to expire the evaluate expression.
 	metricEvExpressionExp time.Duration
 	// metricEvExpressionExp is the time to expire the data policy id.
@@ -36,13 +38,14 @@ func New() *Cache {
 	}
 
 	return &Cache{
-		redis:                  c,
-		metricIdContainerIdExp: time.Minute,
-		metricEvExpressionExp:  time.Minute,
-		metricDataPolicyIdExp:  time.Minute,
-		snmpAgentExp:           time.Minute * 5,
-		snmpMetricExp:          time.Minute * 2,
-		customQueryExp:         time.Minute,
+		redis:                   c,
+		metricRequestByIdentExp: time.Minute,
+		metricRequestExp:        time.Minute,
+		metricEvExpressionExp:   time.Minute,
+		metricDataPolicyIdExp:   time.Minute,
+		snmpAgentExp:            time.Minute * 5,
+		snmpMetricExp:           time.Minute * 2,
+		customQueryExp:          time.Minute,
 	}
 }
 

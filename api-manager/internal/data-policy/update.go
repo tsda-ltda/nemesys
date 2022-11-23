@@ -58,14 +58,14 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to update data policy on influxdb", logger.ErrField(err))
-			err = tx.Rollback(ctx)
+			err = tx.Rollback()
 			if err != nil {
 				api.Log.Error("fail to rollback tx", logger.ErrField(err))
 				return
 			}
 			return
 		}
-		err = tx.Commit(ctx)
+		err = tx.Commit()
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to commit tx", logger.ErrField(err))

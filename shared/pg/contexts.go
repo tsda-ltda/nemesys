@@ -47,33 +47,18 @@ const (
 )
 
 func (pg *PG) ContextExists(ctx context.Context, id int32) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	c.Release()
-	return exists, c.QueryRow(ctx, sqlCtxExists, id).Scan(&exists)
+	return exists, pg.db.QueryRowContext(ctx, sqlCtxExists, id).Scan(&exists)
 }
 
 func (pg *PG) ExistsTeamAndContextIdent(ctx context.Context, teamId int32, ident string, ctxId int32) (r ContextsExistsTeamAndIdentResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	c.Release()
-	return r, c.QueryRow(ctx, sqlCtxExistsTeamAndIdent, teamId, ident, ctxId).Scan(
+	return r, pg.db.QueryRowContext(ctx, sqlCtxExistsTeamAndIdent, teamId, ident, ctxId).Scan(
 		&r.TeamExists,
 		&r.IdentExists,
 	)
 }
 
 func (pg *PG) CreateContext(ctx context.Context, context models.Context) (id int32, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return id, err
-	}
-	c.Release()
-	return id, c.QueryRow(ctx, sqlCtxCreate,
+	return id, pg.db.QueryRowContext(ctx, sqlCtxCreate,
 		context.Ident,
 		context.Descr,
 		context.Name,
@@ -82,38 +67,25 @@ func (pg *PG) CreateContext(ctx context.Context, context models.Context) (id int
 }
 
 func (pg *PG) UpdateContext(ctx context.Context, context models.Context) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	c.Release()
-	t, err := c.Exec(ctx, sqlCtxCreate,
+	t, err := pg.db.ExecContext(ctx, sqlCtxCreate,
 		context.Ident,
 		context.Descr,
 		context.Name,
 		context.Id,
 	)
-	return t.RowsAffected() != 0, err
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) DeleteContext(ctx context.Context, id int32) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	c.Release()
-	t, err := c.Exec(ctx, sqlCtxDelete, id)
-	return t.RowsAffected() != 0, err
+	t, err := pg.db.ExecContext(ctx, sqlCtxDelete, id)
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) GetContexts(ctx context.Context, teamId int32, limit int, offset int) (contexts []models.Context, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer c.Release()
 	contexts = []models.Context{}
-	rows, err := c.Query(ctx, sqlCtxMGet, teamId, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sqlCtxMGet, teamId, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -131,12 +103,7 @@ func (pg *PG) GetContexts(ctx context.Context, teamId int32, limit int, offset i
 }
 
 func (pg *PG) GetContext(ctx context.Context, id int32) (r ContextsGetResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlCtxGet, id)
+	rows, err := pg.db.QueryContext(ctx, sqlCtxGet, id)
 	if err != nil {
 		return r, err
 	}
@@ -158,12 +125,7 @@ func (pg *PG) GetContext(ctx context.Context, id int32) (r ContextsGetResponse, 
 }
 
 func (pg *PG) GetContextTreeId(ctx context.Context, ctxIdent string, teamIdent string) (r ContextsGetIdsByIdentResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlCtxGetIdsByIdent, teamIdent, ctxIdent)
+	rows, err := pg.db.QueryContext(ctx, sqlCtxGetIdsByIdent, teamIdent, ctxIdent)
 	if err != nil {
 		return r, err
 	}

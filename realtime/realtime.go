@@ -73,8 +73,7 @@ func New() *RTS {
 
 func (s *RTS) Run() {
 	s.log.Info("starting listeners...")
-	go s.containerListener()         // listen to container changes
-	go s.metricListener()            // listen to metric changes
+	go s.notificationListener()      // listen to notification
 	go s.metricDataRequestListener() // listen to data requests
 	go s.metricDataListener()        // listen to new data
 	go s.metricsDataListener()       // listen to new data

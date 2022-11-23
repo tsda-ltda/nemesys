@@ -64,6 +64,9 @@ func Init() {
 	set("PG_USERNAME", &PGUsername)
 	set("PG_PASSWORD", &PGPassword)
 	set("PG_DB_NAME", &PGDBName)
+	set("PG_MAX_CONN_LIFETIME", &PGConnMaxLifetime)
+	set("PG_MAX_CONNS", &PGMaxConns)
+	set("PG_MAX_IDLE_CONNS", &PGMaxIdleConns)
 
 	set("INFLUX_HOST", &InfluxHost)
 	set("INFLUX_PORT", &InfluxPort)

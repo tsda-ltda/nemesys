@@ -43,6 +43,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("fail to delete data policy from influxdb", logger.ErrField(err))
 			return
 		}
+		api.Amqph.NotifyDataPolicyDeleted(int16(id))
 
 		api.Log.Info("data policy deleted, id: " + fmt.Sprint(id))
 		c.Status(http.StatusNoContent)

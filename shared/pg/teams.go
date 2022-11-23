@@ -45,21 +45,11 @@ const (
 )
 
 func (pg *PG) TeamIdentExists(ctx context.Context, ident string, id int32) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer c.Release()
-	return exists, c.QueryRow(ctx, sqlTeamsExistsIdent, ident, id).Scan(&exists)
+	return exists, pg.db.QueryRowContext(ctx, sqlTeamsExistsIdent, ident, id).Scan(&exists)
 }
 
 func (pg *PG) CreateTeam(ctx context.Context, team models.Team) (id int32, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return id, err
-	}
-	defer c.Release()
-	return id, c.QueryRow(ctx, sqlTeamsCreate,
+	return id, pg.db.QueryRowContext(ctx, sqlTeamsCreate,
 		team.Ident,
 		team.Descr,
 		team.Name,
@@ -67,22 +57,13 @@ func (pg *PG) CreateTeam(ctx context.Context, team models.Team) (id int32, err e
 }
 
 func (pg *PG) DeleteTeam(ctx context.Context, id int32) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer c.Release()
-	t, err := c.Exec(ctx, sqlTeamsDelete, id)
-	return t.RowsAffected() != 0, err
+	t, err := pg.db.ExecContext(ctx, sqlTeamsDelete, id)
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) GetTeam(ctx context.Context, id int32) (r TeamsGetResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlTeamsGet, id)
+	rows, err := pg.db.QueryContext(ctx, sqlTeamsGet, id)
 	if err != nil {
 		return r, err
 	}
@@ -103,13 +84,8 @@ func (pg *PG) GetTeam(ctx context.Context, id int32) (r TeamsGetResponse, err er
 }
 
 func (pg *PG) GetTeams(ctx context.Context, limit int, offset int) (teams []models.Team, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer c.Release()
 	teams = []models.Team{}
-	rows, err := c.Query(ctx, sqlTeamsMGet, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sqlTeamsMGet, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -131,27 +107,18 @@ func (pg *PG) GetTeams(ctx context.Context, limit int, offset int) (teams []mode
 }
 
 func (pg *PG) UpdateTeam(ctx context.Context, team models.Team) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer c.Release()
-	t, err := c.Exec(ctx, sqlTeamsUpdate,
+	t, err := pg.db.ExecContext(ctx, sqlTeamsUpdate,
 		team.Name,
 		team.Ident,
 		team.Descr,
 		team.Id,
 	)
-	return t.RowsAffected() != 0, err
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) ExistsRelUserTeam(ctx context.Context, userId int32, teamId int32) (r TeamsExistsRelUserTeamResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	return r, c.QueryRow(ctx, sqlTeamsExistsRelUserTeam, userId, teamId).Scan(
+	return r, pg.db.QueryRowContext(ctx, sqlTeamsExistsRelUserTeam, userId, teamId).Scan(
 		&r.RelationExist,
 		&r.UserExists,
 		&r.TeamExists,
@@ -159,33 +126,19 @@ func (pg *PG) ExistsRelUserTeam(ctx context.Context, userId int32, teamId int32)
 }
 
 func (pg *PG) AddTeamMember(ctx context.Context, userId int32, teamId int32) error {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer c.Release()
-	_, err = c.Exec(ctx, sqlTeamsAddMember, userId, teamId)
+	_, err := pg.db.ExecContext(ctx, sqlTeamsAddMember, userId, teamId)
 	return err
 }
 
 func (pg *PG) RemoveTeamMember(ctx context.Context, userId int32, teamId int32) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer c.Release()
-	t, err := c.Exec(ctx, sqlTeamsRemMember, userId, teamId)
-	return t.RowsAffected() != 0, err
+	t, err := pg.db.ExecContext(ctx, sqlTeamsRemMember, userId, teamId)
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) GetTeamMembers(ctx context.Context, teamId int32, limit int, offset int) (users []models.UserSimplified, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer c.Release()
 	users = []models.UserSimplified{}
-	rows, err := c.Query(ctx, sqlTeamsMGetMembers, teamId, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sqlTeamsMGetMembers, teamId, limit, offset)
 	if err != nil {
 		return nil, err
 	}

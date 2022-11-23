@@ -51,6 +51,12 @@ var (
 	PGPassword = "postgres"
 	// PGDBName is the database name. Default is "namesys".
 	PGDBName = "namesys"
+	// PGMaxConns is the postgres maximum number of connections open. Default is "20".
+	PGMaxConns = "20"
+	// PGMaxIdleConns is the postgres maximum number of idle connections. Default is "20".
+	PGMaxIdleConns = "20"
+	// PGConnMaxLifetime is the postgres maximum connection life time in minutes. Default is "10".
+	PGConnMaxLifetime = "10"
 
 	// InfluxHost is the influxdb host. Default is "localhost".
 	InfluxHost = "localhost"

@@ -21,6 +21,19 @@ func MetricRequest(api *api.API) func(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
+
+		cacheR, err := api.Cache.GetMetricRequest(ctx, id)
+		if err != nil {
+			c.AbortWithStatus(http.StatusInternalServerError)
+			api.Log.Error("fail to get metric request on cache", logger.ErrField(err))
+			return
+		}
+		if cacheR.Exists {
+			c.Set("metric_request", cacheR.Request)
+			c.Next()
+			return
+		}
+
 		r, err := api.PG.GetMetricRequest(ctx, id)
 		if err != nil {
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -33,6 +46,13 @@ func MetricRequest(api *api.API) func(c *gin.Context) {
 		}
 		if !r.Enabled {
 			c.AbortWithStatusJSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgMetricDisabled))
+			return
+		}
+
+		err = api.Cache.SetMetricRequest(ctx, r.MetricRequest)
+		if err != nil {
+			c.AbortWithStatus(http.StatusInternalServerError)
+			api.Log.Error("fail to set metric request on cache", logger.ErrField(err))
 			return
 		}
 

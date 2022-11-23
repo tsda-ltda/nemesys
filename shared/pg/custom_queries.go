@@ -44,12 +44,8 @@ const (
 )
 
 func (pg *PG) CreateCustomQuery(ctx context.Context, cq models.CustomQuery) (id int32, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return id, err
-	}
-	defer c.Release()
-	return id, c.QueryRow(ctx, sqlCustomQueriesCreate,
+
+	return id, pg.db.QueryRowContext(ctx, sqlCustomQueriesCreate,
 		cq.Ident,
 		cq.Descr,
 		cq.Flux,
@@ -57,28 +53,19 @@ func (pg *PG) CreateCustomQuery(ctx context.Context, cq models.CustomQuery) (id 
 }
 
 func (pg *PG) UpdateCustomQuery(ctx context.Context, cq models.CustomQuery) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer c.Release()
-	t, err := c.Exec(ctx, sqlCustomQueriesUpdate,
+	t, err := pg.db.ExecContext(ctx, sqlCustomQueriesUpdate,
 		cq.Ident,
 		cq.Descr,
 		cq.Flux,
 		cq.Id,
 	)
-	return t.RowsAffected() != 0, err
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) GetCustomQueries(ctx context.Context, limit int, offset int) (cqs []models.CustomQuery, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer c.Release()
 	cqs = nil
-	rows, err := c.Query(ctx, sqlCustomQueriesMGet, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sqlCustomQueriesMGet, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -100,12 +87,7 @@ func (pg *PG) GetCustomQueries(ctx context.Context, limit int, offset int) (cqs 
 }
 
 func (pg *PG) GetCustomQuery(ctx context.Context, id int32) (r CustomQueriesGetResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	err = c.QueryRow(ctx, sqlCustomQueriesGet, id).Scan(
+	err = pg.db.QueryRowContext(ctx, sqlCustomQueriesGet, id).Scan(
 		&r.CustomQuery.Ident,
 		&r.CustomQuery.Descr,
 		&r.CustomQuery.Flux,
@@ -122,12 +104,8 @@ func (pg *PG) GetCustomQuery(ctx context.Context, id int32) (r CustomQueriesGetR
 }
 
 func (pg *PG) GetCustomQueryByIdent(ctx context.Context, ident string) (r CustomQueriesGetResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	err = c.QueryRow(ctx, sqlCustomQueriesGetByIdent, ident).Scan(
+
+	err = pg.db.QueryRowContext(ctx, sqlCustomQueriesGetByIdent, ident).Scan(
 		&r.CustomQuery.Id,
 		&r.CustomQuery.Descr,
 		&r.CustomQuery.Flux,
@@ -144,23 +122,16 @@ func (pg *PG) GetCustomQueryByIdent(ctx context.Context, ident string) (r Custom
 }
 
 func (pg *PG) DeleteCustomQuery(ctx context.Context, id int32) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
+
+	t, err := pg.db.ExecContext(ctx, sqlCustomQueriesDelete, id)
 	if err != nil {
 		return false, err
 	}
-	defer c.Release()
-	t, err := c.Exec(ctx, sqlCustomQueriesDelete, id)
-	if err != nil {
-		return false, err
-	}
-	return t.RowsAffected() != 0, nil
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) ExistsCustomQueryIdent(ctx context.Context, id int32, ident string) (r CustomQueriesExistsIdent, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	return r, c.QueryRow(ctx, sqlCustomQueriesExistsIdent, id, ident).Scan(&r.IdentExists, &r.Exists)
+
+	return r, pg.db.QueryRowContext(ctx, sqlCustomQueriesExistsIdent, id, ident).Scan(&r.IdentExists, &r.Exists)
 }

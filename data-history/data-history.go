@@ -77,8 +77,7 @@ func (d *DHS) Run() {
 	}
 	d.log.Info("starting listeners...")
 	go d.metricsDataListener()
-	go d.containerListener()
-	go d.metricListener()
+	go d.notificationListener()
 
 	d.IsReady = true
 	d.log.Info("service is ready!")

@@ -43,52 +43,53 @@ const (
 )
 
 func (pg *PG) CreateFlexLegacyMetric(ctx context.Context, metric models.Metric[models.FlexLegacyMetric]) (err error) {
-	c, err := pg.pool.Begin(ctx)
+	c, err := pg.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	id, err := pg.createMetric(ctx, c, metric.Base)
 	if err != nil {
-		c.Rollback(ctx)
+		c.Rollback()
 		return err
 	}
-	_, err = c.Exec(ctx, sqlFlexLegacyMetricsCreate,
+	_, err = pg.db.ExecContext(ctx, sqlFlexLegacyMetricsCreate,
 		id,
 		metric.Protocol.OID,
 		metric.Protocol.Port,
 		metric.Protocol.PortType,
 	)
 	if err != nil {
-		c.Rollback(ctx)
+		c.Rollback()
 		return err
 	}
-	return c.Commit(ctx)
+	return c.Commit()
 }
 
 func (pg *PG) UpdateFlexLegacyMetric(ctx context.Context, metric models.Metric[models.FlexLegacyMetric]) (exists bool, err error) {
-	c, err := pg.pool.Begin(ctx)
+	c, err := pg.db.BeginTx(ctx, nil)
 	if err != nil {
 		return false, err
 	}
 	exists, err = pg.updateMetric(ctx, c, metric.Base)
 	if err != nil {
-		c.Rollback(ctx)
+		c.Rollback()
 		return false, err
 	}
 	if !exists {
 		return false, nil
 	}
-	t, err := c.Exec(ctx, sqlFlexLegacyMetricsUpdate,
+	t, err := pg.db.ExecContext(ctx, sqlFlexLegacyMetricsUpdate,
 		metric.Base.Id,
 		metric.Protocol.OID,
 		metric.Protocol.Port,
 		metric.Protocol.PortType,
 	)
 	if err != nil {
-		c.Rollback(ctx)
+		c.Rollback()
 		return false, err
 	}
-	return t.RowsAffected() != 0, c.Commit(ctx)
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, c.Commit()
 }
 
 func (pg *PG) GetFlexLegacyMetric(ctx context.Context, id int64) (r FlexLegacyMetricGetResponse, err error) {
@@ -107,12 +108,7 @@ func (pg *PG) GetFlexLegacyMetric(ctx context.Context, id int64) (r FlexLegacyMe
 }
 
 func (pg *PG) GetFlexLegacyMetricProtocol(ctx context.Context, id int64) (r FlexLegacyMetricGetProtocolResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlFlexLegacyMetricsGetProtocol, id)
+	rows, err := pg.db.QueryContext(ctx, sqlFlexLegacyMetricsGetProtocol, id)
 	if err != nil {
 		return r, err
 	}
@@ -137,12 +133,7 @@ func (pg *PG) DeleteFlexLegacyMetric(ctx context.Context, id int64) (exists bool
 }
 
 func (pg *PG) GetFlexLegacyMetricAsSNMPMetric(ctx context.Context, id int64) (r FlexLegacyMetricsGetAsSNMPMetricResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlFlexLegacyMetricsGetAsSNMPMetric, id)
+	rows, err := pg.db.QueryContext(ctx, sqlFlexLegacyMetricsGetAsSNMPMetric, id)
 	if err != nil {
 		return r, err
 	}
@@ -161,12 +152,7 @@ func (pg *PG) GetFlexLegacyMetricAsSNMPMetric(ctx context.Context, id int64) (r 
 }
 
 func (pg *PG) FlexLegacyMetricsByIdsAsSNMPMetric(ctx context.Context, ids []int64) (metrics []models.SNMPMetric, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlFlexLegacyMetricsGetByIdsAsSNMPMetric, ids)
+	rows, err := pg.db.QueryContext(ctx, sqlFlexLegacyMetricsGetByIdsAsSNMPMetric, ids)
 	if err != nil {
 		return nil, err
 	}

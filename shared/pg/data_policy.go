@@ -2,9 +2,9 @@ package pg
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/fernandotsda/nemesys/shared/models"
-	"github.com/jackc/pgx/v5"
 )
 
 // DataPolicyGetResponse is the response for Get handler.
@@ -30,21 +30,16 @@ const (
 )
 
 func (pg *PG) CountDataPolicy(ctx context.Context) (n int64, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return n, err
-	}
-	defer c.Release()
-	err = c.QueryRow(ctx, sqlDPCount).Scan(&n)
+	err = pg.db.QueryRowContext(ctx, sqlDPCount).Scan(&n)
 	return n, err
 }
 
-func (pg *PG) CreateDataPolicy(ctx context.Context, dp models.DataPolicy) (tx pgx.Tx, id int16, err error) {
-	c, err := pg.pool.Begin(ctx)
+func (pg *PG) CreateDataPolicy(ctx context.Context, dp models.DataPolicy) (tx *sql.Tx, id int16, err error) {
+	c, err := pg.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, id, err
 	}
-	err = c.QueryRow(ctx, sqlDPCreate,
+	err = pg.db.QueryRowContext(ctx, sqlDPCreate,
 		&dp.Descr,
 		&dp.UseAggregation,
 		&dp.Retention,
@@ -57,12 +52,12 @@ func (pg *PG) CreateDataPolicy(ctx context.Context, dp models.DataPolicy) (tx pg
 	return c, id, nil
 }
 
-func (pg *PG) UpdateDataPolicy(ctx context.Context, dp models.DataPolicy) (tx pgx.Tx, exists bool, err error) {
-	c, err := pg.pool.Begin(ctx)
+func (pg *PG) UpdateDataPolicy(ctx context.Context, dp models.DataPolicy) (tx *sql.Tx, exists bool, err error) {
+	c, err := pg.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, false, err
 	}
-	t, err := c.Exec(ctx, sqlDPUpdate,
+	t, err := pg.db.ExecContext(ctx, sqlDPUpdate,
 		dp.Descr,
 		dp.Retention,
 		dp.UseAggregation,
@@ -73,26 +68,18 @@ func (pg *PG) UpdateDataPolicy(ctx context.Context, dp models.DataPolicy) (tx pg
 	if err != nil {
 		return nil, false, err
 	}
-	return c, t.RowsAffected() != 0, nil
+	rowsAffected, _ := t.RowsAffected()
+	return c, rowsAffected != 0, err
 }
 
 func (pg *PG) DeleteDataPolicy(ctx context.Context, id int16) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer c.Release()
-	t, err := c.Exec(ctx, sqlDPDelete, id)
-	return t.RowsAffected() != 0, err
+	t, err := pg.db.ExecContext(ctx, sqlDPDelete, id)
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) GetDataPolicy(ctx context.Context, id int16) (r DataPolicyGetResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlDPMGet)
+	rows, err := pg.db.QueryContext(ctx, sqlDPMGet)
 	if err != nil {
 		return r, err
 	}
@@ -115,13 +102,8 @@ func (pg *PG) GetDataPolicy(ctx context.Context, id int16) (r DataPolicyGetRespo
 }
 
 func (pg *PG) GetDataPolicies(ctx context.Context) (dps []models.DataPolicy, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer c.Release()
 	dps = []models.DataPolicy{}
-	rows, err := c.Query(ctx, sqlDPMGet)
+	rows, err := pg.db.QueryContext(ctx, sqlDPMGet)
 	if err != nil {
 		return nil, err
 	}

@@ -30,6 +30,8 @@ func (a *Amqph) declareExchages() {
 		}
 	}
 
+	declare(amqp.ExchangeDataPolicyDeleted, "fanout", true, false, false, false, nil)
+
 	declare(amqp.ExchangeContainerCreated, "fanout", true, false, false, false, nil)
 	declare(amqp.ExchangeContainerUpdated, "fanout", true, false, false, false, nil)
 	declare(amqp.ExchangeContainerDeleted, "fanout", true, false, false, false, nil)

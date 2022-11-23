@@ -2,10 +2,10 @@ package pg
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
-	"github.com/jackc/pgx/v5"
 )
 
 // BaseContainerGetResponse is the response for the Get handler.
@@ -43,8 +43,8 @@ const (
 	sqlContainersEnabled    = `SELECT enabled FROM containers WHERE id = $1;`
 )
 
-func (pg *PG) createContainer(ctx context.Context, tx pgx.Tx, container models.BaseContainer) (id int32, err error) {
-	return id, tx.QueryRow(ctx, sqlContainersCreate,
+func (pg *PG) createContainer(ctx context.Context, tx *sql.Tx, container models.BaseContainer) (id int32, err error) {
+	return id, tx.QueryRowContext(ctx, sqlContainersCreate,
 		container.Name,
 		container.Descr,
 		container.Type,
@@ -53,34 +53,26 @@ func (pg *PG) createContainer(ctx context.Context, tx pgx.Tx, container models.B
 	).Scan(&id)
 }
 
-func (pg *PG) updateContainer(ctx context.Context, tx pgx.Tx, container models.BaseContainer) (exists bool, err error) {
-	t, err := tx.Exec(ctx, sqlContainersUpdate,
+func (pg *PG) updateContainer(ctx context.Context, tx *sql.Tx, container models.BaseContainer) (exists bool, err error) {
+	t, err := tx.ExecContext(ctx, sqlContainersUpdate,
 		container.Name,
 		container.Descr,
 		container.Enabled,
 		container.RTSPullingInterval,
 		container.Id,
 	)
-	return t.RowsAffected() != 0, err
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) DeleteContainer(ctx context.Context, id int32) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer c.Release()
-	t, err := c.Exec(ctx, sqlContainersDelete, id)
-	return t.RowsAffected() != 0, err
+	t, err := pg.db.ExecContext(ctx, sqlContainersDelete, id)
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) GetContainer(ctx context.Context, id int32) (r BaseContainerGetResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlContainersGet, id)
+	rows, err := pg.db.QueryContext(ctx, sqlContainersGet, id)
 	if err != nil {
 		return r, err
 	}
@@ -103,13 +95,8 @@ func (pg *PG) GetContainer(ctx context.Context, id int32) (r BaseContainerGetRes
 }
 
 func (pg *PG) GetContainers(ctx context.Context, t types.ContainerType, limit int, offset int) (containers []models.BaseContainer, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return containers, err
-	}
-	defer c.Release()
 	containers = []models.BaseContainer{}
-	rows, err := c.Query(ctx, sqlContainersMGet, t, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sqlContainersMGet, t, limit, offset)
 	if err != nil {
 		return containers, err
 	}
@@ -133,12 +120,7 @@ func (pg *PG) GetContainers(ctx context.Context, t types.ContainerType, limit in
 }
 
 func (pg *PG) GetContainerRTSConfig(ctx context.Context, id int32) (r BaseContainerGetRTSConfigResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlContainersGetRTSInfo, id)
+	rows, err := pg.db.QueryContext(ctx, sqlContainersGetRTSInfo, id)
 	if err != nil {
 		return r, err
 	}
@@ -154,21 +136,11 @@ func (pg *PG) GetContainerRTSConfig(ctx context.Context, id int32) (r BaseContai
 }
 
 func (pg *PG) ContainerExist(ctx context.Context, id int32) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	c.Release()
-	return exists, c.QueryRow(ctx, sqlContainersExists, id).Scan(&exists)
+	return exists, pg.db.QueryRowContext(ctx, sqlContainersExists, id).Scan(&exists)
 }
 
 func (pg *PG) ContainerEnabled(ctx context.Context, id int32) (r BaseContainerEnabledResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlContainersEnabled, id)
+	rows, err := pg.db.QueryContext(ctx, sqlContainersEnabled, id)
 	if err != nil {
 		return r, err
 	}

@@ -2,10 +2,10 @@ package pg
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
-	"github.com/jackc/pgx/v5"
 )
 
 type MetricsGetEvaluableExpressionResponse struct {
@@ -83,12 +83,7 @@ const (
 )
 
 func (pg *PG) GetMetric(ctx context.Context, id int64) (r MetricsGetResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlMetricsGet, id)
+	rows, err := pg.db.QueryContext(ctx, sqlMetricsGet, id)
 	if err != nil {
 		return r, err
 	}
@@ -118,13 +113,8 @@ func (pg *PG) GetMetric(ctx context.Context, id int64) (r MetricsGetResponse, er
 }
 
 func (pg *PG) GetMetricsSimplified(ctx context.Context, containerType types.ContainerType, containerId int32, limit int, offset int) (metrics []models.BaseMetricSimplified, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer c.Release()
 	metrics = []models.BaseMetricSimplified{}
-	rows, err := c.Query(ctx, sqlMetricsMGetSimplified, containerId, containerType, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sqlMetricsMGetSimplified, containerId, containerType, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -147,8 +137,8 @@ func (pg *PG) GetMetricsSimplified(ctx context.Context, containerType types.Cont
 	return metrics, nil
 }
 
-func (pg *PG) createMetric(ctx context.Context, tx pgx.Tx, metric models.BaseMetric) (id int64, err error) {
-	err = tx.QueryRow(ctx, sqlMetricsCreate,
+func (pg *PG) createMetric(ctx context.Context, tx *sql.Tx, metric models.BaseMetric) (id int64, err error) {
+	err = tx.QueryRowContext(ctx, sqlMetricsCreate,
 		metric.ContainerId,
 		metric.ContainerType,
 		metric.Name,
@@ -165,8 +155,8 @@ func (pg *PG) createMetric(ctx context.Context, tx pgx.Tx, metric models.BaseMet
 	return id, err
 }
 
-func (pg *PG) updateMetric(ctx context.Context, tx pgx.Tx, metric models.BaseMetric) (exists bool, err error) {
-	t, err := tx.Exec(ctx, sqlMetricsUpdate,
+func (pg *PG) updateMetric(ctx context.Context, tx *sql.Tx, metric models.BaseMetric) (exists bool, err error) {
+	t, err := tx.ExecContext(ctx, sqlMetricsUpdate,
 		metric.Name,
 		metric.Descr,
 		metric.Enabled,
@@ -179,26 +169,18 @@ func (pg *PG) updateMetric(ctx context.Context, tx pgx.Tx, metric models.BaseMet
 		metric.EvaluableExpression,
 		metric.Id,
 	)
-	return t.RowsAffected() != 0, err
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) DeleteMetric(ctx context.Context, id int64) (exists bool, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer c.Release()
-	t, err := c.Exec(ctx, sqlMetricsDelete, id)
-	return t.RowsAffected() != 0, err
+	t, err := pg.db.ExecContext(ctx, sqlMetricsDelete, id)
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) GetMetricEvaluableExpression(ctx context.Context, id int64) (r MetricsGetEvaluableExpressionResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlMetricsGetEvaluableExpression, id)
+	rows, err := pg.db.QueryContext(ctx, sqlMetricsGetEvaluableExpression, id)
 	if err != nil {
 		return r, err
 	}
@@ -214,12 +196,7 @@ func (pg *PG) GetMetricEvaluableExpression(ctx context.Context, id int64) (r Met
 }
 
 func (pg *PG) GetMetricRTSConfig(ctx context.Context, id int64) (r MetricsGetRTSConfigResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlMetricsGetRTSConfig, id)
+	rows, err := pg.db.QueryContext(ctx, sqlMetricsGetRTSConfig, id)
 	if err != nil {
 		return r, err
 	}
@@ -238,12 +215,7 @@ func (pg *PG) GetMetricRTSConfig(ctx context.Context, id int64) (r MetricsGetRTS
 }
 
 func (pg *PG) MetricContainerAndDataPolicyExists(ctx context.Context, base models.BaseMetric) (r MetricsExistsContainerAndDataPolicyResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	return r, c.QueryRow(ctx, sqlMetricsExistsContainerAndDataPolicy, base.ContainerId, base.ContainerType, base.DataPolicyId, base.Id).Scan(
+	return r, pg.db.QueryRowContext(ctx, sqlMetricsExistsContainerAndDataPolicy, base.ContainerId, base.ContainerType, base.DataPolicyId, base.Id).Scan(
 		&r.Exists,
 		&r.ContainerExists,
 		&r.DataPolicyExists,
@@ -251,14 +223,9 @@ func (pg *PG) MetricContainerAndDataPolicyExists(ctx context.Context, base model
 }
 
 func (pg *PG) MetricEnabled(ctx context.Context, id int32) (r MetricsEnabledResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
 	var ce *bool
 	var me *bool
-	rows, err := c.Query(ctx, sqlContainersEnabled, id)
+	rows, err := pg.db.QueryContext(ctx, sqlContainersEnabled, id)
 	if err != nil {
 		return r, err
 	}
@@ -282,12 +249,7 @@ func (pg *PG) MetricEnabled(ctx context.Context, id int32) (r MetricsEnabledResp
 }
 
 func (pg *PG) GetMetricsRequestsAndIntervals(ctx context.Context, limit int, offset int) (r []GetMetricsRequestsAndIntervalsResult, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlMetricsGetMetricsRequestsAndIntervals, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sqlMetricsGetMetricsRequestsAndIntervals, limit, offset)
 	if err != nil {
 		return r, err
 	}

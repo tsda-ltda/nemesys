@@ -1,52 +1,53 @@
 package pg
 
 import (
-	"context"
-	"strconv"
+	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/fernandotsda/nemesys/shared/env"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type PG struct {
-	// pool is the connection pool.
-	pool *pgxpool.Pool
+	// db is the connection db.
+	db *sql.DB
 }
 
 func New() *PG {
-	port, err := strconv.ParseInt(env.PGPort, 0, 64)
+	url := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", env.PGUsername, env.PGPassword, env.PGHost, env.PGPort, env.PGDBName)
+	db, err := sql.Open("pgx", url)
 	if err != nil {
-		panic("fail to parse postgres port, err: " + err.Error())
+		panic("fail to open sql driver, err: " + err.Error())
 	}
-	pool, err := pgxpool.NewWithConfig(context.Background(), &pgxpool.Config{
-		MaxConns:          10,
-		MinConns:          1,
-		HealthCheckPeriod: time.Second,
-		MaxConnIdleTime:   time.Minute * 5,
-		ConnConfig: &pgx.ConnConfig{
-			Config: pgconn.Config{
-				Host:           env.PGHost,
-				Port:           uint16(port),
-				Database:       env.PGDBName,
-				User:           env.PGUsername,
-				Password:       env.PGPassword,
-				TLSConfig:      nil,
-				ConnectTimeout: time.Second * 10,
-			},
-			Tracer:                   nil,
-			StatementCacheCapacity:   20,
-			DescriptionCacheCapacity: 20,
-		},
-	})
-	if err != nil {
-		panic("fail to create postgres connection pool, err: " + err.Error())
-	}
-	return &PG{pool: pool}
+
+	// maxConns, err := strconv.Atoi(env.PGMaxConns)
+	// if err != nil {
+	// 	panic("fail to parse maxConns")
+	// }
+	// maxIdleConns, err := strconv.Atoi(env.PGMaxIdleConns)
+	// if err != nil {
+	// 	panic("fail to parse maxConns")
+	// }
+	// maxConnLifetime, err := strconv.Atoi(env.PGConnMaxLifetime)
+	// if err != nil {
+	// 	panic("fail to parse maxConnLifetime")
+	// }
+
+	// db.SetConnMaxLifetime(time.Duration(maxConnLifetime) * time.Minute)
+	// db.SetMaxIdleConns(maxIdleConns)
+	// db.SetMaxOpenConns(maxConns)
+	// Maximum Idle Connections
+	db.SetMaxIdleConns(5)
+	// Maximum Open Connections
+	db.SetMaxOpenConns(10)
+	// Idle Connection Timeout
+	db.SetConnMaxIdleTime(1 * time.Second)
+	// Connection Lifetime
+	db.SetConnMaxLifetime(30 * time.Second)
+	return &PG{db: db}
 }
 
 func (pg *PG) Close() {
-	pg.pool.Close()
+	pg.db.Close()
 }

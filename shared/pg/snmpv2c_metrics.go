@@ -28,44 +28,45 @@ const (
 )
 
 func (pg *PG) CreateSNMPv2cMetric(ctx context.Context, m models.Metric[models.SNMPMetric]) error {
-	c, err := pg.pool.Begin(ctx)
+	c, err := pg.db.BeginTx(ctx, nil)
 	if err != nil {
-		c.Rollback(ctx)
+		c.Rollback()
 		return err
 	}
 	id, err := pg.createMetric(ctx, c, m.Base)
 	if err != nil {
-		c.Rollback(ctx)
+		c.Rollback()
 		return err
 	}
-	_, err = c.Exec(ctx, sqlSNMPMetricsCreate, m.Protocol.OID, id)
+	_, err = pg.db.ExecContext(ctx, sqlSNMPMetricsCreate, m.Protocol.OID, id)
 	if err != nil {
-		c.Rollback(ctx)
+		c.Rollback()
 		return err
 	}
-	return c.Commit(ctx)
+	return c.Commit()
 }
 
 func (pg *PG) UpdateSNMPv2cMetric(ctx context.Context, m models.Metric[models.SNMPMetric]) (exists bool, err error) {
-	c, err := pg.pool.Begin(ctx)
+	c, err := pg.db.BeginTx(ctx, nil)
 	if err != nil {
-		c.Rollback(ctx)
+		c.Rollback()
 		return false, err
 	}
 	exists, err = pg.updateMetric(ctx, c, m.Base)
 	if err != nil {
-		c.Rollback(ctx)
+		c.Rollback()
 		return false, err
 	}
 	if !exists {
 		return false, nil
 	}
-	t, err := c.Exec(ctx, sqlSNMPMetricsUpdate, m.Protocol.OID, m.Protocol.Id, m.Protocol.Id)
+	t, err := pg.db.ExecContext(ctx, sqlSNMPMetricsUpdate, m.Protocol.OID, m.Protocol.Id, m.Protocol.Id)
 	if err != nil {
-		c.Rollback(ctx)
+		c.Rollback()
 		return false, err
 	}
-	return t.RowsAffected() != 0, c.Commit(ctx)
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, c.Commit()
 }
 
 func (pg *PG) GetSNMPv2cMetric(ctx context.Context, id int64) (r SNMPv2cMetricGetResponse, err error) {
@@ -84,12 +85,7 @@ func (pg *PG) GetSNMPv2cMetric(ctx context.Context, id int64) (r SNMPv2cMetricGe
 }
 
 func (pg *PG) GetSNMPv2cMetricProtocol(ctx context.Context, id int64) (r SNMPv2cMetricGetProtocolResponse, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return r, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlSNMPMetricsGet, id)
+	rows, err := pg.db.QueryContext(ctx, sqlSNMPMetricsGet, id)
 	if err != nil {
 		return r, err
 	}
@@ -106,12 +102,7 @@ func (pg *PG) GetSNMPv2cMetricProtocol(ctx context.Context, id int64) (r SNMPv2c
 }
 
 func (pg *PG) GetSNMPv2cMetricsByIds(ctx context.Context, ids []int64) (metrics []models.SNMPMetric, err error) {
-	c, err := pg.pool.Acquire(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer c.Release()
-	rows, err := c.Query(ctx, sqlSNMPMetricsGetByIds, ids)
+	rows, err := pg.db.QueryContext(ctx, sqlSNMPMetricsGetByIds, ids)
 	if err != nil {
 		return nil, err
 	}
