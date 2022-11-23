@@ -60,22 +60,18 @@ func (s *RTS) startMetricPulling(r models.MetricRequest, config models.RTSMetric
 		s.muStartPulling.Lock()
 		defer s.muStartPulling.Unlock()
 
-		// check if container exists
 		c, ok := s.pulling[r.ContainerId]
 		if !ok {
-			res, err := s.pgConn.Containers.GetRTSConfig(context.Background(), r.ContainerId)
+			res, err := s.pgConn.GetContainerRTSConfig(context.Background(), r.ContainerId)
 			if err != nil {
 				s.log.Error("fail to get containers's RTS info", logger.ErrField(err))
 				return
 			}
-
-			// check if container exists
 			if !res.Exists {
 				s.log.Warn("fail to start metric pulling, container does not exists")
 				return
 			}
 
-			// create new container pulling
 			c = &ContainerPulling{
 				Id:                 r.ContainerId,
 				Type:               r.ContainerType,
@@ -85,23 +81,18 @@ func (s *RTS) startMetricPulling(r models.MetricRequest, config models.RTSMetric
 				RTS:                s,
 			}
 
-			// save container
 			s.pulling[r.ContainerId] = c
 			c.OnClose = func(cp *ContainerPulling) {
 				delete(s.pulling, cp.Id)
 				s.log.Debug("container pulling stoped, id: " + strconv.FormatInt(int64(cp.Id), 10))
 			}
 
-			// run container
 			go c.Run()
-
 			s.log.Debug("container pulling started, id: " + strconv.FormatInt(int64(r.ContainerId), 10))
 		}
 
-		// check if metric already exists in container
 		m, ok := c.Metrics[r.MetricId]
 		if !ok {
-			// push metric to container's metrics
 			c.AddMetric(MetricPulling{
 				MetricBasicRequestInfo: models.MetricBasicRequestInfo{
 					Id:           r.MetricId,
@@ -152,13 +143,13 @@ func (c *ContainerPulling) Run() {
 				c.Metrics[k] = m
 			}
 
-			// encode request
 			b, err := amqp.Encode(r)
 			if err != nil {
 				c.Close()
 				continue
 			}
 
+			// send metric data request to translators
 			c.RTS.amqph.PublisherCh <- models.DetailedPublishing{
 				Exchange:   amqp.ExchangeMetricsDataRequest,
 				RoutingKey: amqp.GetDataRoutingKey(r.ContainerType),

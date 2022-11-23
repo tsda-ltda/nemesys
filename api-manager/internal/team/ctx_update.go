@@ -24,21 +24,18 @@ func UpdateContextHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// ctx id
 		ctxId, err := strconv.ParseInt(c.Param("ctxId"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// team id
 		teamId, err := strconv.ParseInt(c.Param("id"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// bind context
 		var context models.Context
 		err = c.ShouldBind(&context)
 		if err != nil {
@@ -46,42 +43,34 @@ func UpdateContextHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// validate struct
 		err = api.Validate.Struct(context)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
-		// validate ident
 		_, err = strconv.ParseInt(context.Ident, 10, 64)
 		if err == nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentIsNumber))
 			return
 		}
 
-		// get ident existence
-		r, err := api.PgConn.Contexts.ExistsTeamAndIdent(ctx, int32(teamId), context.Ident, int32(ctxId))
+		r, err := api.PG.ExistsTeamAndContextIdent(ctx, int32(teamId), context.Ident, int32(ctxId))
 		if err != nil {
 			api.Log.Error("fail to get context existence", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-
-		// check if team exists
 		if !r.TeamExists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTeamNotFound))
 			return
 		}
-
-		// check if ident exists
 		if r.IdentExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}
 
-		// create context
-		_, err = api.PgConn.Contexts.Update(ctx, models.Context{
+		_, err = api.PG.UpdateContext(ctx, models.Context{
 			Name:  context.Name,
 			Ident: context.Ident,
 			Descr: context.Descr,

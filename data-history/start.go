@@ -9,8 +9,7 @@ import (
 func (d *DHS) readDatabase(limit int, offset int) error {
 	var round int = offset / limit
 	d.log.Info(fmt.Sprintf("(round %d) Reading database...", round))
-
-	r, err := d.pgConn.Metrics.GetMetricsRequestsAndIntervals(context.Background(), limit, offset)
+	r, err := d.pg.GetMetricsRequestsAndIntervals(context.Background(), limit, offset)
 	if err != nil {
 		return err
 	}

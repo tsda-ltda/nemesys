@@ -22,21 +22,18 @@ func MGet(api *api.API, t types.ContainerType) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// db query params
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
-
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// get containers
-		containers, err := api.PgConn.Containers.MGet(ctx, t, limit, offset)
+		containers, err := api.PG.GetContainers(ctx, t, limit, offset)
 		if err != nil {
 			api.Log.Error("fail to get containers", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)

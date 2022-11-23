@@ -19,22 +19,19 @@ func Get(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// contextual metric id
 		id, err := strconv.ParseInt(c.Param("metricId"), 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// get metric
-		r, err := api.PgConn.ContextualMetrics.Get(ctx, int64(id))
+		r, err := api.PG.GetContextualMetric(ctx, int64(id))
 		if err != nil {
-			api.Log.Error("fail to get metrics", logger.ErrField(err))
+			api.Log.Error("fail to get contextual metric", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
 
-		// check if exists
 		if !r.Exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
 			return
@@ -56,14 +53,12 @@ func MGet(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// context id
 		ctxId, err := strconv.ParseInt(c.Param("ctxId"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// db query params
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
@@ -76,20 +71,18 @@ func MGet(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// check if context exists
-		e, err := api.PgConn.Contexts.Exists(ctx, int32(ctxId))
+		exists, err := api.PG.ContextExists(ctx, int32(ctxId))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if context exists", logger.ErrField(err))
 			return
 		}
-		if !e {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
 			return
 		}
 
-		// get metrics
-		metrics, err := api.PgConn.ContextualMetrics.MGet(ctx, int32(ctxId), limit, offset)
+		metrics, err := api.PG.GetContextualMetrics(ctx, int32(ctxId), limit, offset)
 		if err != nil {
 			api.Log.Error("fail to get metrics", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)

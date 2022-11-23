@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -22,8 +21,8 @@ import (
 type API struct {
 	// Amqph is the amqp handler.
 	Amqph *amqph.Amqph
-	// Postgresql connection.
-	PgConn *pg.Conn
+	// Postgresql handler.
+	PG *pg.PG
 	// Influx is the influxdb client.
 	Influx *influxdb.Client
 	// Cache is the cache handler.
@@ -44,13 +43,6 @@ type API struct {
 
 // Create a new API instance.
 func New(conn *amqp091.Connection, log *logger.Logger) (*API, error) {
-	// connect to postgresql
-	pgConn, err := pg.Connect()
-	if err != nil {
-		return nil, err
-	}
-	log.Info("connected to postgresql")
-
 	// connect to redis auth
 	rdbAuth, err := rdb.NewAuthClient()
 	if err != nil {
@@ -87,7 +79,7 @@ func New(conn *amqp091.Connection, log *logger.Logger) (*API, error) {
 	// create and run amqp handler
 	amqph := amqph.New(conn, log)
 	return &API{
-		PgConn:           pgConn,
+		PG:               pg.New(),
 		Influx:           &influxClient,
 		Router:           r,
 		Auth:             auth,
@@ -109,7 +101,7 @@ func (api *API) Run() error {
 
 // Close all api dependencies.
 func (api *API) Close() {
-	api.PgConn.Close(context.Background())
+	api.PG.Close()
 	api.Auth.Close()
 	api.Cache.Close()
 	api.Amqph.Close()

@@ -22,7 +22,6 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// bind team
 		var team models.Team
 		err := c.ShouldBind(&team)
 		if err != nil {
@@ -30,36 +29,30 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// validate team
 		err = api.Validate.Struct(team)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// validate ident
 		_, err = strconv.ParseInt(team.Ident, 10, 64)
 		if err == nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentIsNumber))
 			return
 		}
 
-		// get ident existence
-		e, err := api.PgConn.Teams.ExistsIdent(ctx, team.Ident)
+		exists, err := api.PG.TeamIdentExists(ctx, team.Ident, -1)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if team ident exists", logger.ErrField(err))
 			return
 		}
-
-		// check if ident exists
-		if e {
+		if exists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}
 
-		// save team in database
-		_, err = api.PgConn.Teams.Create(ctx, models.Team{
+		_, err = api.PG.CreateTeam(ctx, models.Team{
 			Name:  team.Name,
 			Ident: team.Ident,
 			Descr: team.Descr,

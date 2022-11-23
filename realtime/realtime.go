@@ -1,8 +1,6 @@
 package rts
 
 import (
-	"context"
-	"log"
 	"sync"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
@@ -19,8 +17,8 @@ import (
 type RTS struct {
 	// cache is the cache handler
 	cache *cache.Cache
-	// pgConn is the postgresql connection.
-	pgConn *pg.Conn
+	// pgConn is the postgresql handler.
+	pgConn *pg.PG
 	// amqp is the amqp connection.
 	amqp *amqp091.Connection
 	// amqph is the amqp handler for common taks.
@@ -42,15 +40,12 @@ type RTS struct {
 
 // New returns a configurated RTS. Will kill if anything goes wrong.
 func New() *RTS {
-	// connect to amqp server
 	amqpConn, err := amqp.Dial()
 	if err != nil {
-		log.Panicf("fail to connect to amqp server, err: %s", err)
-		return nil
+		panic("fail to connect to amqp server, err: " + err.Error())
 	}
 
-	// create logger
-	l, err := logger.New(
+	log, err := logger.New(
 		amqpConn,
 		logger.Config{
 			Service:        "rts",
@@ -59,23 +54,13 @@ func New() *RTS {
 		},
 	)
 	if err != nil {
-		log.Panicf("fail to create logger, err: %s", err)
-		return nil
+		panic("fail to create logger, err: " + err.Error())
 	}
 
-	// connect to postgres
-	pg, err := pg.Connect()
-	if err != nil {
-		l.Panic("fail to connect postgres", logger.ErrField(err))
-	}
-	l.Info("connected to postgres ")
-
-	// create amqp handler
-	amqph := amqph.New(amqpConn, l)
-
+	amqph := amqph.New(amqpConn, log)
 	return &RTS{
-		log:               l,
-		pgConn:            pg,
+		log:               log,
+		pgConn:            pg.New(),
 		amqp:              amqpConn,
 		amqph:             amqph,
 		cache:             cache.New(),
@@ -87,7 +72,6 @@ func New() *RTS {
 }
 
 func (s *RTS) Run() {
-
 	s.log.Info("starting listeners...")
 	go s.containerListener()         // listen to container changes
 	go s.metricListener()            // listen to metric changes
@@ -101,13 +85,9 @@ func (s *RTS) Run() {
 
 // Close connections.
 func (s *RTS) Close() {
-	// Close logger
 	s.log.Close()
-	// Close amqp connection
 	s.amqp.Close()
-	// close postgresql
-	s.pgConn.Close(context.Background())
-	// close Redis client
+	s.pgConn.Close()
 	s.cache.Close()
 	s.closed <- nil
 }

@@ -11,23 +11,20 @@ import (
 )
 
 func CreateDefaultUser(ctx context.Context, api *api.API) error {
-	// check if user already exists
-	e, err := api.PgConn.Users.ExistsUsername(ctx, env.DefaultUsername)
+	exists, err := api.PG.UsernameExists(ctx, env.DefaultUsername)
 	if err != nil {
 		return err
 	}
-	if e {
+	if exists {
 		return nil
 	}
 
-	// hash password
 	pwHashed, err := auth.Hash(env.DefaultPassword, api.UserPWBcryptCost)
 	if err != nil {
 		return err
 	}
 
-	// save user
-	_, err = api.PgConn.Users.Create(ctx, models.User{
+	_, err = api.PG.CreateUser(ctx, models.User{
 		Role:     roles.Master,
 		Name:     "Default Master",
 		Username: env.DefaultUsername,

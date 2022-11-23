@@ -19,22 +19,18 @@ func GetContextHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// context id
 		contextId, err := strconv.ParseInt(c.Param("ctxId"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// get contexts
-		r, err := api.PgConn.Contexts.Get(ctx, int32(contextId))
+		r, err := api.PG.GetContext(ctx, int32(contextId))
 		if err != nil {
-			api.Log.Error("fail to get contexts", logger.ErrField(err))
+			api.Log.Error("fail to get context", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-
-		// check if not exists
 		if !r.Exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextNotFound))
 			return
@@ -56,28 +52,23 @@ func MGetContextHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// team id
 		teamId, err := strconv.ParseInt(c.Param("id"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
-
-		// db query params
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
-
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// get contexts
-		ctxs, err := api.PgConn.Contexts.MGet(ctx, int32(teamId), limit, offset)
+		ctxs, err := api.PG.GetContexts(ctx, int32(teamId), limit, offset)
 		if err != nil {
 			api.Log.Error("fail to get contexts", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)

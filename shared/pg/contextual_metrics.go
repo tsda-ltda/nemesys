@@ -4,12 +4,7 @@ import (
 	"context"
 
 	"github.com/fernandotsda/nemesys/shared/models"
-	"github.com/jackc/pgx/v5"
 )
-
-type ContextualMetrics struct {
-	*pgx.Conn
-}
 
 // ContextualMetricsGetIdsByIdentResponse is the response for GetIdsByIdent handler.
 type ContextualMetricsGetIdsByIdentResponse struct {
@@ -75,8 +70,12 @@ const (
 	sqlCtxMetricsGet    = `SELECT ctx_id, metric_id, ident, name, descr FROM contextual_metrics WHERE id = $1;`
 )
 
-// GetIdsByIdent returns a team id, ctx id, metric id using their idents.
-func (c *ContextualMetrics) GetIdsByIdent(ctx context.Context, metricIdent string, ctxIdent string, teamIdent string) (r ContextualMetricsGetIdsByIdentResponse, err error) {
+func (pg *PG) GetContextualMetricTreeId(ctx context.Context, metricIdent string, ctxIdent string, teamIdent string) (r ContextualMetricsGetIdsByIdentResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlCtxMetricsGetIdsByIdent, teamIdent, ctxIdent, metricIdent)
 	if err != nil {
 		return r, err
@@ -96,8 +95,12 @@ func (c *ContextualMetrics) GetIdsByIdent(ctx context.Context, metricIdent strin
 	return r, nil
 }
 
-// Get returns a contextual metric by id.
-func (c *ContextualMetrics) Get(ctx context.Context, id int64) (r CtxMetricsGetResponse, err error) {
+func (pg *PG) GetContextualMetric(ctx context.Context, id int64) (r CtxMetricsGetResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlCtxMetricsGet, id)
 	if err != nil {
 		return r, err
@@ -117,12 +120,16 @@ func (c *ContextualMetrics) Get(ctx context.Context, id int64) (r CtxMetricsGetR
 	return r, err
 }
 
-// MGet returns all metrics of a context with limit and offset.
-func (c *ContextualMetrics) MGet(ctx context.Context, ctxId int32, limit int, offset int) (metrics []models.ContextualMetric, err error) {
+func (pg *PG) GetContextualMetrics(ctx context.Context, ctxId int32, limit int, offset int) (metrics []models.ContextualMetric, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer c.Release()
 	metrics = []models.ContextualMetric{}
 	rows, err := c.Query(ctx, sqlCtxMetricsMGet, ctxId, limit, offset)
 	if err != nil {
-		return metrics, err
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -135,7 +142,7 @@ func (c *ContextualMetrics) MGet(ctx context.Context, ctxId int32, limit int, of
 			&m.Descr,
 		)
 		if err != nil {
-			return metrics, err
+			return nil, err
 		}
 		m.ContextId = ctxId
 		metrics = append(metrics, m)
@@ -143,14 +150,21 @@ func (c *ContextualMetrics) MGet(ctx context.Context, ctxId int32, limit int, of
 	return metrics, nil
 }
 
-// ExistsIdent returns if a contextual metric's ident exists.
-func (c *ContextualMetrics) ExistsIdent(ctx context.Context, ident string, ctxId int32, id int64) (exists bool, err error) {
+func (pg *PG) ContextualMetricIdentExists(ctx context.Context, ident string, ctxId int32, id int64) (exists bool, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	c.Release()
 	return exists, c.QueryRow(ctx, sqlCtxMetricsExistsIdent, ident, ctxId, id).Scan(&exists)
 }
 
-// GetMetricEnabledAndRequestById returns the metric's information to make a data request and
-// if is enabled, querying by id.
-func (c *ContextualMetrics) GetMetricEnabledAndRequestById(ctx context.Context, contextualMetricId int64) (r CtxMetricsGetMetricEnabledAndMetricRequestByIdResponse, err error) {
+func (pg *PG) GetMetricRequest(ctx context.Context, contextualMetricId int64) (r CtxMetricsGetMetricEnabledAndMetricRequestByIdResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlCtxMetricsGetMetricRequestInfo, contextualMetricId)
 	if err != nil {
 		return r, err
@@ -173,8 +187,12 @@ func (c *ContextualMetrics) GetMetricEnabledAndRequestById(ctx context.Context, 
 	return r, nil
 }
 
-// ExistsContextAndIdent returns if a context, metric and a contexual metric's ident exists.
-func (c *ContextualMetrics) ExistsContextMetricAndIdent(ctx context.Context, contextId int32, metricId int64, ident string, contextualMetricId int64) (r CtxMetricsExistsContextMetricAndIdentResponse, err error) {
+func (pg *PG) ContextMetricAndContexualMetricIdentExists(ctx context.Context, contextId int32, metricId int64, ident string, contextualMetricId int64) (r CtxMetricsExistsContextMetricAndIdentResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlCtxMetricsExistsContextMetricAndIdent, contextId, metricId, ident, contextualMetricId)
 	if err != nil {
 		return r, err
@@ -193,8 +211,12 @@ func (c *ContextualMetrics) ExistsContextMetricAndIdent(ctx context.Context, con
 	return r, nil
 }
 
-// Create creates a contextual metric, returning it's id.
-func (c *ContextualMetrics) Create(ctx context.Context, m models.ContextualMetric) (id int64, err error) {
+func (pg *PG) CreateContextualMetric(ctx context.Context, m models.ContextualMetric) (id int64, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return id, err
+	}
+	defer c.Release()
 	return id, c.QueryRow(ctx, sqlCtxMetricsCreate,
 		m.ContextId,
 		m.MetricId,
@@ -204,8 +226,12 @@ func (c *ContextualMetrics) Create(ctx context.Context, m models.ContextualMetri
 	).Scan(&id)
 }
 
-// Update updates a contextual metric if exists.
-func (c *ContextualMetrics) Update(ctx context.Context, m models.ContextualMetric) (exists bool, err error) {
+func (pg *PG) UpdateContextualMetric(ctx context.Context, m models.ContextualMetric) (exists bool, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer c.Release()
 	t, err := c.Exec(ctx, sqlCtxMetricsUpdate,
 		m.Ident,
 		m.Name,
@@ -215,8 +241,12 @@ func (c *ContextualMetrics) Update(ctx context.Context, m models.ContextualMetri
 	return t.RowsAffected() != 0, err
 }
 
-// Delete deletes a contextual metric by id.
-func (c *ContextualMetrics) Delete(ctx context.Context, id int64) (exists bool, err error) {
+func (pg *PG) DeleteContextualMetric(ctx context.Context, id int64) (exists bool, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer c.Release()
 	t, err := c.Exec(ctx, sqlCtxMetricsDelete, id)
 	return t.RowsAffected() != 0, err
 }

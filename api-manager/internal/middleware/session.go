@@ -7,13 +7,10 @@ import (
 )
 
 func validateSession(api *api.API, c *gin.Context) (meta auth.SessionMeta, err error) {
-	// get session cookie
 	sess, err := c.Cookie(auth.SessionCookieName)
 	if err != nil {
 		return meta, err
 	}
-
-	// validate session
 	meta, err = api.Auth.Validate(c.Request.Context(), sess)
 	if err != nil {
 		return meta, err

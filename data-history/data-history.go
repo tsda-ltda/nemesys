@@ -1,8 +1,6 @@
 package dhs
 
 import (
-	"context"
-
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/env"
@@ -15,8 +13,8 @@ import (
 type DHS struct {
 	// influxClient is the influx client.
 	influxClient *influxdb.Client
-	// pgConn is the postgres connection.
-	pgConn *pg.Conn
+	// pg is the postgres handler.
+	pg *pg.PG
 	// amqpConn is the amqp connection.
 	amqpConn *amqp091.Connection
 	// amqph is the amqp handler.
@@ -50,18 +48,10 @@ func New() (*DHS, error) {
 		return nil, err
 	}
 
-	// connect to postgres
-	pgConn, err := pg.Connect()
-	if err != nil {
-		log.Error("fail to connect to postgres", logger.ErrField(err))
-		return nil, err
-	}
-	log.Info("connected to postgres")
-
 	// connect influxdb
 	influxClient, err := influxdb.Connect()
 	if err != nil {
-		log.Error("fail to connect to postgres", logger.ErrField(err))
+		log.Error("fail to connect to influxdb", logger.ErrField(err))
 		return nil, err
 	}
 	log.Info("connected to influxdb")
@@ -71,7 +61,7 @@ func New() (*DHS, error) {
 
 	return &DHS{
 		influxClient:      &influxClient,
-		pgConn:            pgConn,
+		pg:                pg.New(),
 		amqpConn:          amqpConn,
 		amqph:             amqph,
 		log:               log,
@@ -99,6 +89,6 @@ func (d *DHS) Run() {
 func (d *DHS) Close() {
 	d.amqpConn.Close()
 	d.influxClient.Close()
-	d.pgConn.Close(context.Background())
+	d.pg.Close()
 	d.closed <- nil
 }

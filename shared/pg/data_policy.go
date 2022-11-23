@@ -7,10 +7,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type DataPolicy struct {
-	*pgx.Conn
-}
-
 // DataPolicyGetResponse is the response for Get handler.
 type DataPolicyGetResponse struct {
 	// Exists is the data policy existence.
@@ -33,25 +29,39 @@ const (
 		use_aggregation, aggregation_retention, aggregation_interval) = ($1, $2, $3, $4, $5) WHERE id = $6;`
 )
 
-// Count counts the number of data-policies created.
-func (c *DataPolicy) Count(ctx context.Context) (n int64, err error) {
+func (pg *PG) CountDataPolicy(ctx context.Context) (n int64, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return n, err
+	}
+	defer c.Release()
 	err = c.QueryRow(ctx, sqlDPCount).Scan(&n)
 	return n, err
 }
 
-// Create creates a data policy.
-func (c *DataPolicy) Create(ctx context.Context, dp models.DataPolicy) (id int16, err error) {
-	return id, c.QueryRow(ctx, sqlDPCreate,
+func (pg *PG) CreateDataPolicy(ctx context.Context, dp models.DataPolicy) (tx pgx.Tx, id int16, err error) {
+	c, err := pg.pool.Begin(ctx)
+	if err != nil {
+		return nil, id, err
+	}
+	err = c.QueryRow(ctx, sqlDPCreate,
 		&dp.Descr,
 		&dp.UseAggregation,
 		&dp.Retention,
 		&dp.AggregationRetention,
 		&dp.AggregationInterval,
 	).Scan(&id)
+	if err != nil {
+		return nil, id, err
+	}
+	return c, id, nil
 }
 
-// Update updates a data policy.
-func (c *DataPolicy) Update(ctx context.Context, dp models.DataPolicy) (exists bool, err error) {
+func (pg *PG) UpdateDataPolicy(ctx context.Context, dp models.DataPolicy) (tx pgx.Tx, exists bool, err error) {
+	c, err := pg.pool.Begin(ctx)
+	if err != nil {
+		return nil, false, err
+	}
 	t, err := c.Exec(ctx, sqlDPUpdate,
 		dp.Descr,
 		dp.Retention,
@@ -60,17 +70,28 @@ func (c *DataPolicy) Update(ctx context.Context, dp models.DataPolicy) (exists b
 		dp.AggregationInterval,
 		dp.Id,
 	)
-	return t.RowsAffected() != 0, err
+	if err != nil {
+		return nil, false, err
+	}
+	return c, t.RowsAffected() != 0, nil
 }
 
-// Delete deletes a data policy.
-func (c *DataPolicy) Delete(ctx context.Context, id int16) (exists bool, err error) {
+func (pg *PG) DeleteDataPolicy(ctx context.Context, id int16) (exists bool, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer c.Release()
 	t, err := c.Exec(ctx, sqlDPDelete, id)
 	return t.RowsAffected() != 0, err
 }
 
-// Get returns a data policy.
-func (c *DataPolicy) Get(ctx context.Context, id int16) (r DataPolicyGetResponse, err error) {
+func (pg *PG) GetDataPolicy(ctx context.Context, id int16) (r DataPolicyGetResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlDPMGet)
 	if err != nil {
 		return r, err
@@ -93,12 +114,16 @@ func (c *DataPolicy) Get(ctx context.Context, id int16) (r DataPolicyGetResponse
 	return r, err
 }
 
-// MGet returns all data policies.
-func (c *DataPolicy) MGet(ctx context.Context) (dps []models.DataPolicy, err error) {
+func (pg *PG) GetDataPolicies(ctx context.Context) (dps []models.DataPolicy, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer c.Release()
 	dps = []models.DataPolicy{}
 	rows, err := c.Query(ctx, sqlDPMGet)
 	if err != nil {
-		return dps, err
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -112,7 +137,7 @@ func (c *DataPolicy) MGet(ctx context.Context) (dps []models.DataPolicy, err err
 			&dp.AggregationInterval,
 		)
 		if err != nil {
-			return dps, err
+			return nil, err
 		}
 		dps = append(dps, dp)
 	}

@@ -18,22 +18,18 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get team id
 		id, err := strconv.ParseInt(c.Param("id"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// get team
-		r, err := api.PgConn.Teams.Get(ctx, int32(id))
+		r, err := api.PG.GetTeam(ctx, int32(id))
 		if err != nil {
 			api.Log.Error("fail to get team", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-
-		// check if team  exists
 		if !r.Exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTeamNotFound))
 			return
@@ -55,21 +51,18 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// db query params
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
-
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// get teams
-		teams, err := api.PgConn.Teams.MGet(ctx, limit, offset)
+		teams, err := api.PG.GetTeams(ctx, limit, offset)
 		if err != nil {
 			api.Log.Error("fail to get teams", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)

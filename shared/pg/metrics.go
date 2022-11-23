@@ -8,11 +8,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type Metrics struct {
-	*pgx.Conn
-}
-
-// MetricsGetEvaluableExpressionResponse is the response for GetEvaluableExpression handler.
 type MetricsGetEvaluableExpressionResponse struct {
 	// Exists is the metric existence.
 	Exists bool
@@ -20,7 +15,6 @@ type MetricsGetEvaluableExpressionResponse struct {
 	Expression string
 }
 
-// MetricsGetResponse is the response for Get handler.
 type MetricsGetResponse struct {
 	// Exists is the metric existence.
 	Exists bool
@@ -28,7 +22,6 @@ type MetricsGetResponse struct {
 	Metric models.BaseMetric
 }
 
-// MetricsGetRTSConfigResponse is the response for GetRTSConfig handler.
 type MetricsGetRTSConfigResponse struct {
 	// Exists is the metric existence.
 	Exists bool
@@ -36,7 +29,6 @@ type MetricsGetRTSConfigResponse struct {
 	RTSConfig models.RTSMetricConfig
 }
 
-// MetricsExistsContainerAndDataPolicyResponse is the response for ExistsContainerAndDataPolicy handler.
 type MetricsExistsContainerAndDataPolicyResponse struct {
 	// Exists is the metric existence.
 	Exists bool
@@ -46,7 +38,6 @@ type MetricsExistsContainerAndDataPolicyResponse struct {
 	DataPolicyExists bool
 }
 
-// MetricsEnabledResponse is the response for Enabled handler.
 type MetricsEnabledResponse struct {
 	// Exists is the metric existence.
 	Exists bool
@@ -91,8 +82,12 @@ const (
 	sqlMetricsGetMetricsRequestsAndIntervals = `SELECT id, type, container_id, container_type, data_policy_id, dhs_interval FROM metrics WHERE dhs_enabled = true LIMIT $1 OFFSET $2;`
 )
 
-// Get returns a metric.
-func (c *Metrics) Get(ctx context.Context, id int64) (r MetricsGetResponse, err error) {
+func (pg *PG) GetMetric(ctx context.Context, id int64) (r MetricsGetResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlMetricsGet, id)
 	if err != nil {
 		return r, err
@@ -122,12 +117,16 @@ func (c *Metrics) Get(ctx context.Context, id int64) (r MetricsGetResponse, err 
 	return r, nil
 }
 
-// MGetSimplified returns all simplified metrics of a container type with a limit and offset.
-func (c *Metrics) MGetSimplified(ctx context.Context, containerType types.ContainerType, containerId int32, limit int, offset int) (metrics []models.BaseMetricSimplified, err error) {
+func (pg *PG) GetMetricsSimplified(ctx context.Context, containerType types.ContainerType, containerId int32, limit int, offset int) (metrics []models.BaseMetricSimplified, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer c.Release()
 	metrics = []models.BaseMetricSimplified{}
 	rows, err := c.Query(ctx, sqlMetricsMGetSimplified, containerId, containerType, limit, offset)
 	if err != nil {
-		return metrics, err
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -140,7 +139,7 @@ func (c *Metrics) MGetSimplified(ctx context.Context, containerType types.Contai
 			&m.Enabled,
 		)
 		if err != nil {
-			return metrics, err
+			return nil, err
 		}
 		m.ContainerType = containerType
 		metrics = append(metrics, m)
@@ -148,9 +147,8 @@ func (c *Metrics) MGetSimplified(ctx context.Context, containerType types.Contai
 	return metrics, nil
 }
 
-// Create creates a metric.
-func (c *Metrics) Create(ctx context.Context, metric models.BaseMetric) (id int64, err error) {
-	err = c.QueryRow(ctx, sqlMetricsCreate,
+func (pg *PG) createMetric(ctx context.Context, tx pgx.Tx, metric models.BaseMetric) (id int64, err error) {
+	err = tx.QueryRow(ctx, sqlMetricsCreate,
 		metric.ContainerId,
 		metric.ContainerType,
 		metric.Name,
@@ -167,9 +165,8 @@ func (c *Metrics) Create(ctx context.Context, metric models.BaseMetric) (id int6
 	return id, err
 }
 
-// Update updates a metric if exists.
-func (c *Metrics) Update(ctx context.Context, metric models.BaseMetric) (exists bool, err error) {
-	t, err := c.Exec(ctx, sqlMetricsUpdate,
+func (pg *PG) updateMetric(ctx context.Context, tx pgx.Tx, metric models.BaseMetric) (exists bool, err error) {
+	t, err := tx.Exec(ctx, sqlMetricsUpdate,
 		metric.Name,
 		metric.Descr,
 		metric.Enabled,
@@ -185,14 +182,22 @@ func (c *Metrics) Update(ctx context.Context, metric models.BaseMetric) (exists 
 	return t.RowsAffected() != 0, err
 }
 
-// Delete deletes a metric if exists.
-func (c *Metrics) Delete(ctx context.Context, id int64) (exists bool, err error) {
+func (pg *PG) DeleteMetric(ctx context.Context, id int64) (exists bool, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer c.Release()
 	t, err := c.Exec(ctx, sqlMetricsDelete, id)
 	return t.RowsAffected() != 0, err
 }
 
-// GetEvaluableExpression returns the metric evaluable expression if exists.
-func (c *Metrics) GetEvaluableExpression(ctx context.Context, id int64) (r MetricsGetEvaluableExpressionResponse, err error) {
+func (pg *PG) GetMetricEvaluableExpression(ctx context.Context, id int64) (r MetricsGetEvaluableExpressionResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlMetricsGetEvaluableExpression, id)
 	if err != nil {
 		return r, err
@@ -208,8 +213,12 @@ func (c *Metrics) GetEvaluableExpression(ctx context.Context, id int64) (r Metri
 	return r, err
 }
 
-// GetRTSConfig returns the metric's RTS configuration.
-func (c *Metrics) GetRTSConfig(ctx context.Context, id int64) (r MetricsGetRTSConfigResponse, err error) {
+func (pg *PG) GetMetricRTSConfig(ctx context.Context, id int64) (r MetricsGetRTSConfigResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlMetricsGetRTSConfig, id)
 	if err != nil {
 		return r, err
@@ -228,8 +237,12 @@ func (c *Metrics) GetRTSConfig(ctx context.Context, id int64) (r MetricsGetRTSCo
 	return r, nil
 }
 
-// ExistsContainerAndDataPolicy check if exists a metric, container and data policy exists.
-func (c *Metrics) ExistsContainerAndDataPolicy(ctx context.Context, base models.BaseMetric) (r MetricsExistsContainerAndDataPolicyResponse, err error) {
+func (pg *PG) MetricContainerAndDataPolicyExists(ctx context.Context, base models.BaseMetric) (r MetricsExistsContainerAndDataPolicyResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	return r, c.QueryRow(ctx, sqlMetricsExistsContainerAndDataPolicy, base.ContainerId, base.ContainerType, base.DataPolicyId, base.Id).Scan(
 		&r.Exists,
 		&r.ContainerExists,
@@ -237,8 +250,12 @@ func (c *Metrics) ExistsContainerAndDataPolicy(ctx context.Context, base models.
 	)
 }
 
-// Enabled returns the enabled status of a metric and it's container.
-func (c *Metrics) Enabled(ctx context.Context, id int32) (r MetricsEnabledResponse, err error) {
+func (pg *PG) MetricEnabled(ctx context.Context, id int32) (r MetricsEnabledResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	var ce *bool
 	var me *bool
 	rows, err := c.Query(ctx, sqlContainersEnabled, id)
@@ -264,8 +281,12 @@ func (c *Metrics) Enabled(ctx context.Context, id int32) (r MetricsEnabledRespon
 	return r, nil
 }
 
-// GetMetricsRequestsAndIntervals returns ax MetricRequest and the DHS interval.
-func (c *Metrics) GetMetricsRequestsAndIntervals(ctx context.Context, limit int, offset int) (r []GetMetricsRequestsAndIntervalsResult, err error) {
+func (pg *PG) GetMetricsRequestsAndIntervals(ctx context.Context, limit int, offset int) (r []GetMetricsRequestsAndIntervalsResult, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlMetricsGetMetricsRequestsAndIntervals, limit, offset)
 	if err != nil {
 		return r, err

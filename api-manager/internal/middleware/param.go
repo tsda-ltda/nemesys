@@ -15,40 +15,31 @@ func ParseContextParams(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get params
 		teamRawId := c.Param("id")
 		ctxRawId := c.Param("ctxId")
 
-		// parse to number
 		_, err1 := strconv.ParseInt(teamRawId, 10, 32)
 		_, err2 := strconv.ParseInt(ctxRawId, 10, 32)
 
-		// check if params are differents types
 		if (err1 != nil) != (err2 != nil) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgParamsNotSameType))
 			return
 		}
-
-		// check if is id
 		if err1 == nil {
 			c.Next()
 			return
 		}
 
-		// get ids
-		r, err := api.PgConn.Contexts.GetIdsByIdent(ctx, ctxRawId, teamRawId)
+		r, err := api.PG.GetContextTreeId(ctx, ctxRawId, teamRawId)
 		if err != nil {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-
-		// check if exists
 		if !r.Exists {
 			c.AbortWithStatusJSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextNotFound))
 			return
 		}
 
-		// set params
 		for i, v := range c.Params {
 			switch v.Key {
 			case "ctxId":
@@ -72,43 +63,34 @@ func ParseContextualMetricParams(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get params
 		metricRawId := c.Param("metricId")
 		teamRawId := c.Param("id")
 		ctxRawId := c.Param("ctxId")
 
-		// parse to number
 		_, err1 := strconv.ParseInt(metricRawId, 10, 64)
 		_, err2 := strconv.ParseInt(teamRawId, 10, 32)
 		_, err3 := strconv.ParseInt(ctxRawId, 10, 32)
 
-		// check if params are different types
 		if (err1 != nil) != (err2 != nil) || (err1 != nil) != (err3 != nil) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgParamsNotSameType))
 			return
 		}
-
-		// check if could parse id to number
 		if err1 == nil {
 			c.Next()
 			return
 		}
 
-		// fetch ids on database
-		r, err := api.PgConn.ContextualMetrics.GetIdsByIdent(ctx, metricRawId, ctxRawId, teamRawId)
+		r, err := api.PG.GetContextualMetricTreeId(ctx, metricRawId, ctxRawId, teamRawId)
 		if err != nil {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			api.Log.Error("fail to get ids on database", logger.ErrField(err))
 			return
 		}
-
-		// check if exists
 		if !r.Exists {
 			c.AbortWithStatusJSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
 			return
 		}
 
-		// set params
 		for i, v := range c.Params {
 			switch v.Key {
 			case "id":

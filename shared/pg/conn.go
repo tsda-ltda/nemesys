@@ -2,57 +2,51 @@ package pg
 
 import (
 	"context"
-	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Conn struct {
-	*pgx.Conn
-	Users                Users
-	Teams                Teams
-	DataPolicy           DataPolicy
-	Contexts             Contexts
-	ContextualMetrics    ContextualMetrics
-	Metrics              Metrics
-	Containers           BaseContainers
-	SNMPv2cContainers    SNMPv2cContainers
-	SNMPv2cMetrics       SNMPv2cMetrics
-	FlexLegacyContainers FlexLegacyContainers
-	FlexLegacyMetrics    FlexLegacyMetrics
-	CustomQueries        CustomQueries
+type PG struct {
+	// pool is the connection pool.
+	pool *pgxpool.Pool
 }
 
-// Connects to a Postgresql database server
-func Connect() (*Conn, error) {
-	ctx := context.Background()
-
-	// connect to pg db
-	conn, err := pgx.Connect(ctx, fmt.Sprintf("postgres://%s:%s@%s:%s/%s", env.PGUsername, env.PGPassword, env.PGHost, env.PGPort, env.PGDBName))
+func New() *PG {
+	port, err := strconv.ParseInt(env.PGPort, 0, 64)
 	if err != nil {
-		return nil, err
+		panic("fail to parse postgres port, err: " + err.Error())
 	}
-
-	// ping db
-	err = conn.Ping(ctx)
+	pool, err := pgxpool.NewWithConfig(context.Background(), &pgxpool.Config{
+		MaxConns:          10,
+		MinConns:          1,
+		HealthCheckPeriod: time.Second,
+		MaxConnIdleTime:   time.Minute * 5,
+		ConnConfig: &pgx.ConnConfig{
+			Config: pgconn.Config{
+				Host:           env.PGHost,
+				Port:           uint16(port),
+				Database:       env.PGDBName,
+				User:           env.PGUsername,
+				Password:       env.PGPassword,
+				TLSConfig:      nil,
+				ConnectTimeout: time.Second * 10,
+			},
+			Tracer:                   nil,
+			StatementCacheCapacity:   20,
+			DescriptionCacheCapacity: 20,
+		},
+	})
 	if err != nil {
-		return nil, err
+		panic("fail to create postgres connection pool, err: " + err.Error())
 	}
+	return &PG{pool: pool}
+}
 
-	return &Conn{
-		Conn:                 conn,
-		Users:                Users{Conn: conn},
-		Teams:                Teams{Conn: conn},
-		Contexts:             Contexts{Conn: conn},
-		ContextualMetrics:    ContextualMetrics{Conn: conn},
-		Metrics:              Metrics{Conn: conn},
-		DataPolicy:           DataPolicy{Conn: conn},
-		Containers:           BaseContainers{Conn: conn},
-		SNMPv2cContainers:    SNMPv2cContainers{Conn: conn},
-		SNMPv2cMetrics:       SNMPv2cMetrics{Conn: conn},
-		FlexLegacyContainers: FlexLegacyContainers{Conn: conn},
-		FlexLegacyMetrics:    FlexLegacyMetrics{Conn: conn},
-		CustomQueries:        CustomQueries{Conn: conn},
-	}, nil
+func (pg *PG) Close() {
+	pg.pool.Close()
 }

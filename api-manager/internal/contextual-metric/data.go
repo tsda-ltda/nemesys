@@ -69,7 +69,6 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get metric request
 		r, err := tools.GetMetricRequest(c)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
@@ -79,13 +78,11 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 
 		now := time.Now().Unix()
 
-		// query options
 		var opts influxdb.QueryOptions
 		opts.MetricId = r.MetricId
 		opts.MetricType = r.MetricType
 		opts.DataPolicyId = r.DataPolicyId
 
-		// get start param
 		start, err := strconv.ParseInt(c.Query("start"), 0, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
@@ -93,7 +90,6 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 		}
 		opts.Start = influxdb.DurationFromSeconds(start - now)
 
-		// get stop param
 		rawStop := c.Param("stop")
 		if len(rawStop) > 0 {
 			stop, err := strconv.ParseInt(rawStop, 0, 64)
@@ -106,12 +102,10 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 			opts.Stop = "now()"
 		}
 
-		// get custom query
 		rawCustomQuery := c.Query("custom_query")
 		if len(rawCustomQuery) != 0 {
 			id, err := strconv.ParseInt(rawCustomQuery, 0, 32)
 			if err != nil {
-				// get custom query by ident on cache
 				cacheRes, err := api.Cache.GetCustomQueryByIdent(ctx, rawCustomQuery)
 				if err != nil {
 					c.Status(http.StatusInternalServerError)
@@ -119,24 +113,20 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 					return
 				}
 
-				// check if cacke exists
 				if !cacheRes.Exists {
-					// get custom query by ident on database
-					dbRes, err := api.PgConn.CustomQueries.GetByIdent(ctx, rawCustomQuery)
+					dbRes, err := api.PG.GetCustomQueryByIdent(ctx, rawCustomQuery)
 					if err != nil {
 						c.Status(http.StatusInternalServerError)
 						api.Log.Error("fail to get custom query on cache", logger.ErrField(err))
 						return
 					}
 
-					// check if custom query exists
 					if !dbRes.Exists {
 						c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgCustomQueryNotFound))
 						return
 					}
 					opts.CustomQueryFlux = dbRes.CustomQuery.Flux
 
-					// save on cache
 					err = api.Cache.SetCustomQueryByIdent(ctx, dbRes.CustomQuery.Flux, rawCustomQuery)
 					if err != nil {
 						c.Status(http.StatusInternalServerError)
@@ -147,7 +137,6 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 					opts.CustomQueryFlux = cacheRes.Flux
 				}
 			} else {
-				// get custom query by id on cache
 				cacheRes, err := api.Cache.GetCustomQuery(ctx, int32(id))
 				if err != nil {
 					c.Status(http.StatusInternalServerError)
@@ -155,17 +144,14 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 					return
 				}
 
-				// check if cacke exists
 				if !cacheRes.Exists {
-					// get custom query by id on database
-					dbRes, err := api.PgConn.CustomQueries.Get(ctx, int32(id))
+					dbRes, err := api.PG.GetCustomQuery(ctx, int32(id))
 					if err != nil {
 						c.Status(http.StatusInternalServerError)
 						api.Log.Error("fail to get custom query on cache", logger.ErrField(err))
 						return
 					}
 
-					// check if custom query exists
 					if !dbRes.Exists {
 						c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgCustomQueryNotFound))
 						return

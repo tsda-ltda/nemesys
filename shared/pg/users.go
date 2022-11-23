@@ -4,12 +4,7 @@ import (
 	"context"
 
 	"github.com/fernandotsda/nemesys/shared/models"
-	"github.com/jackc/pgx/v5"
 )
-
-type Users struct {
-	*pgx.Conn
-}
 
 // UsersExistsUsernameEmailResponse is the response for ExistsUsernameEmailResponse handler.
 type UsersExistsUsernameEmailResponse struct {
@@ -65,56 +60,84 @@ const (
 		WHERE ut.user_id = $1 LIMIT $2 OFFSET $3;`
 )
 
-// Exists return the existence of user.
-func (c *Users) Exists(ctx context.Context, id int32) (exists bool, err error) {
+func (pg *PG) UserExists(ctx context.Context, id int32) (exists bool, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer c.Release()
 	return exists, c.QueryRow(ctx, sqlUsersExists, id).Scan(&exists)
 }
 
-// ExistsUsername returns the existence of a user's username.
-func (c *Users) ExistsUsername(ctx context.Context, username string) (exists bool, err error) {
+func (pg *PG) UsernameExists(ctx context.Context, username string) (exists bool, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer c.Release()
 	return exists, c.QueryRow(ctx, sqlUsersExistsUsername, username).Scan(&exists)
 }
 
-// ExistsUsernameEmail returns the existence of a user's username and email.
-func (c *Users) ExistsUsernameEmail(ctx context.Context, username string, email string, userId int32) (r UsersExistsUsernameEmailResponse, err error) {
+func (pg *PG) UsernameAndEmailExists(ctx context.Context, username string, email string, userId int32) (r UsersExistsUsernameEmailResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	return r, c.QueryRow(ctx, sqlUsersExistsUsernameEmail, userId, username, email).Scan(
 		&r.UsernameExists,
 		&r.EmailExists,
 	)
 }
 
-// Create saves an user in database.
-func (c *Users) Create(ctx context.Context, user models.User) (id int32, err error) {
+func (pg *PG) CreateUser(ctx context.Context, user models.User) (id int32, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return id, err
+	}
+	defer c.Release()
 	return id, c.QueryRow(ctx, sqlUsersCreate, user.Role, user.Name, user.Username, user.Password, user.Email).Scan(&id)
 }
 
-// Delete deletes a user by id if exists.
-func (c *Users) Delete(ctx context.Context, id int32) (e bool, err error) {
+func (pg *PG) DeleteUser(ctx context.Context, id int32) (e bool, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer c.Release()
 	t, err := c.Exec(ctx, sqlUsersDelete, id)
 	return t.RowsAffected() != 0, err
 }
 
-// MGetSimplified returns simplified users with a limit and a offset.
-func (c *Users) MGetSimplified(ctx context.Context, limit int, offset int) (users []models.UserSimplified, err error) {
+func (pg *PG) GetUsersSimplified(ctx context.Context, limit int, offset int) (users []models.UserSimplified, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer c.Release()
 	users = []models.UserSimplified{}
 	rows, err := c.Query(ctx, sqlUsersMGetSimplified, limit, offset)
 	if err != nil {
-		return users, err
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var u models.UserSimplified
 		err = rows.Scan(&u.Id, &u.Username, &u.Name)
 		if err != nil {
-			return users, err
+			return nil, err
 		}
 		users = append(users, u)
 	}
 	return users, nil
 }
 
-// GetWithout returns a user without password and it's existence.
-func (c *Users) GetWithoutPW(ctx context.Context, id int32) (r UsersGetWithoutPWResponse, err error) {
+func (pg *PG) GetUserWithoutPW(ctx context.Context, id int32) (r UsersGetWithoutPWResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlUsersGetWithoutPW, id)
 	if err != nil {
 		return r, err
@@ -136,8 +159,12 @@ func (c *Users) GetWithoutPW(ctx context.Context, id int32) (r UsersGetWithoutPW
 	return r, nil
 }
 
-// Update updates a user if exists.
-func (c *Users) Update(ctx context.Context, user models.User) (exists bool, err error) {
+func (pg *PG) UpdateUser(ctx context.Context, user models.User) (exists bool, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer c.Release()
 	t, err := c.Exec(ctx, sqlUsersUpdate,
 		user.Role,
 		user.Name,
@@ -152,8 +179,12 @@ func (c *Users) Update(ctx context.Context, user models.User) (exists bool, err 
 	return t.RowsAffected() != 0, nil
 }
 
-// LoginInfo returns the information necessary to check a login attempt.
-func (c *Users) LoginInfo(ctx context.Context, username string) (r UsersLoginInfoResponse, err error) {
+func (pg *PG) GetLoginInfo(ctx context.Context, username string) (r UsersLoginInfoResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlUsersLoginInfo, username)
 	if err != nil {
 		return r, err
@@ -173,8 +204,12 @@ func (c *Users) LoginInfo(ctx context.Context, username string) (r UsersLoginInf
 	return r, nil
 }
 
-// GetRole returns an user's role if the user exists.
-func (c *Users) GetRole(ctx context.Context, id int32) (r UsersGetRoleResponse, err error) {
+func (pg *PG) GetUserRole(ctx context.Context, id int32) (r UsersGetRoleResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlUsersGetRole, id)
 	if err != nil {
 		return r, err
@@ -190,19 +225,23 @@ func (c *Users) GetRole(ctx context.Context, id int32) (r UsersGetRoleResponse, 
 	return r, nil
 }
 
-// Teams returns all user's teams with a limit and offset.
-func (c *Users) Teams(ctx context.Context, userId int32, limit int, offset int) (teams []models.Team, err error) {
+func (pg *PG) GetUserTeams(ctx context.Context, userId int32, limit int, offset int) (teams []models.Team, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer c.Release()
 	teams = []models.Team{}
 	rows, err := c.Query(ctx, sqlUsersTeams, userId, limit, offset)
 	if err != nil {
-		return teams, err
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var t models.Team
 		err = rows.Scan(&t.Id, &t.Name, &t.Ident, &t.Descr)
 		if err != nil {
-			return teams, err
+			return nil, err
 		}
 		teams = append(teams, t)
 	}

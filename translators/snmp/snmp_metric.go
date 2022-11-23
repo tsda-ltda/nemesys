@@ -34,9 +34,9 @@ func (s *SNMPService) getSNMPMetrics(request models.MetricsRequest) (metrics []m
 		var newMetrics []models.SNMPMetric
 		switch request.ContainerType {
 		case types.CTSNMPv2c:
-			newMetrics, err = s.pgConn.SNMPv2cMetrics.GetByIds(ctx, notExists)
+			newMetrics, err = s.pg.GetSNMPv2cMetricsByIds(ctx, notExists)
 		case types.CTFlexLegacy:
-			newMetrics, err = s.pgConn.FlexLegacyMetrics.GetByIdsAsSNMPMetric(ctx, notExists)
+			newMetrics, err = s.pg.FlexLegacyMetricsByIdsAsSNMPMetric(ctx, notExists)
 		}
 		if err != nil {
 			return metrics, err

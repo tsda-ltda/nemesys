@@ -4,22 +4,22 @@ import (
 	"context"
 
 	"github.com/fernandotsda/nemesys/shared/models"
-	"github.com/jackc/pgx/v5"
 )
 
-type FlexLegacyContainers struct {
-	*pgx.Conn
-}
-
-// FlexLegacyContainersGetResponse is the response for Get handler.
-type FlexLegacyContainersGetResponse struct {
+type FlexLegacyContainersGetProtocolResponse struct {
 	// Exists is the flex legacy container existence.
 	Exists bool
 	// Container is the flex legacy container.
 	Container models.FlexLegacyContainer
 }
 
-// FlexLegacyContainersGetSNMPConfigResponse is the response for GetSNMPConfig handler.
+type FlexLegacyContainersGetResponse struct {
+	// Exists is the flex legacy container existence.
+	Exists bool
+	// Container is the flex legacy container.
+	Container models.Container[models.FlexLegacyContainer]
+}
+
 type FlexLegacyContainersGetSNMPConfigResponse struct {
 	// Exists is the flex legacy container existence.
 	Exists bool
@@ -27,7 +27,6 @@ type FlexLegacyContainersGetSNMPConfigResponse struct {
 	Container models.FlexLegacyContainer
 }
 
-// FlexLegacyContainerExistsContainerTargetPortAndSerialNumberRespose is the response for ExistsContainerTargetPortAndSerialNumber handler.
 type FlexLegacyContainerExistsContainerTargetPortAndSerialNumberRespose struct {
 	// ContainerExists is the container existence.
 	ContainerExists bool
@@ -44,7 +43,7 @@ const (
 	sqlFlexLegacyContainersUpdate = `UPDATE flex_legacy_containers SET 
 		(target, port, transport, community, retries, max_oids, timeout, serial_number, model, city, region, country) = 
 		($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) WHERE container_id = $13;`
-	sqlFlexLegacyContainersGet = `SELECT 
+	sqlFlexLegacyContainersGetProtocol = `SELECT 
 		target, port, transport, community, retries, max_oids, timeout, serial_number, model, city, region, country
 		FROM flex_legacy_containers WHERE container_id = $1;`
 	sqlFlexLegacyContainersGetSNMPConfig = `SELECT
@@ -55,49 +54,100 @@ const (
 		EXISTS (SELECT 1 FROM flex_legacy_containers WHERE serial_number = $4 AND container_id != $1);`
 )
 
-// Create creates a new flex legacy container.
-func (c *FlexLegacyContainers) Create(ctx context.Context, container models.FlexLegacyContainer) (err error) {
+func (pg *PG) CreateFlexLegacyContainer(ctx context.Context, container models.Container[models.FlexLegacyContainer]) (err error) {
+	c, err := pg.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	id, err := pg.createContainer(ctx, c, container.Base)
+	if err != nil {
+		c.Rollback(ctx)
+		return err
+	}
 	_, err = c.Exec(ctx, sqlFlexLegacyContainersCreate,
-		container.Id,
-		container.Target,
-		container.Port,
-		container.Transport,
-		container.Community,
-		container.Retries,
-		container.MaxOids,
-		container.Timeout,
-		container.SerialNumber,
-		container.Model,
-		container.City,
-		container.Region,
-		container.Coutry,
+		id,
+		container.Protocol.Target,
+		container.Protocol.Port,
+		container.Protocol.Transport,
+		container.Protocol.Community,
+		container.Protocol.Retries,
+		container.Protocol.MaxOids,
+		container.Protocol.Timeout,
+		container.Protocol.SerialNumber,
+		container.Protocol.Model,
+		container.Protocol.City,
+		container.Protocol.Region,
+		container.Protocol.Coutry,
 	)
-	return err
+	if err != nil {
+		c.Rollback(ctx)
+		return err
+	}
+
+	return c.Commit(ctx)
 }
 
-// Update updates a flex legacy.
-func (c *FlexLegacyContainers) Update(ctx context.Context, container models.FlexLegacyContainer) (exists bool, err error) {
+func (pg *PG) UpdateFlexLegacyContainer(ctx context.Context, container models.Container[models.FlexLegacyContainer]) (exists bool, err error) {
+	c, err := pg.pool.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	exists, err = pg.updateContainer(ctx, c, container.Base)
+	if err != nil {
+		c.Rollback(ctx)
+		return false, err
+	}
+	if !exists {
+		return false, nil
+	}
 	t, err := c.Exec(ctx, sqlFlexLegacyContainersUpdate,
-		container.Target,
-		container.Port,
-		container.Transport,
-		container.Community,
-		container.Retries,
-		container.MaxOids,
-		container.Timeout,
-		container.SerialNumber,
-		container.Model,
-		container.City,
-		container.Region,
-		container.Coutry,
-		container.Id,
+		container.Protocol.Target,
+		container.Protocol.Port,
+		container.Protocol.Transport,
+		container.Protocol.Community,
+		container.Protocol.Retries,
+		container.Protocol.MaxOids,
+		container.Protocol.Timeout,
+		container.Protocol.SerialNumber,
+		container.Protocol.Model,
+		container.Protocol.City,
+		container.Protocol.Region,
+		container.Protocol.Coutry,
+		container.Protocol.Id,
 	)
-	return t.RowsAffected() != 0, err
+	if err != nil {
+		c.Rollback(ctx)
+		return false, err
+	}
+	return t.RowsAffected() != 0, c.Commit(ctx)
 }
 
-// Get returns a flex legacy container by id.
-func (c *FlexLegacyContainers) Get(ctx context.Context, id int32) (r FlexLegacyContainersGetResponse, err error) {
-	rows, err := c.Query(ctx, sqlFlexLegacyContainersGet, id)
+func (pg *PG) DeleteFlexLegacyContainer(ctx context.Context, id int32) (exists bool, err error) {
+	return pg.DeleteContainer(ctx, id)
+}
+
+func (pg *PG) GetFlexLegacyContainer(ctx context.Context, id int32) (r FlexLegacyContainersGetResponse, err error) {
+	baseR, err := pg.GetContainer(ctx, id)
+	if err != nil {
+		return r, err
+	}
+	protocolR, err := pg.GetFlexLegacyContainerProtocol(ctx, id)
+	if err != nil {
+		return r, err
+	}
+	r.Exists = baseR.Exists
+	r.Container.Base = baseR.Container
+	r.Container.Protocol = protocolR.Container
+	return r, nil
+}
+
+func (pg *PG) GetFlexLegacyContainerProtocol(ctx context.Context, id int32) (r FlexLegacyContainersGetProtocolResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
+	rows, err := c.Query(ctx, sqlFlexLegacyContainersGetProtocol, id)
 	if err != nil {
 		return r, err
 	}
@@ -126,7 +176,12 @@ func (c *FlexLegacyContainers) Get(ctx context.Context, id int32) (r FlexLegacyC
 	return r, nil
 }
 
-func (c *FlexLegacyContainers) GetSNMPConfig(ctx context.Context, id int32) (r FlexLegacyContainersGetSNMPConfigResponse, err error) {
+func (pg *PG) GetFlexLegacyContainerSNMPConfig(ctx context.Context, id int32) (r FlexLegacyContainersGetSNMPConfigResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlFlexLegacyContainersGetSNMPConfig, id)
 	if err != nil {
 		return r, err
@@ -151,8 +206,12 @@ func (c *FlexLegacyContainers) GetSNMPConfig(ctx context.Context, id int32) (r F
 	return r, nil
 }
 
-// ExistsContainerTargetPortAndSerialNumber returns the existence of a container, target port combination and serial-number.
-func (c *FlexLegacyContainers) ExistsContainerTargetPortAndSerialNumber(ctx context.Context, id int32, target string, port int32, serialNumber int32) (r FlexLegacyContainerExistsContainerTargetPortAndSerialNumberRespose, err error) {
+func (pg *PG) ExistsFlexLegacyContainerTargetPortAndSerialNumber(ctx context.Context, id int32, target string, port int32, serialNumber int32) (r FlexLegacyContainerExistsContainerTargetPortAndSerialNumberRespose, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	return r, c.QueryRow(ctx, sqlFlexLegacyContainersExistsContainerTargetPortAndSerialNumber, id, target, port, serialNumber).Scan(
 		&r.ContainerExists,
 		&r.TargetPortExists,

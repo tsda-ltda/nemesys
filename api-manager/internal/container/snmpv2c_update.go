@@ -22,14 +22,12 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get container id
 		id, err := strconv.ParseInt(c.Param("containerId"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// bind container
 		var container models.Container[models.SNMPv2cContainer]
 		err = c.ShouldBind(&container)
 		if err != nil {
@@ -37,20 +35,17 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// validate container
 		err = api.Validate.Struct(container)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
-		// assign values
-		container.Base.Type = types.CTSNMPv2c
 		container.Base.Id = int32(id)
 		container.Protocol.Id = int32(id)
+		container.Base.Type = types.CTSNMPv2c
 
-		// get target port existence
-		exists, err := api.PgConn.SNMPv2cContainers.AvailableTargetPort(ctx,
+		exists, err := api.PG.AvailableSNMPv2cContainerTargetPort(ctx,
 			container.Protocol.Target,
 			container.Protocol.Port,
 			container.Base.Id,
@@ -60,41 +55,21 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-
-		// check if target port exists
 		if exists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTargetPortExists))
 		}
 
-		// create container
-		exists, err = api.PgConn.Containers.Update(ctx, container.Base)
+		exists, err = api.PG.UpdateSNMPv2cContainer(ctx, container)
 		if err != nil {
-			api.Log.Error("fail to update container", logger.ErrField(err))
-			c.Status(http.StatusInternalServerError)
-			return
-		}
-
-		// check if container exists
-		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
-			return
-		}
-
-		// update snmp container
-		exists, err = api.PgConn.SNMPv2cContainers.Update(ctx, container.Protocol)
-		if err != nil {
-			api.Log.Error("fail to update snmp container", logger.ErrField(err))
+			api.Log.Error("fail to update snmpv2c container", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
 		if !exists {
-			api.Log.Error("base container exists but snmp container don't")
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
 		api.Log.Debug("snmp container updated, name: " + container.Base.Name)
-
-		// notify container
 		api.Amqph.NotifyContainerUpdated(container.Base, container.Protocol, types.CTSNMPv2c)
 
 		c.Status(http.StatusOK)

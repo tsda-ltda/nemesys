@@ -8,10 +8,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type BaseContainers struct {
-	*pgx.Conn
-}
-
 // BaseContainerGetResponse is the response for the Get handler.
 type BaseContainerGetResponse struct {
 	// Exists is the existence of the base container.
@@ -47,9 +43,8 @@ const (
 	sqlContainersEnabled    = `SELECT enabled FROM containers WHERE id = $1;`
 )
 
-// Create crates a container returning it's id.
-func (c *BaseContainers) Create(ctx context.Context, container models.BaseContainer) (id int32, err error) {
-	return id, c.QueryRow(ctx, sqlContainersCreate,
+func (pg *PG) createContainer(ctx context.Context, tx pgx.Tx, container models.BaseContainer) (id int32, err error) {
+	return id, tx.QueryRow(ctx, sqlContainersCreate,
 		container.Name,
 		container.Descr,
 		container.Type,
@@ -58,9 +53,8 @@ func (c *BaseContainers) Create(ctx context.Context, container models.BaseContai
 	).Scan(&id)
 }
 
-// Update updates a container.
-func (c *BaseContainers) Update(ctx context.Context, container models.BaseContainer) (exists bool, err error) {
-	t, err := c.Exec(ctx, sqlContainersUpdate,
+func (pg *PG) updateContainer(ctx context.Context, tx pgx.Tx, container models.BaseContainer) (exists bool, err error) {
+	t, err := tx.Exec(ctx, sqlContainersUpdate,
 		container.Name,
 		container.Descr,
 		container.Enabled,
@@ -70,14 +64,22 @@ func (c *BaseContainers) Update(ctx context.Context, container models.BaseContai
 	return t.RowsAffected() != 0, err
 }
 
-// Delete deletes a container.
-func (c *BaseContainers) Delete(ctx context.Context, id int32) (exists bool, err error) {
+func (pg *PG) DeleteContainer(ctx context.Context, id int32) (exists bool, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer c.Release()
 	t, err := c.Exec(ctx, sqlContainersDelete, id)
 	return t.RowsAffected() != 0, err
 }
 
-// Get returns a container by id.
-func (c *BaseContainers) Get(ctx context.Context, id int32) (r BaseContainerGetResponse, err error) {
+func (pg *PG) GetContainer(ctx context.Context, id int32) (r BaseContainerGetResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlContainersGet, id)
 	if err != nil {
 		return r, err
@@ -100,8 +102,12 @@ func (c *BaseContainers) Get(ctx context.Context, id int32) (r BaseContainerGetR
 	return r, nil
 }
 
-// MGet get all containers of a specific container type with a limit and offset.
-func (c *BaseContainers) MGet(ctx context.Context, t types.ContainerType, limit int, offset int) (containers []models.BaseContainer, err error) {
+func (pg *PG) GetContainers(ctx context.Context, t types.ContainerType, limit int, offset int) (containers []models.BaseContainer, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return containers, err
+	}
+	defer c.Release()
 	containers = []models.BaseContainer{}
 	rows, err := c.Query(ctx, sqlContainersMGet, t, limit, offset)
 	if err != nil {
@@ -126,8 +132,12 @@ func (c *BaseContainers) MGet(ctx context.Context, t types.ContainerType, limit 
 	return containers, nil
 }
 
-// GetRTSConfig returns the RTS configuration of a container.
-func (c *BaseContainers) GetRTSConfig(ctx context.Context, id int32) (r BaseContainerGetRTSConfigResponse, err error) {
+func (pg *PG) GetContainerRTSConfig(ctx context.Context, id int32) (r BaseContainerGetRTSConfigResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlContainersGetRTSInfo, id)
 	if err != nil {
 		return r, err
@@ -143,13 +153,21 @@ func (c *BaseContainers) GetRTSConfig(ctx context.Context, id int32) (r BaseCont
 	return r, nil
 }
 
-// Exists returns the existence of a container.
-func (c *BaseContainers) Exists(ctx context.Context, id int32) (exists bool, err error) {
+func (pg *PG) ContainerExist(ctx context.Context, id int32) (exists bool, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	c.Release()
 	return exists, c.QueryRow(ctx, sqlContainersExists, id).Scan(&exists)
 }
 
-// Enabled returns the enabled status of a container.
-func (c *BaseContainers) Enabled(ctx context.Context, id int32) (r BaseContainerEnabledResponse, err error) {
+func (pg *PG) ContainerEnabled(ctx context.Context, id int32) (r BaseContainerEnabledResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlContainersEnabled, id)
 	if err != nil {
 		return r, err

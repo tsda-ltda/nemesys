@@ -21,16 +21,12 @@ import (
 func Logout(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
-
-		// get session metadata
 		meta, err := tools.GetSessionMeta(c)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get session metadata", logger.ErrField(err))
 			return
 		}
-
-		// remove session
 		err = api.Auth.RemoveSession(ctx, meta.UserId)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgSessionAlreadyRemoved))
@@ -50,8 +46,6 @@ func Logout(api *api.API) func(c *gin.Context) {
 func ForceLogout(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
-
-		// get session metadata
 		meta, err := tools.GetSessionMeta(c)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
@@ -59,7 +53,6 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// get user id
 		rawId := c.Param("id")
 		id, err := strconv.ParseInt(rawId, 10, 64)
 		if err != nil {
@@ -67,27 +60,22 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// get user role
-		r, err := api.PgConn.Users.GetRole(ctx, int32(id))
+		r, err := api.PG.GetUserRole(ctx, int32(id))
 		if err != nil {
 			api.Log.Error("fail to get user role", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
 
-		// check if user exists
 		if !r.Exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
 			return
 		}
-
-		// check if target's role is superior
 		if uint8(r.Role) > meta.Role {
 			c.Status(http.StatusForbidden)
 			return
 		}
 
-		// remove session
 		err = api.Auth.RemoveSession(ctx, int32(id))
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgSessionAlreadyRemoved))

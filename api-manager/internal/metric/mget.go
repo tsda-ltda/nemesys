@@ -23,14 +23,12 @@ func MGet(api *api.API, t types.ContainerType) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// container id
 		containerId, err := strconv.ParseInt(c.Param("containerId"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// db query params
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
@@ -43,8 +41,7 @@ func MGet(api *api.API, t types.ContainerType) func(c *gin.Context) {
 			return
 		}
 
-		// get metrics
-		metrics, err := api.PgConn.Metrics.MGetSimplified(ctx, t, int32(containerId), limit, offset)
+		metrics, err := api.PG.GetMetricsSimplified(ctx, t, int32(containerId), limit, offset)
 		if err != nil {
 			api.Log.Error("fail to get metrics", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)

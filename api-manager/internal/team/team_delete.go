@@ -19,23 +19,19 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get id
 		id, err := strconv.ParseInt(c.Param("id"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// delete team
-		e, err := api.PgConn.Teams.Delete(ctx, int32(id))
+		exists, err := api.PG.DeleteTeam(ctx, int32(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to delete team", logger.ErrField(err))
 			return
 		}
-
-		// check if team exist
-		if !e {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTeamNotFound))
 			return
 		}

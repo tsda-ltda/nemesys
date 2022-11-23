@@ -22,7 +22,6 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// bind data policy
 		var dp models.DataPolicy
 		err := c.ShouldBind(&dp)
 		if err != nil {
@@ -30,52 +29,55 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// validate struct
 		err = api.Validate.Struct(dp)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
 			return
 		}
 
-		// get number of data policies in the system
-		n, err := api.PgConn.DataPolicy.Count(ctx)
+		n, err := api.PG.CountDataPolicy(ctx)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to count number of data polcies", logger.ErrField(err))
 			return
 		}
 
-		// get maximum permited data policies
 		max, err := strconv.ParseInt(env.MaxDataPolicies, 10, 0)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to parse env.MaxDataPolicies", logger.ErrField(err))
 			return
 		}
-
-		// check if exceeds max data policies
 		if n >= max {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgMaxDataPolicy))
 			api.Log.Warn("attempt to create data-policy failed, maximum number reached")
 			return
 		}
 
-		// create data policy on postgres
-		id, err := api.PgConn.DataPolicy.Create(ctx, dp)
+		tx, id, err := api.PG.CreateDataPolicy(ctx, dp)
 		if err != nil {
 			api.Log.Error("fail to create data policy on postgres", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
 
-		// assign id
 		dp.Id = id
 
-		// create datapolicy on influxdb
 		err = api.Influx.CreateDataPolicy(ctx, dp)
 		if err != nil {
 			api.Log.Error("fail to create data policy on influxdb", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
+			err = tx.Rollback(ctx)
+			if err != nil {
+				api.Log.Error("fail to rollback tx", logger.ErrField(err))
+				return
+			}
+			return
+		}
+		err = tx.Commit(ctx)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			api.Log.Error("fail to commit tx", logger.ErrField(err))
 			return
 		}
 

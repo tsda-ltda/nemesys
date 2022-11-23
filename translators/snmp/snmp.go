@@ -18,8 +18,8 @@ type SNMPService struct {
 	amqpConn *amqp091.Connection
 	// amqph is the amqp handler for common tasks.
 	amqph *amqph.Amqph
-	// pgConn is the postgresql connection.
-	pgConn *pg.Conn
+	// pg is the postgresql handler.
+	pg *pg.PG
 	// evaluator is the metric evaluator
 	evaluator *evaluator.Evaluator
 	// cache is the cache handler.
@@ -50,19 +50,13 @@ func New() *SNMPService {
 		panic("fail to create logger, err: " + err.Error())
 	}
 
-	// connect to postgres
-	pgConn, err := pg.Connect()
-	if err != nil {
-		log.Fatal("fail to connect to posgres", logger.ErrField(err))
-	}
-	log.Info("connected to postgres")
-
+	pg := pg.New()
 	return &SNMPService{
 		amqph:             amqph.New(amqpConn, log),
 		amqpConn:          amqpConn,
-		pgConn:            pgConn,
+		pg:                pg,
 		log:               log,
-		evaluator:         evaluator.New(pgConn),
+		evaluator:         evaluator.New(pg),
 		cache:             cache.New(),
 		stopGetListener:   make(chan any),
 		stopDataPublisher: make(chan any),

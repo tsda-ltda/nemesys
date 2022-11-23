@@ -25,14 +25,12 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		exists, err := api.PgConn.CustomQueries.Delete(ctx, int32(id))
+		exists, err := api.PG.DeleteCustomQuery(ctx, int32(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to delete custom query on database", logger.ErrField(err))
 			return
 		}
-
-		// check if exists
 		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgCustomQueryNotFound))
 			return

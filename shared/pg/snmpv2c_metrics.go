@@ -4,15 +4,16 @@ import (
 	"context"
 
 	"github.com/fernandotsda/nemesys/shared/models"
-	"github.com/jackc/pgx/v5"
 )
 
-type SNMPv2cMetrics struct {
-	*pgx.Conn
+type SNMPv2cMetricGetResponse struct {
+	// Exstis is the SNMP metric existence.
+	Exists bool
+	// Metric is the metric.
+	Metric models.Metric[models.SNMPMetric]
 }
 
-// SNMPv2cMetricsGetResponse is the response for Get handler.
-type SNMPv2cMetricsGetResponse struct {
+type SNMPv2cMetricGetProtocolResponse struct {
 	// Exstis is the SNMP metric existence.
 	Exists bool
 	// Metric is the metric.
@@ -26,21 +27,69 @@ const (
 	sqlSNMPMetricsUpdate   = `UPDATE snmpv2c_metrics SET (oid, metric_id) = ($1, $2) WHERE metric_id = $3;`
 )
 
-// Create creates a SNMP metric.
-func (c *SNMPv2cMetrics) Create(ctx context.Context, m models.SNMPMetric) error {
-	_, err := c.Exec(ctx, sqlSNMPMetricsCreate, m.OID, m.Id)
-	return err
+func (pg *PG) CreateSNMPv2cMetric(ctx context.Context, m models.Metric[models.SNMPMetric]) error {
+	c, err := pg.pool.Begin(ctx)
+	if err != nil {
+		c.Rollback(ctx)
+		return err
+	}
+	id, err := pg.createMetric(ctx, c, m.Base)
+	if err != nil {
+		c.Rollback(ctx)
+		return err
+	}
+	_, err = c.Exec(ctx, sqlSNMPMetricsCreate, m.Protocol.OID, id)
+	if err != nil {
+		c.Rollback(ctx)
+		return err
+	}
+	return c.Commit(ctx)
 }
 
-// Update updates a SNMP metric if exists.
-func (c *SNMPv2cMetrics) Update(ctx context.Context, m models.SNMPMetric) (exists bool, err error) {
-	t, err := c.Exec(ctx, sqlSNMPMetricsUpdate, m.OID, m.Id, m.Id)
-	return t.RowsAffected() != 0, err
+func (pg *PG) UpdateSNMPv2cMetric(ctx context.Context, m models.Metric[models.SNMPMetric]) (exists bool, err error) {
+	c, err := pg.pool.Begin(ctx)
+	if err != nil {
+		c.Rollback(ctx)
+		return false, err
+	}
+	exists, err = pg.updateMetric(ctx, c, m.Base)
+	if err != nil {
+		c.Rollback(ctx)
+		return false, err
+	}
+	if !exists {
+		return false, nil
+	}
+	t, err := c.Exec(ctx, sqlSNMPMetricsUpdate, m.Protocol.OID, m.Protocol.Id, m.Protocol.Id)
+	if err != nil {
+		c.Rollback(ctx)
+		return false, err
+	}
+	return t.RowsAffected() != 0, c.Commit(ctx)
 }
 
-// Get returns a SNMP metric if exists.
-func (c *SNMPv2cMetrics) Get(ctx context.Context, metricId int64) (r SNMPv2cMetricsGetResponse, err error) {
-	rows, err := c.Query(ctx, sqlSNMPMetricsGet, metricId)
+func (pg *PG) GetSNMPv2cMetric(ctx context.Context, id int64) (r SNMPv2cMetricGetResponse, err error) {
+	baseR, err := pg.GetMetric(ctx, id)
+	if err != nil {
+		return r, err
+	}
+	protocolR, err := pg.GetSNMPv2cMetricProtocol(ctx, id)
+	if err != nil {
+		return r, err
+	}
+	r.Exists = baseR.Exists
+	r.Metric.Base = baseR.Metric
+	r.Metric.Protocol = protocolR.Metric
+	return r, err
+}
+
+func (pg *PG) GetSNMPv2cMetricProtocol(ctx context.Context, id int64) (r SNMPv2cMetricGetProtocolResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
+	rows, err := c.Query(ctx, sqlSNMPMetricsGet, id)
 	if err != nil {
 		return r, err
 	}
@@ -50,17 +99,21 @@ func (c *SNMPv2cMetrics) Get(ctx context.Context, metricId int64) (r SNMPv2cMetr
 		if err != nil {
 			return r, err
 		}
-		r.Metric.Id = metricId
+		r.Metric.Id = id
 		r.Exists = true
 	}
 	return r, nil
 }
 
-// Get returns multiple SNMP metric by an array of ids.
-func (c *SNMPv2cMetrics) GetByIds(ctx context.Context, ids []int64) (metrics []models.SNMPMetric, err error) {
+func (pg *PG) GetSNMPv2cMetricsByIds(ctx context.Context, ids []int64) (metrics []models.SNMPMetric, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlSNMPMetricsGetByIds, ids)
 	if err != nil {
-		return metrics, err
+		return nil, err
 	}
 	defer rows.Close()
 	metrics = []models.SNMPMetric{}

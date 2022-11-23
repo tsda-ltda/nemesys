@@ -21,7 +21,6 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// bind container
 		var container models.Container[models.SNMPv2cContainer]
 		err := c.ShouldBind(&container)
 		if err != nil {
@@ -29,18 +28,15 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// validate container
 		err = api.Validate.Struct(container)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
-		// set type
 		container.Base.Type = types.CTSNMPv2c
 
-		// get target port existence
-		exists, err := api.PgConn.SNMPv2cContainers.AvailableTargetPort(ctx,
+		exists, err := api.PG.AvailableSNMPv2cContainerTargetPort(ctx,
 			container.Protocol.Target,
 			container.Protocol.Port,
 			-1,
@@ -50,34 +46,18 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("fail to check if target port exists", logger.ErrField(err))
 			return
 		}
-
-		// check if target port exists
 		if exists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTargetPortExists))
 			return
 		}
 
-		// create container
-		id, err := api.PgConn.Containers.Create(ctx, container.Base)
+		err = api.PG.CreateSNMPv2cContainer(ctx, container)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to crate container", logger.ErrField(err))
-			return
-		}
-
-		// assign id
-		container.Protocol.Id = int32(id)
-
-		// create snmp container
-		err = api.PgConn.SNMPv2cContainers.Create(ctx, container.Protocol)
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to crate snmp container", logger.ErrField(err))
+			api.Log.Error("fail to crate snmpv2c container", logger.ErrField(err))
 			return
 		}
 		api.Log.Debug("snmp container crated, name: " + container.Base.Name)
-
-		// notify container
 		api.Amqph.NotifyContainerCreated(container.Base, container.Protocol, types.CTSNMPv2c)
 
 		c.Status(http.StatusOK)

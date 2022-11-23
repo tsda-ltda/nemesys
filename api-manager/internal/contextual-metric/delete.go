@@ -19,7 +19,6 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// contextual metric id
 		rawId := c.Param("metricId")
 		id, err := strconv.ParseInt(rawId, 10, 64)
 		if err != nil {
@@ -27,15 +26,13 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// delete
-		e, err := api.PgConn.ContextualMetrics.Delete(ctx, int64(id))
+		e, err := api.PG.DeleteContextualMetric(ctx, int64(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to delete contextual metric", logger.ErrField(err))
 			return
 		}
 
-		// check if exists
 		if !e {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
 			return

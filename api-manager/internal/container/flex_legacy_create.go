@@ -21,7 +21,6 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// bind body
 		var container models.Container[models.FlexLegacyContainer]
 		err := c.ShouldBind(&container)
 		if err != nil {
@@ -29,16 +28,15 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// validate container
 		err = api.Validate.Struct(container)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
+
 		container.Base.Type = types.CTFlexLegacy
 
-		// check if container, target port combination and serial number exists
-		r, err := api.PgConn.FlexLegacyContainers.ExistsContainerTargetPortAndSerialNumber(ctx,
+		r, err := api.PG.ExistsFlexLegacyContainerTargetPortAndSerialNumber(ctx,
 			-1,
 			container.Protocol.Target,
 			container.Protocol.Port,
@@ -49,32 +47,16 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 			api.Log.Error("fail to check if container, target port combination and serial-number exists", logger.ErrField(err))
 			return
 		}
-
-		// check if target port combination exists
 		if r.TargetPortExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTargetPortExists))
 			return
 		}
-
-		// check if serial-number exists
 		if r.SerialNumberExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgSerialNumberExists))
 			return
 		}
 
-		// create base container
-		id, err := api.PgConn.Containers.Create(ctx, container.Base)
-		if err != nil {
-			c.Status(http.StatusBadRequest)
-			api.Log.Error("fail to create base container", logger.ErrField(err))
-			return
-		}
-
-		// assign id
-		container.Protocol.Id = id
-
-		// create flex legacy container
-		err = api.PgConn.FlexLegacyContainers.Create(ctx, container.Protocol)
+		err = api.PG.CreateFlexLegacyContainer(ctx, container)
 		if err != nil {
 			api.Log.Error("fail to create flex legacy container", logger.ErrField(err))
 			return

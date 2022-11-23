@@ -71,13 +71,11 @@ func (s *RTS) metricDataRequestListener() {
 	for d := range msgs {
 		ctx := context.Background()
 
-		// check if correlation id empty
 		if len(d.CorrelationId) == 0 {
 			s.log.Warn("receive a rts data request but no correlation id was provided")
 			continue
 		}
 
-		// decode message body
 		var r models.MetricRequest
 		err = amqp.Decode(d.Body, &r)
 		if err != nil {
@@ -85,11 +83,9 @@ func (s *RTS) metricDataRequestListener() {
 			continue
 		}
 
-		// parse metric id to string
 		metricIdString := strconv.FormatInt(int64(r.ContainerId), 10)
 		s.log.Debug("get metric data request received, container id: " + metricIdString)
 
-		// get data on cache
 		bytes, err := s.cache.Get(ctx, rdb.CacheMetricDataKey(r.MetricId))
 		if err != nil {
 			if err != redis.Nil {
@@ -97,25 +93,19 @@ func (s *RTS) metricDataRequestListener() {
 				continue
 			}
 
-			// get metric container type and RTS configuration
-			res, err := s.pgConn.Metrics.GetRTSConfig(ctx, r.MetricId)
+			res, err := s.pgConn.GetMetricRTSConfig(ctx, r.MetricId)
 			if err != nil {
 				s.log.Error("fail to get metric rts information", logger.ErrField(err))
 				continue
 			}
-
-			// check if configuration does not exists
 			if !res.Exists {
 				s.log.Warn("fail to get metric rts information, metric does not exist")
 				continue
 			}
 
-			// start pulling
 			s.startMetricPulling(r, res.RTSConfig)
-
-			// publish data when available
 			go func(correlationId string, r models.MetricRequest) {
-				// send data request
+				// send metric data request to translators
 				s.amqph.PublisherCh <- models.DetailedPublishing{
 					Exchange:   amqp.ExchangeMetricDataRequest,
 					RoutingKey: amqp.GetDataRoutingKey(r.ContainerType),
@@ -126,23 +116,17 @@ func (s *RTS) metricDataRequestListener() {
 						Body:          d.Body,
 					},
 				}
-
-				// set pending request
 				s.pendingMetricData[correlationId] = res.RTSConfig
-
-				// delete channel
 				defer func(correlationId string) {
 					delete(s.pendingMetricData, correlationId)
 				}(correlationId)
 
-				// wait response
 				res, err := s.plumber.Listen(correlationId, time.Second*25)
 				if err != nil {
 					s.log.Warn("plumber timeout, no data response was available")
 					return
 				}
 
-				// publish data
 				s.publishRTSMetricData(amqp091.Publishing{
 					Type:          res.Type,
 					Body:          res.Body,
@@ -152,10 +136,7 @@ func (s *RTS) metricDataRequestListener() {
 			continue
 		}
 
-		// restart/start pulling
 		s.restartMetricPulling(r)
-
-		// publish data
 		s.publishRTSMetricData(amqp091.Publishing{
 			Expiration:    amqp.DefaultExp,
 			Body:          bytes,
@@ -181,23 +162,17 @@ func (s *RTS) metricDataListener() {
 	for d := range msgs {
 		ctx := context.Background()
 
-		// check for pending request
-		info, ok := s.pendingMetricData[d.CorrelationId]
-
-		// send data as response for a possible listener
 		s.plumber.Send(d)
 
-		// check if info exists
+		info, ok := s.pendingMetricData[d.CorrelationId]
 		if !ok {
 			continue
 		}
 
-		// check message type
 		if amqp.ToMessageType(d.Type) != amqp.OK {
 			continue
 		}
 
-		// decode message body
 		var m models.MetricDataResponse
 		err := amqp.Decode(d.Body, &m)
 		if err != nil {
@@ -205,7 +180,6 @@ func (s *RTS) metricDataListener() {
 			continue
 		}
 
-		// save on cache
 		err = s.cache.Set(ctx, d.Body, rdb.CacheMetricDataKey(m.Id), time.Millisecond*time.Duration(info.CacheDuration))
 		if err != nil {
 			s.log.Error("fail to save metric data on cache", logger.ErrField(err))
@@ -231,12 +205,10 @@ func (s *RTS) metricsDataListener() {
 	for d := range msgs {
 		ctx := context.Background()
 
-		// check if message type
 		if amqp.ToMessageType(d.Type) != amqp.OK {
 			continue
 		}
 
-		// decode message body
 		var m models.MetricsDataResponse
 		err := amqp.Decode(d.Body, &m)
 		if err != nil {
@@ -244,25 +216,21 @@ func (s *RTS) metricsDataListener() {
 			continue
 		}
 
-		// get container pulling
 		p, ok := s.pulling[m.ContainerId]
 		if !ok {
 			continue
 		}
 
 		for _, v := range m.Metrics {
-			// check if metric has failed
 			if v.Failed {
 				continue
 			}
 
-			// get metric pulling
 			mp, ok := p.Metrics[v.Id]
 			if !ok {
 				continue
 			}
 
-			// encode metric
 			b, err := amqp.Encode(models.MetricDataResponse{
 				MetricBasicDataReponse: v,
 				ContainerId:            m.ContainerId,
@@ -272,7 +240,6 @@ func (s *RTS) metricsDataListener() {
 				continue
 			}
 
-			// save on cache
 			err = s.cache.Set(ctx, b, rdb.CacheMetricDataKey(v.Id), time.Millisecond*time.Duration(mp.CacheDuration))
 			if err != nil {
 				s.log.Error("fail to save metric data on cache", logger.ErrField(err))

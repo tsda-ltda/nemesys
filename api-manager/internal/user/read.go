@@ -19,22 +19,19 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get id from param
 		id, err := strconv.ParseInt(c.Param("id"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// get user
-		r, err := api.PgConn.Users.GetWithoutPW(ctx, int32(id))
+		r, err := api.PG.GetUserWithoutPW(ctx, int32(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if user exists", logger.ErrField(err))
 			return
 		}
 
-		// check if user exists
 		if !r.Exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
 			return
@@ -56,22 +53,18 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// get limit
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
-
-		// get offset
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// get users
-		users, err := api.PgConn.Users.MGetSimplified(ctx, limit, offset)
+		users, err := api.PG.GetUsersSimplified(ctx, limit, offset)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to query users", logger.ErrField(err))

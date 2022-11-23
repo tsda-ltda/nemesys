@@ -28,7 +28,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// delete container
-		e, err := api.PgConn.Containers.Delete(ctx, int32(id))
+		e, err := api.PG.DeleteContainer(ctx, int32(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to delete container", logger.ErrField(err))

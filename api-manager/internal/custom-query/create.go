@@ -21,7 +21,6 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// bind body
 		var cq models.CustomQuery
 		err := c.ShouldBind(&cq)
 		if err != nil {
@@ -29,36 +28,31 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// validate body
 		err = api.Validate.Struct(cq)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
-		// check if ident can be parsed to int
 		_, err = strconv.Atoi(cq.Ident)
 		if err == nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
-		// get ident existence
-		r, err := api.PgConn.CustomQueries.ExistsIdent(ctx, -1, cq.Ident)
+		r, err := api.PG.ExistsCustomQueryIdent(ctx, -1, cq.Ident)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check custom query ident existence", logger.ErrField(err))
 			return
 		}
 
-		// check if exists
 		if r.IdentExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}
 
-		// create custom query
-		_, err = api.PgConn.CustomQueries.Create(ctx, cq)
+		_, err = api.PG.CreateCustomQuery(ctx, cq)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to create custom query", logger.ErrField(err))

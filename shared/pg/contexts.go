@@ -4,12 +4,7 @@ import (
 	"context"
 
 	"github.com/fernandotsda/nemesys/shared/models"
-	"github.com/jackc/pgx/v5"
 )
-
-type Contexts struct {
-	*pgx.Conn
-}
 
 // ContextsExistsTeamAndIdentResponse is the response for the ExistsTeamAndIdentResponse handler.
 type ContextsExistsTeamAndIdentResponse struct {
@@ -51,21 +46,33 @@ const (
 	sqlCtxExists = `SELECT EXISTS (SELECT 1 FROM contexts WHERE id = $1);`
 )
 
-// Exists returns the existence of a context.
-func (c *Contexts) Exists(ctx context.Context, id int32) (exists bool, err error) {
+func (pg *PG) ContextExists(ctx context.Context, id int32) (exists bool, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	c.Release()
 	return exists, c.QueryRow(ctx, sqlCtxExists, id).Scan(&exists)
 }
 
-// ExistsTeamAndIdent returns the existence of a team and a context ident.
-func (c *Contexts) ExistsTeamAndIdent(ctx context.Context, teamId int32, ident string, ctxId int32) (r ContextsExistsTeamAndIdentResponse, err error) {
+func (pg *PG) ExistsTeamAndContextIdent(ctx context.Context, teamId int32, ident string, ctxId int32) (r ContextsExistsTeamAndIdentResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	c.Release()
 	return r, c.QueryRow(ctx, sqlCtxExistsTeamAndIdent, teamId, ident, ctxId).Scan(
 		&r.TeamExists,
 		&r.IdentExists,
 	)
 }
 
-// Create creates a context returning it's id.
-func (c *Contexts) Create(ctx context.Context, context models.Context) (id int32, err error) {
+func (pg *PG) CreateContext(ctx context.Context, context models.Context) (id int32, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return id, err
+	}
+	c.Release()
 	return id, c.QueryRow(ctx, sqlCtxCreate,
 		context.Ident,
 		context.Descr,
@@ -74,8 +81,12 @@ func (c *Contexts) Create(ctx context.Context, context models.Context) (id int32
 	).Scan(&id)
 }
 
-// Update updates a context.
-func (c *Contexts) Update(ctx context.Context, context models.Context) (exists bool, err error) {
+func (pg *PG) UpdateContext(ctx context.Context, context models.Context) (exists bool, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	c.Release()
 	t, err := c.Exec(ctx, sqlCtxCreate,
 		context.Ident,
 		context.Descr,
@@ -85,25 +96,33 @@ func (c *Contexts) Update(ctx context.Context, context models.Context) (exists b
 	return t.RowsAffected() != 0, err
 }
 
-// Delete deletes a context.
-func (c *Contexts) Delete(ctx context.Context, id int32) (exists bool, err error) {
+func (pg *PG) DeleteContext(ctx context.Context, id int32) (exists bool, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	c.Release()
 	t, err := c.Exec(ctx, sqlCtxDelete, id)
 	return t.RowsAffected() != 0, err
 }
 
-// MGet returns all team's contexts with a limit and a offset.
-func (c *Contexts) MGet(ctx context.Context, teamId int32, limit int, offset int) (contexts []models.Context, err error) {
+func (pg *PG) GetContexts(ctx context.Context, teamId int32, limit int, offset int) (contexts []models.Context, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer c.Release()
 	contexts = []models.Context{}
 	rows, err := c.Query(ctx, sqlCtxMGet, teamId, limit, offset)
 	if err != nil {
-		return contexts, err
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var c models.Context
 		err = rows.Scan(&c.Id, &c.Ident, &c.Descr, &c.Name)
 		if err != nil {
-			return contexts, err
+			return nil, err
 		}
 		c.TeamId = teamId
 		contexts = append(contexts, c)
@@ -111,8 +130,12 @@ func (c *Contexts) MGet(ctx context.Context, teamId int32, limit int, offset int
 	return contexts, nil
 }
 
-// Get returns a context by id.
-func (c *Contexts) Get(ctx context.Context, id int32) (r ContextsGetResponse, err error) {
+func (pg *PG) GetContext(ctx context.Context, id int32) (r ContextsGetResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlCtxGet, id)
 	if err != nil {
 		return r, err
@@ -134,8 +157,12 @@ func (c *Contexts) Get(ctx context.Context, id int32) (r ContextsGetResponse, er
 	return r, nil
 }
 
-// GetIdsByIdent returns the context and team ids using their ident.
-func (c *Contexts) GetIdsByIdent(ctx context.Context, ctxIdent string, teamIdent string) (r ContextsGetIdsByIdentResponse, err error) {
+func (pg *PG) GetContextTreeId(ctx context.Context, ctxIdent string, teamIdent string) (r ContextsGetIdsByIdentResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
 	rows, err := c.Query(ctx, sqlCtxGetIdsByIdent, teamIdent, ctxIdent)
 	if err != nil {
 		return r, err

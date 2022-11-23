@@ -4,14 +4,16 @@ import (
 	"context"
 
 	"github.com/fernandotsda/nemesys/shared/models"
-	"github.com/jackc/pgx/v5"
 )
 
-type SNMPv2cContainers struct {
-	*pgx.Conn
+type SNMPv2cContainersGetResponse struct {
+	// Exists is the container existence.
+	Exists bool
+	// Container is the SNMPv2c container.
+	Container models.Container[models.SNMPv2cContainer]
 }
 
-type SNMPv2cContainersGetResponse struct {
+type SNMPv2cContainersGetProtocolResponse struct {
 	// Exists is the container existence.
 	Exists bool
 	// Container is the SNMPv2c container.
@@ -19,7 +21,7 @@ type SNMPv2cContainersGetResponse struct {
 }
 
 const (
-	sqlSNMPv2cContainerGet = `SELECT target, port, transport, community,
+	sqlSNMPv2cContainerGetProtocol = `SELECT target, port, transport, community,
 		retries, max_oids, timeout FROM snmpv2c_containers WHERE container_id = $1; `
 	sqlSNMPv2cContainerExistsTargetPort = `SELECT EXISTS (SELECT 1 FROM snmpv2c_containers WHERE target = $1 AND port = $2 AND container_id != $3);`
 	sqlSNMPv2cContainerCreate           = `INSERT INTO snmpv2c_containers (container_id, target, port, transport, community,
@@ -28,39 +30,89 @@ const (
 		retries, max_oids, timeout) = ($1, $2, $3, $4, $5, $6, $7) WHERE container_id = $8;`
 )
 
-// Create creates a SNMPv2c container.
-func (c *SNMPv2cContainers) Create(ctx context.Context, container models.SNMPv2cContainer) error {
-	_, err := c.Exec(ctx, sqlSNMPv2cContainerCreate,
-		container.Id,
-		container.Target,
-		container.Port,
-		container.Transport,
-		container.Community,
-		container.Retries,
-		container.MaxOids,
-		container.Timeout,
+func (pg *PG) CreateSNMPv2cContainer(ctx context.Context, container models.Container[models.SNMPv2cContainer]) error {
+	c, err := pg.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	id, err := pg.createContainer(ctx, c, container.Base)
+	if err != nil {
+		c.Rollback(ctx)
+		return err
+	}
+	_, err = c.Exec(ctx, sqlSNMPv2cContainerCreate,
+		id,
+		container.Protocol.Target,
+		container.Protocol.Port,
+		container.Protocol.Transport,
+		container.Protocol.Community,
+		container.Protocol.Retries,
+		container.Protocol.MaxOids,
+		container.Protocol.Timeout,
 	)
-	return err
+	if err != nil {
+		c.Rollback(ctx)
+		return err
+	}
+	return c.Commit(ctx)
 }
 
-// Update updates a SNMPv2c container.
-func (c *SNMPv2cContainers) Update(ctx context.Context, container models.SNMPv2cContainer) (exists bool, err error) {
+func (pg *PG) UpdateSNMPv2cContainer(ctx context.Context, container models.Container[models.SNMPv2cContainer]) (exists bool, err error) {
+	c, err := pg.pool.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	exists, err = pg.updateContainer(ctx, c, container.Base)
+	if err != nil {
+		c.Rollback(ctx)
+		return
+	}
+	if !exists {
+		return false, nil
+	}
 	t, err := c.Exec(ctx, sqlSNMPv2cContainerUpdate,
-		container.Target,
-		container.Port,
-		container.Transport,
-		container.Community,
-		container.Retries,
-		container.MaxOids,
-		container.Timeout,
-		container.Id,
+		container.Protocol.Target,
+		container.Protocol.Port,
+		container.Protocol.Transport,
+		container.Protocol.Community,
+		container.Protocol.Retries,
+		container.Protocol.MaxOids,
+		container.Protocol.Timeout,
+		container.Protocol.Id,
 	)
-	return t.RowsAffected() != 0, err
+	if err != nil {
+		c.Rollback(ctx)
+		return false, err
+	}
+	return t.RowsAffected() != 0, c.Commit(ctx)
 }
 
-// Get returns a SNMPv2c container.
-func (c *SNMPv2cContainers) Get(ctx context.Context, containerId int32) (r SNMPv2cContainersGetResponse, err error) {
-	rows, err := c.Query(ctx, sqlSNMPv2cContainerGet, containerId)
+func (pg *PG) DeleteSNMPv2cContainer(ctx context.Context, id int32) (exists bool, err error) {
+	return pg.DeleteContainer(ctx, id)
+}
+
+func (pg *PG) GetSNMPv2cContainer(ctx context.Context, id int32) (r SNMPv2cContainersGetResponse, err error) {
+	baseR, err := pg.GetContainer(ctx, id)
+	if err != nil {
+		return r, err
+	}
+	protocolR, err := pg.GetSNMPv2cContainerProtocol(ctx, id)
+	if err != nil {
+		return r, err
+	}
+	r.Exists = baseR.Exists
+	r.Container.Base = baseR.Container
+	r.Container.Protocol = protocolR.Container
+	return r, nil
+}
+
+func (pg *PG) GetSNMPv2cContainerProtocol(ctx context.Context, id int32) (r SNMPv2cContainersGetProtocolResponse, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return r, err
+	}
+	defer c.Release()
+	rows, err := c.Query(ctx, sqlSNMPv2cContainerGetProtocol, id)
 	if err != nil {
 		return r, err
 	}
@@ -78,13 +130,17 @@ func (c *SNMPv2cContainers) Get(ctx context.Context, containerId int32) (r SNMPv
 		if err != nil {
 			return r, err
 		}
-		r.Container.Id = containerId
+		r.Container.Id = id
 		r.Exists = true
 	}
 	return r, nil
 }
 
-// AvailableTargetPort returns the existence of an target:port.
-func (c *SNMPv2cContainers) AvailableTargetPort(ctx context.Context, target string, port int32, id int32) (exists bool, err error) {
+func (pg *PG) AvailableSNMPv2cContainerTargetPort(ctx context.Context, target string, port int32, id int32) (exists bool, err error) {
+	c, err := pg.pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer c.Release()
 	return exists, c.QueryRow(ctx, sqlSNMPv2cContainerExistsTargetPort, target, port, id).Scan(&exists)
 }

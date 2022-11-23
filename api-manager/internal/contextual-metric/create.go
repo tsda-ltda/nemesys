@@ -22,14 +22,12 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		// context id
 		contextId, err := strconv.ParseInt(c.Param("ctxId"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		// bind body
 		var cmetric models.ContextualMetric
 		err = c.ShouldBind(&cmetric)
 		if err != nil {
@@ -37,43 +35,35 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// validate contextual metric
 		err = api.Validate.Struct(cmetric)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
-		// assign id
 		cmetric.ContextId = int32(contextId)
 
-		r, err := api.PgConn.ContextualMetrics.ExistsContextMetricAndIdent(ctx, cmetric.ContextId, cmetric.MetricId, cmetric.Ident, -1)
+		r, err := api.PG.ContextMetricAndContexualMetricIdentExists(ctx, cmetric.ContextId, cmetric.MetricId, cmetric.Ident, -1)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if context, metric and ident exists", logger.ErrField(err))
 			return
 		}
 
-		// check if context exists
 		if !r.ContextExists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextNotFound))
 			return
 		}
-
-		// check if metric exists
 		if !r.MetricExists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
 			return
 		}
-
-		// check if ident exists
 		if r.IdentExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}
 
-		// create contextual metric
-		_, err = api.PgConn.ContextualMetrics.Create(ctx, cmetric)
+		_, err = api.PG.CreateContextualMetric(ctx, cmetric)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			return

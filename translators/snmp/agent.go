@@ -16,7 +16,6 @@ var ErrContainerNotExists = errors.New("container does not exists")
 func (s *SNMPService) getContainerAgent(containerId int32, t types.ContainerType) (agent models.SNMPAgent, err error) {
 	ctx := context.Background()
 
-	// get on cache
 	r, err := s.cache.GetSNMPAgent(ctx, containerId)
 	if err != nil {
 		return agent, err
@@ -25,21 +24,16 @@ func (s *SNMPService) getContainerAgent(containerId int32, t types.ContainerType
 		return r.Agent, nil
 	}
 
-	// create container config
 	switch t {
 	case types.CTSNMPv2c:
-		// get snmpv2c protocol configuration
-		r, err := s.pgConn.SNMPv2cContainers.Get(ctx, containerId)
+		r, err := s.pg.GetSNMPv2cContainerProtocol(ctx, containerId)
 		if err != nil {
 			return agent, err
 		}
-
-		// check if container exists
 		if !r.Exists {
 			return agent, ErrContainerNotExists
 		}
 
-		// fill agent
 		agent = models.SNMPAgent{
 			Target:    r.Container.Target,
 			Port:      uint16(r.Container.Port),
@@ -51,18 +45,15 @@ func (s *SNMPService) getContainerAgent(containerId int32, t types.ContainerType
 			Version:   g.Version2c,
 		}
 	case types.CTFlexLegacy:
-		// get flex legacy protocol configuration
-		r, err := s.pgConn.FlexLegacyContainers.GetSNMPConfig(ctx, containerId)
+		r, err := s.pg.GetFlexLegacyContainerProtocol(ctx, containerId)
 		if err != nil {
 			return agent, err
 		}
 
-		// check if container exists
 		if !r.Exists {
 			return agent, ErrContainerNotExists
 		}
 
-		// fill agent
 		agent = models.SNMPAgent{
 			Target:    r.Container.Target,
 			Port:      uint16(r.Container.Port),
@@ -76,9 +67,6 @@ func (s *SNMPService) getContainerAgent(containerId int32, t types.ContainerType
 	default:
 		return agent, errors.New("unsupported container type: " + strconv.FormatInt(int64(t), 10))
 	}
-
-	// save config on cache
 	err = s.cache.SetSNMPAgent(ctx, containerId, agent)
-
 	return agent, err
 }
