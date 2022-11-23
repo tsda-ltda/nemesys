@@ -25,7 +25,7 @@ func Set(api *api.API) {
 	r := api.Router.Group(env.APIManagerRoutesPrefix)
 
 	// user authentication
-	r.POST("/login", uauth.LoginHandler(api))
+	r.POST("/login", middleware.Limiter(api, time.Second/2), uauth.LoginHandler(api))
 	r.POST("/logout", middleware.Protect(api, roles.Viewer), uauth.Logout(api))
 
 	// users config
