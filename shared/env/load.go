@@ -92,4 +92,6 @@ func Init() {
 	set("USER_SESSION_TTL", &UserSessionTTL)
 	set("USER_SESSION_TOKEN_SIZE", &UserSessionTokenSize)
 	set("USER_PW_BCRYPT_COST", &UserPWBcryptCost)
+
+	set("SERVICE_RECOVERY_LOG_FILE", &ServiceRecoveryLogFile)
 }

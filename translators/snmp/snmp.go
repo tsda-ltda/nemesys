@@ -63,7 +63,6 @@ func New() *SNMPService {
 	}
 }
 
-// Run sets up all receivers and producers.
 func (s *SNMPService) Run() {
 	s.log.Info("starting listeners...")
 	go s.getMetricListener()  // listen to metric data requests

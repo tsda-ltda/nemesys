@@ -104,4 +104,7 @@ var (
 	// to each machine config, the recommended is to set a cost
 	// that makes '/login' route takes around 200ms. Default is "11".
 	UserPWBcryptCost = "11"
+
+	// ServiceRecoveryLogFile is the service recovery log file.
+	ServiceRecoveryLogFile = "service_recovery"
 )
