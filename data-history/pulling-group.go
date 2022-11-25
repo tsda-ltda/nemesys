@@ -53,10 +53,16 @@ func (g *DataPullingGroup) Run() {
 				continue
 			}
 
+			routingKey, err := amqp.GetDataRoutingKey(g.ContainerType)
+			if err != nil {	
+				
+				continue	
+			}
+
 			// publish request
 			g.dhs.amqph.PublisherCh <- models.DetailedPublishing{
 				Exchange:   amqp.ExchangeMetricsDataRequest,
-				RoutingKey: amqp.GetDataRoutingKey(g.ContainerType),
+				RoutingKey: routingKey,
 				Publishing: amqp091.Publishing{
 					Headers:    amqp.RouteHeader("dhs"),
 					Expiration: amqp.DefaultExp,

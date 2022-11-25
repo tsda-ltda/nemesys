@@ -17,8 +17,8 @@ import (
 type RTS struct {
 	// cache is the cache handler
 	cache *cache.Cache
-	// pgConn is the postgresql handler.
-	pgConn *pg.PG
+	// pg is the postgresql handler.
+	pg *pg.PG
 	// amqp is the amqp connection.
 	amqp *amqp091.Connection
 	// amqph is the amqp handler for common taks.
@@ -32,8 +32,8 @@ type RTS struct {
 	muStartPulling sync.Mutex
 	// pulling is the map of containers pulling.
 	pulling map[int32]*ContainerPulling
-	// pendingMetricData is a map of pending data requests.
-	pendingMetricData map[string]models.RTSMetricConfig
+	// pendingMetricDataRequest is a map of pending data requests.
+	pendingMetricDataRequest map[string]models.RTSMetricConfig
 	// closed is the filled when rts is closed.
 	closed chan any
 }
@@ -59,15 +59,15 @@ func New() *RTS {
 
 	amqph := amqph.New(amqpConn, log)
 	return &RTS{
-		log:               log,
-		pgConn:            pg.New(),
-		amqp:              amqpConn,
-		amqph:             amqph,
-		cache:             cache.New(),
-		plumber:           models.NewAMQPPlumber(),
-		pendingMetricData: make(map[string]models.RTSMetricConfig),
-		pulling:           make(map[int32]*ContainerPulling),
-		closed:            make(chan any),
+		log:                      log,
+		pg:                       pg.New(),
+		amqp:                     amqpConn,
+		amqph:                    amqph,
+		cache:                    cache.New(),
+		plumber:                  models.NewAMQPPlumber(),
+		pendingMetricDataRequest: make(map[string]models.RTSMetricConfig),
+		pulling:                  make(map[int32]*ContainerPulling),
+		closed:                   make(chan any),
 	}
 }
 
@@ -86,7 +86,7 @@ func (s *RTS) Run() {
 func (s *RTS) Close() {
 	s.log.Close()
 	s.amqp.Close()
-	s.pgConn.Close()
+	s.pg.Close()
 	s.cache.Close()
 	s.closed <- nil
 }

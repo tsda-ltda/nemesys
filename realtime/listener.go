@@ -87,22 +87,47 @@ func (s *RTS) metricDataRequestListener() {
 				continue
 			}
 
-			res, err := s.pgConn.GetMetricRTSConfig(ctx, r.MetricId)
+			routingKey, err := amqp.GetDataRoutingKey(r.ContainerType)
+
+			// if there is no routing key for this container type,
+			// send response with nil value
+			if err != nil {
+				b, err := amqp.Encode(models.MetricDataResponse{
+					MetricBasicDataReponse: models.MetricBasicDataReponse{
+						Id:           r.MetricId,
+						Type:         r.MetricType,
+						Value:        nil,
+						DataPolicyId: r.DataPolicyId,
+						Failed:       false,
+					},
+					ContainerId: r.ContainerId,
+				})
+				if err != nil {
+					s.log.Error("fail to encode amqp message", logger.ErrField(err))
+					continue
+				}
+
+				s.publishRTSMetricData(amqp091.Publishing{
+					Expiration:    amqp.DefaultExp,
+					Body:          b,
+					Type:          amqp.FromMessageType(amqp.OK),
+					CorrelationId: d.CorrelationId,
+				})
+				continue
+			}
+
+			config, err := s.getRTSMetricConfig(ctx, r.MetricId)
 			if err != nil {
 				s.log.Error("fail to get metric rts information", logger.ErrField(err))
 				continue
 			}
-			if !res.Exists {
-				s.log.Warn("fail to get metric rts information, metric does not exist")
-				continue
-			}
 
-			s.startMetricPulling(r, res.RTSConfig)
+			s.startMetricPulling(r, config)
 			go func(correlationId string, r models.MetricRequest) {
 				// send metric data request to translators
 				s.amqph.PublisherCh <- models.DetailedPublishing{
 					Exchange:   amqp.ExchangeMetricDataRequest,
-					RoutingKey: amqp.GetDataRoutingKey(r.ContainerType),
+					RoutingKey: routingKey,
 					Publishing: amqp091.Publishing{
 						Expiration:    amqp.DefaultExp,
 						Headers:       amqp.RouteHeader("rts"),
@@ -110,9 +135,9 @@ func (s *RTS) metricDataRequestListener() {
 						Body:          d.Body,
 					},
 				}
-				s.pendingMetricData[correlationId] = res.RTSConfig
+				s.pendingMetricDataRequest[correlationId] = config
 				defer func(correlationId string) {
-					delete(s.pendingMetricData, correlationId)
+					delete(s.pendingMetricDataRequest, correlationId)
 				}(correlationId)
 
 				res, err := s.plumber.Listen(correlationId, time.Second*25)
@@ -154,14 +179,8 @@ func (s *RTS) metricDataListener() {
 		return
 	}
 	for d := range msgs {
-		ctx := context.Background()
-
 		s.plumber.Send(d)
-
-		info, ok := s.pendingMetricData[d.CorrelationId]
-		if !ok {
-			continue
-		}
+		ctx := context.Background()
 
 		if amqp.ToMessageType(d.Type) != amqp.OK {
 			continue
@@ -174,7 +193,17 @@ func (s *RTS) metricDataListener() {
 			continue
 		}
 
-		err = s.cache.Set(ctx, d.Body, rdb.CacheMetricDataKey(m.Id), time.Millisecond*time.Duration(info.CacheDuration))
+		config, ok := s.pendingMetricDataRequest[d.CorrelationId]
+		if !ok {
+			var err error
+			config, err = s.getRTSMetricConfig(ctx, m.Id)
+			if err != nil {
+				s.log.Error("fail to get metric configuration", logger.ErrField(err))
+				continue
+			}
+		}
+
+		err = s.cache.Set(ctx, d.Body, rdb.CacheMetricDataKey(m.Id), time.Millisecond*time.Duration(config.CacheDuration))
 		if err != nil {
 			s.log.Error("fail to save metric data on cache", logger.ErrField(err))
 			continue

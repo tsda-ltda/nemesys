@@ -62,7 +62,7 @@ func (s *RTS) startMetricPulling(r models.MetricRequest, config models.RTSMetric
 
 		c, ok := s.pulling[r.ContainerId]
 		if !ok {
-			res, err := s.pgConn.GetContainerRTSConfig(context.Background(), r.ContainerId)
+			res, err := s.pg.GetContainerRTSConfig(context.Background(), r.ContainerId)
 			if err != nil {
 				s.log.Error("fail to get containers's RTS info", logger.ErrField(err))
 				return
@@ -149,10 +149,16 @@ func (c *ContainerPulling) Run() {
 				continue
 			}
 
+			routingKey, err := amqp.GetDataRoutingKey(r.ContainerType)
+			if err != nil {
+				c.RTS.log.Error("fail ge data routing key", logger.ErrField(err))
+				continue
+			}
+
 			// send metric data request to translators
 			c.RTS.amqph.PublisherCh <- models.DetailedPublishing{
 				Exchange:   amqp.ExchangeMetricsDataRequest,
-				RoutingKey: amqp.GetDataRoutingKey(r.ContainerType),
+				RoutingKey: routingKey,
 				Publishing: amqp091.Publishing{
 					Expiration: amqp.DefaultExp,
 					Headers:    amqp.RouteHeader("rts"),

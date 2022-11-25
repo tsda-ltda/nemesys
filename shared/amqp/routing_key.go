@@ -7,14 +7,16 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-func GetDataRoutingKey(t types.ContainerType) string {
+var ErrNoRoutingKey = errors.New("no routing key")
+
+func GetDataRoutingKey(t types.ContainerType) (string, error) {
 	switch t {
 	case types.CTSNMPv2c:
-		return "snmp"
+		return "snmp", nil
 	case types.CTFlexLegacy:
-		return "snmp"
+		return "snmp", nil
 	default:
-		return "snmp"
+		return "snmp", ErrNoRoutingKey
 	}
 }
 

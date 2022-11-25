@@ -12,9 +12,13 @@ func (a *Amqph) RequestMetricData(req models.MetricRequest, serviceName string) 
 	if err != nil {
 		return err
 	}
+	routingKey, err := amqp.GetDataRoutingKey(req.ContainerType)
+	if err != nil {
+		return nil
+	}
 	a.PublisherCh <- models.DetailedPublishing{
 		Exchange:   amqp.ExchangeMetricDataRequest,
-		RoutingKey: amqp.GetDataRoutingKey(req.ContainerType),
+		RoutingKey: routingKey,
 		Publishing: amqp091.Publishing{
 			Headers:    amqp.RouteHeader(serviceName),
 			Expiration: amqp.DefaultExp,
