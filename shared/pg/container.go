@@ -37,14 +37,15 @@ type BaseContainerEnabledResponse struct {
 }
 
 const (
-	sqlContainersCreate     = `INSERT INTO containers (name, descr, type, enabled, rts_pulling_interval) VALUES ($1, $2, $3, $4, $5)RETURNING id;`
-	sqlContainersGet        = `SELECT name, descr, type, enabled, rts_pulling_interval FROM containers WHERE id = $1 AND type = $2;`
-	sqlContainersUpdate     = `UPDATE containers SET (name, descr, enabled, rts_pulling_interval) = ($1, $2, $3, $4) WHERE id = $5;`
-	sqlContainersDelete     = `DELETE FROM containers WHERE id = $1;`
-	sqlContainersMGet       = `SELECT id, name, descr, enabled, rts_pulling_interval FROM containers WHERE type = $1 LIMIT $2 OFFSET $3;`
-	sqlContainersGetRTSInfo = `SELECT rts_pulling_interval FROM containers WHERE id = $1;`
-	sqlContainersExists     = `SELECT EXISTS (SELECT 1 FROM containers WHERE id = $1);`
-	sqlContainersEnabled    = `SELECT enabled FROM containers WHERE id = $1;`
+	sqlContainersCreate        = `INSERT INTO containers (name, descr, type, enabled, rts_pulling_interval) VALUES ($1, $2, $3, $4, $5)RETURNING id;`
+	sqlContainersGet           = `SELECT name, descr, type, enabled, rts_pulling_interval FROM containers WHERE id = $1 AND type = $2;`
+	sqlContainersUpdate        = `UPDATE containers SET (name, descr, enabled, rts_pulling_interval) = ($1, $2, $3, $4) WHERE id = $5;`
+	sqlContainersDelete        = `DELETE FROM containers WHERE id = $1;`
+	sqlContainersMGet          = `SELECT id, name, descr, enabled, rts_pulling_interval FROM containers WHERE type = $1 LIMIT $2 OFFSET $3;`
+	sqlContainersGetRTSInfo    = `SELECT rts_pulling_interval FROM containers WHERE id = $1;`
+	sqlContainersExists        = `SELECT EXISTS (SELECT 1 FROM containers WHERE id = $1);`
+	sqlContainersEnabled       = `SELECT enabled FROM containers WHERE id = $1;`
+	sqlContainersMGetIdEnabled = `SELECT id FROM containers WHERE enabled = true AND type = $1 LIMIT $2 OFFSET $3;`
 )
 
 func (pg *PG) CreateBasicContainer(ctx context.Context, container models.Container[struct{}]) (id int32, err error) {
@@ -202,4 +203,21 @@ func (pg *PG) ContainerEnabled(ctx context.Context, id int32) (r BaseContainerEn
 		r.Exists = true
 	}
 	return r, nil
+}
+
+func (pg *PG) GetEnabledContainersIds(ctx context.Context, containerType types.ContainerType, limit int, offset int) (ids []int32, err error) {
+	rows, err := pg.db.QueryContext(ctx, sqlContainersMGetIdEnabled, containerType, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int32
+		err = rows.Scan(&id)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
 }

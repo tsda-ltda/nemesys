@@ -1,11 +1,12 @@
 package api
 
 import (
-	"errors"
 	"fmt"
+	stdlog "log"
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
+	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/cache"
 	"github.com/fernandotsda/nemesys/shared/env"
@@ -13,12 +14,14 @@ import (
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/fernandotsda/nemesys/shared/rdb"
+	"github.com/fernandotsda/nemesys/shared/service"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/rabbitmq/amqp091-go"
 )
 
 type API struct {
+	service.Tools
+
 	// Amqph is the amqp handler.
 	Amqph *amqph.Amqph
 	// Postgresql handler.
@@ -37,48 +40,70 @@ type API struct {
 	UserPWBcryptCost int
 	// Logger is the internal logger.
 	Log *logger.Logger
-	// Closed is filled when application is closed.
-	Closed chan any
 }
 
-// Create a new API instance.
-func New(conn *amqp091.Connection, log *logger.Logger) (*API, error) {
+func New() service.Service {
+	// connect to amqp
+	amqpConn, err := amqp.Dial()
+	if err != nil {
+		stdlog.Panicf("Fail to dial with amqp server, err: %s", err)
+		return nil
+	}
+
+	// create logger
+	log, err := logger.New(amqpConn, logger.Config{
+		Service:        "api-manager",
+		ConsoleLevel:   logger.ParseLevelEnv(env.LogConsoleLevelAPIManager),
+		BroadcastLevel: logger.ParseLevelEnv(env.LogBroadcastLevelAPIManager),
+	})
+	if err != nil {
+		stdlog.Panicf("Fail to create logger, err: %s", err)
+		return nil
+	}
+	log.Info("Connected to amqp server")
+
 	// connect to redis auth
 	rdbAuth, err := rdb.NewAuthClient()
 	if err != nil {
-		return nil, err
+		log.Panic("Fail to create auth client", logger.ErrField(err))
+		return nil
 	}
-	log.Info("connected to redis")
+	log.Info("Connected to redis client (auth client)")
 
 	// create authentication handler
 	auth, err := auth.New(rdbAuth)
 	if err != nil {
-		return nil, err
+		log.Panic("Fail to create auth handler", logger.ErrField(err))
+		return nil
 	}
 
 	// connect to influxdb
 	influxClient, err := influxdb.Connect()
 	if err != nil {
-		return nil, err
+		log.Panic("Fail to connect to influxdb", logger.ErrField(err))
+		return nil
 	}
-	log.Info("connected to influxdb")
+	log.Info("Connected to influxdb")
 
 	// parse bcrypt coast
 	bcryptCost, err := strconv.Atoi(env.UserPWBcryptCost)
 	if err != nil {
-		return nil, errors.New("fail to parse env.UserPWBcryptCost, err: " + err.Error())
+		log.Fatal("Fail to parse env.UserPWBcryptCost", logger.ErrField(err))
+		return nil
 	}
 
 	// create gin engine
 	gin.SetMode(gin.ReleaseMode)
+	log.Info("Gin mode setted to 'release'")
 	r := gin.New()
 
 	// create validator
 	validate := validator.New()
 
 	// create and run amqp handler
-	amqph := amqph.New(conn, log)
+	amqph := amqph.New(amqpConn, log)
 	return &API{
+		Tools:            service.NewTools(),
 		PG:               pg.New(),
 		Influx:           &influxClient,
 		Router:           r,
@@ -88,21 +113,26 @@ func New(conn *amqp091.Connection, log *logger.Logger) (*API, error) {
 		Cache:            cache.New(),
 		Amqph:            amqph,
 		UserPWBcryptCost: bcryptCost,
-		Closed:           make(chan any),
-	}, nil
+	}
 }
 
-// Start listen and server.
-func (api *API) Run() error {
+func (api *API) Run() {
 	url := fmt.Sprintf("%s:%s", env.APIManagerHost, env.APIManagerPort)
-	api.Log.Info("server listening to: " + url)
-	return api.Router.Run(url)
+	api.Log.Info("Server listening to: " + url)
+
+	err := api.Router.Run(url)
+	if err != nil {
+		api.Log.Error("Server stopped with error", logger.ErrField(err))
+		return
+	}
+	api.Log.Info("Server stopped gracefully")
 }
 
-// Close all api dependencies.
-func (api *API) Close() {
+func (api *API) Close() error {
 	api.PG.Close()
-	api.Auth.Close()
 	api.Cache.Close()
 	api.Amqph.Close()
+	api.Auth.Close()
+	api.DispatchDone(nil)
+	return nil
 }

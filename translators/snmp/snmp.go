@@ -1,6 +1,8 @@
 package snmp
 
 import (
+	stdlog "log"
+
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/cache"
@@ -8,10 +10,12 @@ import (
 	"github.com/fernandotsda/nemesys/shared/evaluator"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/pg"
+	"github.com/fernandotsda/nemesys/shared/service"
 	"github.com/rabbitmq/amqp091-go"
 )
 
 type SNMPService struct {
+	service.Tools
 	// log is the logger handler.
 	log *logger.Logger
 	// amqpConn is the amqp connection.
@@ -24,34 +28,33 @@ type SNMPService struct {
 	evaluator *evaluator.Evaluator
 	// cache is the cache handler.
 	cache *cache.Cache
-	// closed is the channel to quit.
-	closed chan any
 	// stopGetListener is the channel to stop the getListener
 	stopGetListener chan any
 	// stopDataListener is the channel to stop the dataPublisher
 	stopDataPublisher chan any
 }
 
-// New returns a configurated SNMPService instance.
-func New() *SNMPService {
-	// connect to amqp server
+func New() service.Service {
 	amqpConn, err := amqp.Dial()
 	if err != nil {
-		panic("fail to connect to amqp server, err: " + err.Error())
+		stdlog.Panicf("Fail to dial with amqp server, err: %s", err.Error())
+		return nil
 	}
 
-	// create logger
 	log, err := logger.New(amqpConn, logger.Config{
 		Service:        "snmp",
 		ConsoleLevel:   logger.ParseLevelEnv(env.LogConsoleLevelSNMP),
 		BroadcastLevel: logger.ParseLevelEnv(env.LogBroadcastLevelSNMP),
 	})
 	if err != nil {
-		panic("fail to create logger, err: " + err.Error())
+		stdlog.Panicf("Fail to create logger, err: %s", err.Error())
+		return nil
 	}
+	log.Info("Connected to amqp server")
 
 	pg := pg.New()
 	return &SNMPService{
+		Tools:             service.NewTools(),
 		amqph:             amqph.New(amqpConn, log),
 		amqpConn:          amqpConn,
 		pg:                pg,
@@ -69,14 +72,18 @@ func (s *SNMPService) Run() {
 	go s.getMetricsListener() // listen to metrics data requests
 
 	s.log.Info("service is ready!")
-	<-s.closed
+	err := <-s.Done()
+	if err != nil {
+		s.log.Error("Service stopped with error", logger.ErrField(err))
+		return
+	}
+	s.log.Info("Service stopped gracefully")
 }
 
 // Close all connections.
-func (s *SNMPService) Close() {
+func (s *SNMPService) Close() error {
 	s.stopDataPublisher <- nil
 	s.stopGetListener <- nil
-
-	s.closed <- nil
-	s.log.Info("service closed")
+	s.DispatchDone(nil)
+	return nil
 }

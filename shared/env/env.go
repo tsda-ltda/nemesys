@@ -107,4 +107,7 @@ var (
 
 	// ServiceRecoveryLogFile is the service recovery log file.
 	ServiceRecoveryLogFile = "service_recovery"
+
+	// DHSFlexLegacyDatalogWorkers is the number of flex-legacy datalog workers. Default is "3".
+	DHSFlexLegacyDatalogWorkers = "3"
 )

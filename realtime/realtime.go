@@ -1,6 +1,7 @@
 package rts
 
 import (
+	stdlog "log"
 	"sync"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
@@ -10,11 +11,13 @@ import (
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/pg"
+	"github.com/fernandotsda/nemesys/shared/service"
 	"github.com/rabbitmq/amqp091-go"
 )
 
 // Real Time Service
 type RTS struct {
+	service.Tools
 	// cache is the cache handler
 	cache *cache.Cache
 	// pg is the postgresql handler.
@@ -34,15 +37,13 @@ type RTS struct {
 	pulling map[int32]*ContainerPulling
 	// pendingMetricDataRequest is a map of pending data requests.
 	pendingMetricDataRequest map[string]models.RTSMetricConfig
-	// closed is the filled when rts is closed.
-	closed chan any
 }
 
-// New returns a configurated RTS. Will kill if anything goes wrong.
-func New() *RTS {
+func New() service.Service {
 	amqpConn, err := amqp.Dial()
 	if err != nil {
-		panic("fail to connect to amqp server, err: " + err.Error())
+		stdlog.Panicf("Fail to dial with amqp server, err: %s", err)
+		return nil
 	}
 
 	log, err := logger.New(
@@ -54,11 +55,13 @@ func New() *RTS {
 		},
 	)
 	if err != nil {
-		panic("fail to create logger, err: " + err.Error())
+		stdlog.Panicf("Fail to create logger, err: %s", err)
 	}
+	log.Info("Connected to amqp server")
 
 	amqph := amqph.New(amqpConn, log)
 	return &RTS{
+		Tools:                    service.NewTools(),
 		log:                      log,
 		pg:                       pg.New(),
 		amqp:                     amqpConn,
@@ -67,26 +70,26 @@ func New() *RTS {
 		plumber:                  models.NewAMQPPlumber(),
 		pendingMetricDataRequest: make(map[string]models.RTSMetricConfig),
 		pulling:                  make(map[int32]*ContainerPulling),
-		closed:                   make(chan any),
 	}
 }
 
 func (s *RTS) Run() {
-	s.log.Info("starting listeners...")
+	s.log.Info("Starting listeners...")
 	go s.notificationListener()      // listen to notification
 	go s.metricDataRequestListener() // listen to data requests
 	go s.metricDataListener()        // listen to new data
 	go s.metricsDataListener()       // listen to new data
 
-	s.log.Info("service is ready!")
-	<-s.closed
+	s.log.Info("Service is ready!")
+	<-s.Done()
 }
 
 // Close connections.
-func (s *RTS) Close() {
+func (s *RTS) Close() error {
 	s.log.Close()
 	s.amqp.Close()
 	s.pg.Close()
 	s.cache.Close()
-	s.closed <- nil
+	s.DispatchDone(nil)
+	return nil
 }

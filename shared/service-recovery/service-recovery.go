@@ -8,7 +8,7 @@ import (
 	"github.com/fernandotsda/nemesys/shared/env"
 )
 
-type ServiceRecoveryConfig struct {
+type Options struct {
 	// MaxRecovers is the maximum number of recoveries before
 	// the ResetRecoversTimeout is reached.
 	MaxRecovers int
@@ -23,15 +23,19 @@ type ServiceRecoveryConfig struct {
 
 type ServiceRecovery struct {
 	// config is the service recovery configuration.
-	config ServiceRecoveryConfig
+	config Options
 	// recovers is the current number of recovers.
 	recovers int
 	// resetRecoversTicker is the ticker to reset
 	// the current number of recovers. If any new
 	// recover resets the ticker.
 	resetRecoversTicker *time.Ticker
-	// handler is the handler called every recover.
-	handler func()
+	recoverable         Recoverable
+}
+
+type Recoverable interface {
+	Close() error
+	Run()
 }
 
 func (st *ServiceRecovery) recover() {
@@ -49,13 +53,18 @@ func (st *ServiceRecovery) recover() {
 		st.resetRecoversTicker.Reset(st.config.ResetRecoversTimeout)
 
 		log.Printf("Running service again after: %f seconds.", st.config.RecoverTimeout.Seconds())
+		err := st.recoverable.Close()
+		if err != nil {
+			log.Fatalf("Fail to close recoverable element, err: %s", err)
+			return
+		}
 		st.exec()
 	}
 }
 
 func (sr *ServiceRecovery) exec() {
 	defer sr.recover()
-	sr.handler()
+	sr.recoverable.Run()
 }
 
 func (sr *ServiceRecovery) reseter() {
@@ -64,7 +73,7 @@ func (sr *ServiceRecovery) reseter() {
 	}
 }
 
-func Run(handler func(), config ServiceRecoveryConfig) {
+func Run(recoverable Recoverable, config Options) {
 	f, err := os.OpenFile(env.ServiceRecoveryLogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
@@ -75,7 +84,7 @@ func Run(handler func(), config ServiceRecoveryConfig) {
 	sr := ServiceRecovery{
 		config:              config,
 		resetRecoversTicker: time.NewTicker(config.ResetRecoversTimeout),
-		handler:             handler,
+		recoverable:         recoverable,
 	}
 	go sr.reseter()
 	sr.exec()
