@@ -19,6 +19,9 @@ func Protect(api *api.API, accessLevel roles.Role) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		meta, err := validateSession(api, c)
 		if err != nil {
+			if c.Request.Context().Err() != nil {
+				return
+			}
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
@@ -47,6 +50,9 @@ func ProtectUser(api *api.API, accessLevel roles.Role) func(c *gin.Context) {
 
 		meta, err := validateSession(api, c)
 		if err != nil {
+			if c.Request.Context().Err() != nil {
+				return
+			}
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}

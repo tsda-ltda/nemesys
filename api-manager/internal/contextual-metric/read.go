@@ -27,6 +27,9 @@ func Get(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.GetContextualMetric(ctx, int64(id))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to get contextual metric", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
@@ -73,6 +76,9 @@ func MGet(api *api.API) func(c *gin.Context) {
 
 		exists, err := api.PG.ContextExists(ctx, int32(ctxId))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if context exists", logger.ErrField(err))
 			return
@@ -84,6 +90,9 @@ func MGet(api *api.API) func(c *gin.Context) {
 
 		metrics, err := api.PG.GetContextualMetrics(ctx, int32(ctxId), limit, offset)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to get metrics", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return

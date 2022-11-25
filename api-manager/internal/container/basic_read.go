@@ -26,6 +26,9 @@ func GetBasicHandler(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.GetBasicContainer(ctx, int32(id))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get basic container", logger.ErrField(err))
 			return

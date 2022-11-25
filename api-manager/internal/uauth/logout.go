@@ -23,12 +23,18 @@ func Logout(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 		meta, err := tools.GetSessionMeta(c)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get session metadata", logger.ErrField(err))
 			return
 		}
 		err = api.Auth.RemoveSession(ctx, meta.UserId)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgSessionAlreadyRemoved))
 			return
 		}
@@ -48,6 +54,9 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 		meta, err := tools.GetSessionMeta(c)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get session metadata", logger.ErrField(err))
 			return
@@ -62,6 +71,9 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.GetUserRole(ctx, int32(id))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to get user role", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
@@ -78,6 +90,9 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 
 		err = api.Auth.RemoveSession(ctx, int32(id))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgSessionAlreadyRemoved))
 			return
 		}

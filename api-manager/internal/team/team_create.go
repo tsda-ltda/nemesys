@@ -43,6 +43,9 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		exists, err := api.PG.TeamIdentExists(ctx, team.Ident, -1)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if team ident exists", logger.ErrField(err))
 			return
@@ -58,6 +61,9 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			Descr: team.Descr,
 		})
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to create team", logger.ErrField(err))
 			return

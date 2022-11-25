@@ -43,6 +43,9 @@ func MGet(api *api.API, t types.ContainerType) func(c *gin.Context) {
 
 		metrics, err := api.PG.GetMetricsSimplified(ctx, t, int32(containerId), limit, offset)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to get metrics", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return

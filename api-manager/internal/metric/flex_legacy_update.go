@@ -56,6 +56,9 @@ func UpdateFlexLegacyHandler(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.MetricContainerAndDataPolicyExists(ctx, metric.Base)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check container and data policy existence", logger.ErrField(err))
 			return
@@ -75,6 +78,9 @@ func UpdateFlexLegacyHandler(api *api.API) func(c *gin.Context) {
 
 		exists, err := api.PG.UpdateFlexLegacyMetric(ctx, metric)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to update flex legacy metric", logger.ErrField(err))
 			return

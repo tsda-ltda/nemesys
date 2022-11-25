@@ -24,6 +24,9 @@ func MetricRequest(api *api.API) func(c *gin.Context) {
 
 		cacheR, err := api.Cache.GetMetricRequest(ctx, id)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.AbortWithStatus(http.StatusInternalServerError)
 			api.Log.Error("fail to get metric request on cache", logger.ErrField(err))
 			return
@@ -36,6 +39,9 @@ func MetricRequest(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.GetMetricRequestByContextualMetric(ctx, id)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.AbortWithStatus(http.StatusInternalServerError)
 			api.Log.Error("fail to get contextual metric, team and context id on database", logger.ErrField(err))
 			return
@@ -51,6 +57,9 @@ func MetricRequest(api *api.API) func(c *gin.Context) {
 
 		err = api.Cache.SetMetricRequest(ctx, r.MetricRequest)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.AbortWithStatus(http.StatusInternalServerError)
 			api.Log.Error("fail to set metric request on cache", logger.ErrField(err))
 			return

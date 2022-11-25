@@ -43,6 +43,9 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 
 		cacheRes, err := api.Cache.GetMetricAddDataForm(ctx, data.Refkey)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get metricAddDataForm on cache", logger.ErrField(err))
 			return
@@ -52,6 +55,9 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 		if !cacheRes.Exists {
 			exists, rk, err := api.PG.GetRefkey(ctx, data.Refkey)
 			if err != nil {
+				if ctx.Err() != nil {
+					return
+				}
 				c.Status(http.StatusInternalServerError)
 				api.Log.Error("fail to get refkey", logger.ErrField(err))
 				return
@@ -63,6 +69,9 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 
 			r1, err := api.PG.GetMetricRequest(ctx, rk.MetricId)
 			if err != nil {
+				if ctx.Err() != nil {
+					return
+				}
 				c.Status(http.StatusInternalServerError)
 				api.Log.Error("fail to get metric request", logger.ErrField(err))
 				return
@@ -70,6 +79,9 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 
 			r2, err := api.PG.GetMetricDHSEnabled(ctx, rk.MetricId)
 			if err != nil {
+				if ctx.Err() != nil {
+					return
+				}
 				c.Status(http.StatusInternalServerError)
 				api.Log.Error("fail to check if metric dhs_enabled is enabled", logger.ErrField(err))
 				return
@@ -84,6 +96,9 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 
 			err = api.Cache.SetMetricAddDataForm(ctx, data.Refkey, form)
 			if err != nil {
+				if ctx.Err() != nil {
+					return
+				}
 				c.Status(http.StatusInternalServerError)
 				api.Log.Error("fail to set metricAddDataForm on cache", logger.ErrField(err))
 				return
@@ -116,6 +131,9 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 		if form.DHSEnabled {
 			err = api.Influx.WritePoint(ctx, metricDataResponse)
 			if err != nil {
+				if ctx.Err() != nil {
+					return
+				}
 				c.Status(http.StatusInternalServerError)
 				api.Log.Error("fail to write point in influxdb", logger.ErrField(err))
 				return

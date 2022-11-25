@@ -35,6 +35,9 @@ func MGet(api *api.API, t types.ContainerType) func(c *gin.Context) {
 
 		containers, err := api.PG.GetContainers(ctx, t, limit, offset)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to get containers", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return

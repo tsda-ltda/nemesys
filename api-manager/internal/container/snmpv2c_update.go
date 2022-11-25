@@ -51,6 +51,9 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			container.Base.Id,
 		)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to check if target port exists", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
@@ -61,6 +64,9 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 
 		exists, err = api.PG.UpdateSNMPv2cContainer(ctx, container)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to update snmpv2c container", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return

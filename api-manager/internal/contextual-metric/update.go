@@ -51,6 +51,9 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 
 		ie, err := api.PG.ContextualMetricIdentExists(ctx, cmetric.Ident, int32(ctxId), int64(id))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if contextual metric exits", logger.ErrField(err))
 			return
@@ -64,6 +67,9 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 
 		exists, err := api.PG.UpdateContextualMetric(ctx, cmetric)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to update contextual metric", logger.ErrField(err))
 			return

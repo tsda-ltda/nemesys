@@ -28,6 +28,9 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 
 		e, err := api.PG.DeleteContextualMetric(ctx, int64(id))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to delete contextual metric", logger.ErrField(err))
 			return

@@ -19,6 +19,9 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 
 		dps, err := api.PG.GetDataPolicies(ctx)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to read data policies", logger.ErrField(err))
 			return
@@ -43,6 +46,9 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.GetDataPolicy(ctx, int16(id))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to read data policy", logger.ErrField(err))
 			return

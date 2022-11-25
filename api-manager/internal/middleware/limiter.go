@@ -18,6 +18,9 @@ func Limiter(api *api.API, duration time.Duration) func(c *gin.Context) {
 		ip := c.ClientIP()
 		suspended, err := api.Cache.GetUserLimited(ctx, ip)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.AbortWithStatus(http.StatusInternalServerError)
 			api.Log.Error("fail to get user limited on cache", logger.ErrField(err))
 			return
@@ -28,6 +31,9 @@ func Limiter(api *api.API, duration time.Duration) func(c *gin.Context) {
 		}
 		err = api.Cache.SetUserLimited(ctx, ip, duration)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.AbortWithStatus(http.StatusInternalServerError)
 			api.Log.Error("fail to set user limited on cache", logger.ErrField(err))
 			return

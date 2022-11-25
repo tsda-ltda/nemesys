@@ -46,6 +46,9 @@ func UpdateBasicHandler(api *api.API) func(c *gin.Context) {
 
 		exists, err := api.PG.UpdateBasicContainer(ctx, container)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to create basic container", logger.ErrField(err))
 			return

@@ -26,6 +26,9 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.GetTeam(ctx, int32(id))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to get team", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
@@ -64,6 +67,9 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 
 		teams, err := api.PG.GetTeams(ctx, limit, offset)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to get teams", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return

@@ -45,6 +45,9 @@ func CreateHandler(api *api.API, containerType types.ContainerType) func(c *gin.
 		rk.MetricId = metricId
 		metricExists, rkExists, err := api.PG.MetricAndRefkeyExists(ctx, metricId, containerType, rk.Refkey, -1)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if metric and refkey exists", logger.ErrField(err))
 			return
@@ -60,6 +63,9 @@ func CreateHandler(api *api.API, containerType types.ContainerType) func(c *gin.
 
 		_, err = api.PG.CreateMetricRefkey(ctx, rk)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to create refkey", logger.ErrField(err))
 			return

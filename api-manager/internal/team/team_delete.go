@@ -27,6 +27,9 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 
 		exists, err := api.PG.DeleteTeam(ctx, int32(id))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to delete team", logger.ErrField(err))
 			return

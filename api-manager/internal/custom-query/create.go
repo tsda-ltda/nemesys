@@ -42,6 +42,9 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.ExistsCustomQueryIdent(ctx, -1, cq.Ident)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check custom query ident existence", logger.ErrField(err))
 			return
@@ -54,6 +57,9 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		_, err = api.PG.CreateCustomQuery(ctx, cq)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to create custom query", logger.ErrField(err))
 			return

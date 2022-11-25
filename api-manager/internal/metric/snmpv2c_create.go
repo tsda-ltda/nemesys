@@ -46,6 +46,9 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.MetricContainerAndDataPolicyExists(ctx, metric.Base)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check container and data policy existence", logger.ErrField(err))
 			return
@@ -61,6 +64,9 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 
 		err = api.PG.CreateSNMPv2cMetric(ctx, metric)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to create snmpv2c metric", logger.ErrField(err))
 			return

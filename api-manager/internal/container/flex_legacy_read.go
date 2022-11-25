@@ -26,6 +26,9 @@ func GetFlexLegacyHandler(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.GetFlexLegacyContainer(ctx, int32(id))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get flex legacy container", logger.ErrField(err))
 			return

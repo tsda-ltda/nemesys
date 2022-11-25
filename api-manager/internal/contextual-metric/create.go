@@ -45,6 +45,9 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.ContextMetricAndContexualMetricIdentExists(ctx, cmetric.ContextId, cmetric.MetricId, cmetric.Ident, -1)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if context, metric and ident exists", logger.ErrField(err))
 			return
@@ -65,6 +68,9 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		_, err = api.PG.CreateContextualMetric(ctx, cmetric)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			return
 		}

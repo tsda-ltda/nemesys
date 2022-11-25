@@ -49,6 +49,9 @@ func CreateContextHandler(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.ExistsTeamAndContextIdent(ctx, int32(teamId), context.Ident, -1)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to get context existence", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
@@ -69,6 +72,9 @@ func CreateContextHandler(api *api.API) func(c *gin.Context) {
 			Descr:  context.Descr,
 		})
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to create context", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return

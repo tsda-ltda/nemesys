@@ -33,6 +33,9 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 
 		exists, err := api.PG.ContainerExist(ctx, int32(containerId))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if container exists", logger.ErrField(err))
 			return
@@ -44,6 +47,9 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 
 		exists, err = api.PG.DeleteMetric(ctx, id)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to delete metric", logger.ErrField(err))
 			return

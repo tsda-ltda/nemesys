@@ -27,6 +27,9 @@ func GetContextHandler(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.GetContext(ctx, int32(contextId))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to get context", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
@@ -70,6 +73,9 @@ func MGetContextHandler(api *api.API) func(c *gin.Context) {
 
 		ctxs, err := api.PG.GetContexts(ctx, int32(teamId), limit, offset)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to get contexts", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return

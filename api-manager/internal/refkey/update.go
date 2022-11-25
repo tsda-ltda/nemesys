@@ -53,6 +53,9 @@ func UpdateHandler(api *api.API, containerType types.ContainerType) func(c *gin.
 
 		metricExists, rkExists, err := api.PG.MetricAndRefkeyExists(ctx, metricId, containerType, rk.Refkey, rkId)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if metric and refkey exists", logger.ErrField(err))
 			return
@@ -68,6 +71,9 @@ func UpdateHandler(api *api.API, containerType types.ContainerType) func(c *gin.
 
 		exists, err := api.PG.UpdateMetricRefkey(ctx, rk)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to update refkey", logger.ErrField(err))
 			return

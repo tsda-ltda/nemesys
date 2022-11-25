@@ -37,6 +37,9 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.UsernameAndEmailExists(ctx, user.Username, user.Email, -1)
 		if err != nil {
+			if ctx.Err() != nil {
+						return
+					}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if username and email exists", logger.ErrField(err))
 			return
@@ -65,6 +68,9 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			Email:    user.Email,
 		})
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to create user", logger.ErrField(err))
 			return

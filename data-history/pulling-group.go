@@ -54,9 +54,8 @@ func (g *DataPullingGroup) Run() {
 			}
 
 			routingKey, err := amqp.GetDataRoutingKey(g.ContainerType)
-			if err != nil {	
-				
-				continue	
+			if err != nil {
+				continue
 			}
 
 			// publish request

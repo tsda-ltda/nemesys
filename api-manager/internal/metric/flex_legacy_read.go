@@ -27,6 +27,9 @@ func GetFlexLegacyHandler(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.GetFlexLegacyMetric(ctx, id)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get flex legacy metric", logger.ErrField(err))
 			return

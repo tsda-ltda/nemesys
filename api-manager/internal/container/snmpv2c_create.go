@@ -42,6 +42,9 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			-1,
 		)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if target port exists", logger.ErrField(err))
 			return
@@ -53,6 +56,9 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 
 		err = api.PG.CreateSNMPv2cContainer(ctx, container)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to crate snmpv2c container", logger.ErrField(err))
 			return

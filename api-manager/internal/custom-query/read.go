@@ -36,6 +36,9 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 
 		cqs, err := api.PG.GetCustomQueries(ctx, limit, offset)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get multi custom queries on database", logger.ErrField(err))
 			return
@@ -62,6 +65,9 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.GetCustomQuery(ctx, int32(id))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get custom query on database", logger.ErrField(err))
 			return

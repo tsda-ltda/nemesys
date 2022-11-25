@@ -51,6 +51,9 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 
 		exists, err := api.PG.TeamIdentExists(ctx, team.Ident, int32(id))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if ident is available", logger.ErrField(err))
 			return
@@ -63,6 +66,9 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		team.Id = int32(id)
 		exists, err = api.PG.UpdateTeam(ctx, team)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to update team", logger.ErrField(err))
 			return

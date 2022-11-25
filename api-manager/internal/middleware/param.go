@@ -32,6 +32,9 @@ func ParseContextParams(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.GetContextTreeId(ctx, ctxRawId, teamRawId)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -82,6 +85,9 @@ func ParseContextualMetricParams(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.GetContextualMetricTreeId(ctx, metricRawId, ctxRawId, teamRawId)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.AbortWithStatus(http.StatusInternalServerError)
 			api.Log.Error("fail to get ids on database", logger.ErrField(err))
 			return

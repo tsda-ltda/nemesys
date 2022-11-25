@@ -43,6 +43,9 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 			container.Protocol.SerialNumber,
 		)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to check if container, target port combination and serial-number exists", logger.ErrField(err))
 			return
@@ -58,6 +61,9 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 
 		err = api.PG.CreateFlexLegacyContainer(ctx, container)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to create flex legacy container", logger.ErrField(err))
 			return
 		}

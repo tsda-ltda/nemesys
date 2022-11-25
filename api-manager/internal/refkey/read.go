@@ -26,6 +26,9 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 
 		rks, err := api.PG.GetMetricRefkeys(ctx, metricId)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to delete refkey", logger.ErrField(err))
 			return
@@ -45,6 +48,9 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 
 		exists, rk, err := api.PG.GetRefkey(ctx, c.Param("refkey"))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to delete refkey", logger.ErrField(err))
 			return

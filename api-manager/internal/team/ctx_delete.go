@@ -27,6 +27,9 @@ func DeleteContextHandler(api *api.API) func(c *gin.Context) {
 
 		exists, err := api.PG.DeleteContext(ctx, int32(id))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to delete context", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return

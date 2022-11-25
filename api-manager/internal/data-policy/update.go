@@ -45,6 +45,9 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		dp.Id = int16(id)
 		tx, exists, err := api.PG.UpdateDataPolicy(ctx, dp)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to update data policy on influxdb", logger.ErrField(err))
 			return
@@ -56,10 +59,16 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 
 		err = api.Influx.UpdateDataPolicy(ctx, dp)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to update data policy on influxdb", logger.ErrField(err))
 			err = tx.Rollback()
 			if err != nil {
+				if ctx.Err() != nil {
+					return
+				}
 				api.Log.Error("fail to rollback tx", logger.ErrField(err))
 				return
 			}
@@ -67,6 +76,9 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		}
 		err = tx.Commit()
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to commit tx", logger.ErrField(err))
 			return

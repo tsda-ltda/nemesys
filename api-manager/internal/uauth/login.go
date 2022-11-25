@@ -42,6 +42,9 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.GetLoginInfo(ctx, form.Username)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to get login info", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
@@ -61,6 +64,9 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 			Role:   uint8(r.Role),
 		})
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to create user session", logger.ErrField(err))
 			return

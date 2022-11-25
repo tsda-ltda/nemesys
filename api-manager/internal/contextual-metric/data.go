@@ -108,6 +108,9 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 			if err != nil {
 				cacheRes, err := api.Cache.GetCustomQueryByIdent(ctx, rawCustomQuery)
 				if err != nil {
+					if ctx.Err() != nil {
+						return
+					}
 					c.Status(http.StatusInternalServerError)
 					api.Log.Error("fail to get custom query on cache", logger.ErrField(err))
 					return
@@ -116,6 +119,9 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 				if !cacheRes.Exists {
 					dbRes, err := api.PG.GetCustomQueryByIdent(ctx, rawCustomQuery)
 					if err != nil {
+						if ctx.Err() != nil {
+							return
+						}
 						c.Status(http.StatusInternalServerError)
 						api.Log.Error("fail to get custom query on cache", logger.ErrField(err))
 						return
@@ -129,6 +135,9 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 
 					err = api.Cache.SetCustomQueryByIdent(ctx, dbRes.CustomQuery.Flux, rawCustomQuery)
 					if err != nil {
+						if ctx.Err() != nil {
+							return
+						}
 						c.Status(http.StatusInternalServerError)
 						api.Log.Error("fail to save custom query flux on cache", logger.ErrField(err))
 						return
@@ -139,6 +148,9 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 			} else {
 				cacheRes, err := api.Cache.GetCustomQuery(ctx, int32(id))
 				if err != nil {
+					if ctx.Err() != nil {
+						return
+					}
 					c.Status(http.StatusInternalServerError)
 					api.Log.Error("fail to get custom query on cache", logger.ErrField(err))
 					return
@@ -147,6 +159,9 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 				if !cacheRes.Exists {
 					dbRes, err := api.PG.GetCustomQuery(ctx, int32(id))
 					if err != nil {
+						if ctx.Err() != nil {
+							return
+						}
 						c.Status(http.StatusInternalServerError)
 						api.Log.Error("fail to get custom query on cache", logger.ErrField(err))
 						return
@@ -159,6 +174,9 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 					opts.CustomQueryFlux = dbRes.CustomQuery.Flux
 					err = api.Cache.SetCustomQuery(ctx, dbRes.CustomQuery.Flux, int32(id))
 					if err != nil {
+						if ctx.Err() != nil {
+							return
+						}
 						c.Status(http.StatusInternalServerError)
 						api.Log.Error("fail to save custom query flux on cache", logger.ErrField(err))
 						return
@@ -171,6 +189,9 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 
 		d, err := api.Influx.Query(ctx, opts)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			if err == influxdb.ErrInvalidQueryOptions {
 				c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 				return

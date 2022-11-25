@@ -43,6 +43,9 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 
 		r, err := api.PG.ExistsRelUserTeam(ctx, userId.UserId, int32(teamId))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get realation, user and team existence", logger.ErrField(err))
 			return
@@ -62,6 +65,9 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 
 		err = api.PG.AddTeamMember(ctx, userId.UserId, int32(teamId))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to add member to team", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
@@ -98,6 +104,9 @@ func RemoveMemberHandler(api *api.API) func(c *gin.Context) {
 
 		exists, err := api.PG.RemoveTeamMember(ctx, int32(userId), int32(teamId))
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to remove member", logger.ErrField(err))
 			return
@@ -142,6 +151,9 @@ func MGetMembersHandler(api *api.API) func(c *gin.Context) {
 
 		m, err := api.PG.GetTeamMembers(ctx, int32(id), limit, offset)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to get team members", logger.ErrField(err))
 			return

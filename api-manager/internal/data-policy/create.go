@@ -37,6 +37,9 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		n, err := api.PG.CountDataPolicy(ctx)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to count number of data polcies", logger.ErrField(err))
 			return
@@ -56,6 +59,9 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		tx, id, err := api.PG.CreateDataPolicy(ctx, dp)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to create data policy on postgres", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
@@ -65,10 +71,16 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		err = api.Influx.CreateDataPolicy(ctx, dp)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to create data policy on influxdb", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			err = tx.Rollback()
 			if err != nil {
+				if ctx.Err() != nil {
+					return
+				}
 				api.Log.Error("fail to rollback tx", logger.ErrField(err))
 				return
 			}
@@ -76,6 +88,9 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 		err = tx.Commit()
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to commit tx", logger.ErrField(err))
 			return

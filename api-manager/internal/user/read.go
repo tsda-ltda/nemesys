@@ -66,6 +66,9 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 
 		users, err := api.PG.GetUsersSimplified(ctx, limit, offset)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to query users", logger.ErrField(err))
 			return

@@ -41,6 +41,9 @@ func TeamsHandler(api *api.API) func(c *gin.Context) {
 
 		teams, err := api.PG.GetUserTeams(ctx, int32(id), limit, offset)
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			api.Log.Error("fail to get user's teams", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
