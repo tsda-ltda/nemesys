@@ -139,7 +139,7 @@ func (pg *PG) ContextualMetricIdentExists(ctx context.Context, ident string, ctx
 	return exists, pg.db.QueryRowContext(ctx, sqlCtxMetricsExistsIdent, ident, ctxId, id).Scan(&exists)
 }
 
-func (pg *PG) GetMetricRequest(ctx context.Context, contextualMetricId int64) (r CtxMetricsGetMetricEnabledAndMetricRequestByIdResponse, err error) {
+func (pg *PG) GetMetricRequestByContextualMetric(ctx context.Context, contextualMetricId int64) (r CtxMetricsGetMetricEnabledAndMetricRequestByIdResponse, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlCtxMetricsGetMetricRequestInfo, contextualMetricId)
 	if err != nil {
 		return r, err

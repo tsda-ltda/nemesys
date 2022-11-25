@@ -34,7 +34,7 @@ func MetricRequest(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.GetMetricRequest(ctx, id)
+		r, err := api.PG.GetMetricRequestByContextualMetric(ctx, id)
 		if err != nil {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			api.Log.Error("fail to get contextual metric, team and context id on database", logger.ErrField(err))
