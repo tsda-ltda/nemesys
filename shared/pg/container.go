@@ -8,7 +8,6 @@ import (
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
-// BaseContainerGetResponse is the response for the Get handler.
 type BaseContainerGetResponse struct {
 	// Exists is the existence of the base container.
 	Exists bool
@@ -16,7 +15,13 @@ type BaseContainerGetResponse struct {
 	Container models.BaseContainer
 }
 
-// BaseContainerGetRTSConfigResponse is the response for the GetRTSConfig handler.
+type BasicContainerGetResponse struct {
+	// Exists is the existence of the base container.
+	Exists bool
+	// Container is the base container.
+	Container models.Container[struct{}]
+}
+
 type BaseContainerGetRTSConfigResponse struct {
 	// Exists is the existence of the base container.
 	Exists bool
@@ -24,7 +29,6 @@ type BaseContainerGetRTSConfigResponse struct {
 	Config models.RTSContainerConfig
 }
 
-// BaseContainerEnabledResponse is the response for the Enabled handler.
 type BaseContainerEnabledResponse struct {
 	// Exists is the existence of the base container.
 	Exists bool
@@ -34,7 +38,7 @@ type BaseContainerEnabledResponse struct {
 
 const (
 	sqlContainersCreate     = `INSERT INTO containers (name, descr, type, enabled, rts_pulling_interval) VALUES ($1, $2, $3, $4, $5)RETURNING id;`
-	sqlContainersGet        = `SELECT name, descr, type, enabled, rts_pulling_interval FROM containers WHERE id = $1;`
+	sqlContainersGet        = `SELECT name, descr, type, enabled, rts_pulling_interval FROM containers WHERE id = $1 AND type = $2;`
 	sqlContainersUpdate     = `UPDATE containers SET (name, descr, enabled, rts_pulling_interval) = ($1, $2, $3, $4) WHERE id = $5;`
 	sqlContainersDelete     = `DELETE FROM containers WHERE id = $1;`
 	sqlContainersMGet       = `SELECT id, name, descr, enabled, rts_pulling_interval FROM containers WHERE type = $1 LIMIT $2 OFFSET $3;`
@@ -42,6 +46,16 @@ const (
 	sqlContainersExists     = `SELECT EXISTS (SELECT 1 FROM containers WHERE id = $1);`
 	sqlContainersEnabled    = `SELECT enabled FROM containers WHERE id = $1;`
 )
+
+func (pg *PG) CreateBasicContainer(ctx context.Context, container models.Container[struct{}]) (id int32, err error) {
+	return id, pg.db.QueryRowContext(ctx, sqlContainersCreate,
+		container.Base.Name,
+		container.Base.Descr,
+		container.Base.Type,
+		container.Base.Enabled,
+		container.Base.RTSPullingInterval,
+	).Scan(&id)
+}
 
 func (pg *PG) createContainer(ctx context.Context, tx *sql.Tx, container models.BaseContainer) (id int32, err error) {
 	return id, tx.QueryRowContext(ctx, sqlContainersCreate,
@@ -51,6 +65,18 @@ func (pg *PG) createContainer(ctx context.Context, tx *sql.Tx, container models.
 		container.Enabled,
 		container.RTSPullingInterval,
 	).Scan(&id)
+}
+
+func (pg *PG) UpdateBasicContainer(ctx context.Context, container models.Container[struct{}]) (exists bool, err error) {
+	t, err := pg.db.ExecContext(ctx, sqlContainersUpdate,
+		container.Base.Name,
+		container.Base.Descr,
+		container.Base.Enabled,
+		container.Base.RTSPullingInterval,
+		container.Base.Id,
+	)
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) updateContainer(ctx context.Context, tx *sql.Tx, container models.BaseContainer) (exists bool, err error) {
@@ -69,6 +95,29 @@ func (pg *PG) DeleteContainer(ctx context.Context, id int32) (exists bool, err e
 	t, err := pg.db.ExecContext(ctx, sqlContainersDelete, id)
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
+}
+
+func (pg *PG) GetBasicContainer(ctx context.Context, id int32) (r BasicContainerGetResponse, err error) {
+	rows, err := pg.db.QueryContext(ctx, sqlContainersGet, id, types.CTBasic)
+	if err != nil {
+		return r, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(
+			&r.Container.Base.Name,
+			&r.Container.Base.Descr,
+			&r.Container.Base.Type,
+			&r.Container.Base.Enabled,
+			&r.Container.Base.RTSPullingInterval,
+		)
+		if err != nil {
+			return r, err
+		}
+		r.Container.Base.Id = id
+		r.Exists = true
+	}
+	return r, nil
 }
 
 func (pg *PG) GetContainer(ctx context.Context, id int32) (r BaseContainerGetResponse, err error) {

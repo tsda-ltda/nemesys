@@ -33,21 +33,29 @@ func CacheMetricEvExpressionKey(metricId int64) string {
 	return fmt.Sprintf("cache:metrics:%d:evexpression", metricId)
 }
 
-func CacheMetricDataPolicyId(metricId int64) string {
+func CacheMetricDataPolicyIdKey(metricId int64) string {
 	return fmt.Sprintf("cache:metrics:%d:data-policy", metricId)
 }
 
-func CacheGoSNMPConfig(containerId int32) string {
+func CacheGoSNMPConfigKey(containerId int32) string {
 	return fmt.Sprintf("cache:containers:%d:go-snmp", containerId)
 }
 
-func CacheSNMPMetric(metricId int64) string {
+func CacheSNMPMetricKey(metricId int64) string {
 	return fmt.Sprintf("cache:metrics:%d:snmp", metricId)
 }
 
-func CacheCustomQuery(cqId int32) string {
+func CacheCustomQueryKey(cqId int32) string {
 	return "cache:custom-query" + strconv.FormatInt(int64(cqId), 10)
 }
-func CacheCustomQueryByIdent(cqIdent string) string {
+func CacheCustomQueryByIdentKey(cqIdent string) string {
 	return "cache:custom-query:" + cqIdent
+}
+
+func CacheMetricAddDataFormKey(refkey string) string {
+	return "cache:metric-add-data-form:" + refkey
+}
+
+func CacheRTSMetricConfig(metricId int64) string {
+	return "cache:metric:" + strconv.FormatInt(metricId, 10) + ":rts-config"
 }

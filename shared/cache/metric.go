@@ -32,11 +32,45 @@ type GetMetricEvExpressionResponse struct {
 type GetMetricDataPolicyIdResponse struct {
 	// Exists is the cache existence.
 	Exists bool
-	// DataPolicyId is the data policy id
+	// DataPolicyId is the data policy id.
 	DataPolicyId int16
 }
 
-// GetMetricRequestByIdent returns a metric request information.
+type GetMetricAddDataFormResponse struct {
+	// Exists is the cache existence.
+	Exists bool
+	// Form is the base metric add data form.
+	Form models.BasicMetricAddDataForm
+}
+
+type GetRTSMetricConfigResponse struct {
+	// Exists is the cache existence.
+	Exists bool
+	// Config is the real time service metric configuration.
+	Config models.RTSMetricConfig
+}
+
+func (c *Cache) GetMetricAddDataForm(ctx context.Context, refkey string) (r GetMetricAddDataFormResponse, err error) {
+	b, err := c.Get(ctx, rdb.CacheMetricAddDataFormKey(refkey))
+	if err != nil {
+		if err == redis.Nil {
+			return r, nil
+		}
+		return r, err
+	}
+	err = c.decode(b, &r.Form)
+	r.Exists = true
+	return r, err
+}
+
+func (c *Cache) SetMetricAddDataForm(ctx context.Context, refkey string, form models.BasicMetricAddDataForm) (err error) {
+	b, err := c.encode(form)
+	if err != nil {
+		return err
+	}
+	return c.redis.Set(ctx, rdb.CacheMetricAddDataFormKey(refkey), b, c.metricAddDataFormExp).Err()
+}
+
 func (c *Cache) GetMetricRequestByIdent(ctx context.Context, teamIdent string, contextIdent string, metricIdent string) (r GetMetricRequestByIdentResponse, err error) {
 	bytes, err := c.redis.Get(ctx, rdb.CacheMetricRequestByIdent(teamIdent, contextIdent, metricIdent)).Bytes()
 	if err != nil {
@@ -50,7 +84,6 @@ func (c *Cache) GetMetricRequestByIdent(ctx context.Context, teamIdent string, c
 	return r, err
 }
 
-// SetMetricRequestByIdent save a metric request information.
 func (c *Cache) SetMetricRequestByIdent(ctx context.Context, teamIdent string, contextIdent string, metricIdent string, ids models.MetricRequest) (err error) {
 	bytes, err := c.encode(ids)
 	if err != nil {
@@ -79,12 +112,10 @@ func (c *Cache) SetMetricRequest(ctx context.Context, request models.MetricReque
 	return c.redis.Set(ctx, rdb.CacheMetricRequest(request.MetricId), b, c.metricRequestExp).Err()
 }
 
-// SetMetricEvExpression save a metric evaluate expression.
 func (c *Cache) SetMetricEvExpression(ctx context.Context, metricId int64, expression string) (err error) {
 	return c.redis.Set(ctx, rdb.CacheMetricEvExpressionKey(metricId), expression, c.metricEvExpressionExp).Err()
 }
 
-// GetMetricEvExpression returns a metric evaluate expression.
 func (c *Cache) GetMetricEvExpression(ctx context.Context, metricId int64) (r GetMetricEvExpressionResponse, err error) {
 	expression, err := c.redis.Get(ctx, rdb.CacheMetricEvExpressionKey(metricId)).Result()
 	if err != nil {
@@ -99,14 +130,12 @@ func (c *Cache) GetMetricEvExpression(ctx context.Context, metricId int64) (r Ge
 	return r, err
 }
 
-// SetMetricDataPolicyId saves a metric data policy id.
 func (c *Cache) SetMetricDataPolicyId(ctx context.Context, metricId int64, dataPolicyId int16) (err error) {
-	return c.redis.Set(ctx, rdb.CacheMetricDataPolicyId(metricId), dataPolicyId, c.metricDataPolicyIdExp).Err()
+	return c.redis.Set(ctx, rdb.CacheMetricDataPolicyIdKey(metricId), dataPolicyId, c.metricDataPolicyIdExp).Err()
 }
 
-// GetMetricDataPolicyId returns a metric data policy id.
 func (c *Cache) GetMetricDataPolicyId(ctx context.Context, metricId int64) (r GetMetricDataPolicyIdResponse, err error) {
-	id, err := c.redis.Get(ctx, rdb.CacheMetricDataPolicyId(metricId)).Int()
+	id, err := c.redis.Get(ctx, rdb.CacheMetricDataPolicyIdKey(metricId)).Int()
 	if err != nil {
 		if err == redis.Nil {
 			return r, nil
@@ -117,4 +146,25 @@ func (c *Cache) GetMetricDataPolicyId(ctx context.Context, metricId int64) (r Ge
 	r.Exists = true
 	r.DataPolicyId = int16(id)
 	return r, nil
+}
+
+func (c *Cache) SetRTSMetricConfig(ctx context.Context, metricId int64, config models.RTSMetricConfig) (err error) {
+	b, err := c.encode(config)
+	if err != nil {
+		return err
+	}
+	return c.redis.Set(ctx, rdb.CacheRTSMetricConfig(metricId), b, c.rtsMetricConfigExp).Err()
+}
+
+func (c *Cache) GetRTSMetricConfig(ctx context.Context, metricId int64) (r GetRTSMetricConfigResponse, err error) {
+	b, err := c.Get(ctx, rdb.CacheRTSMetricConfig(metricId))
+	if err != nil {
+		if err == redis.Nil {
+			return r, nil
+		}
+		return r, err
+	}
+	err = c.decode(b, &r.Config)
+	r.Exists = true
+	return r, err
 }

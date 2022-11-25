@@ -10,6 +10,7 @@ const (
 	MsgUserNotFound             = "User does not exists."
 	MsgMemberNotFound           = "Member does not exists."
 	MsgCustomQueryNotFound      = "Custom query does not exists."
+	MsgRefkeyNotFound           = "Metric reference key not found."
 
 	MsgParamsNotSameType     = "Params must have same type. Use only numbers or only text."
 	MsgIdentIsNumber         = "Identification must not be number as text."
@@ -23,13 +24,15 @@ const (
 	MsgInvalidParams     = "Invalid route params."
 	MsgInvalidBody       = "Invalid body."
 	MsgInvalidJSONFields = "Invalid JSON fields."
+	MsgInvalidMetricData = "Invalid metric data, could not parse input data to metric type. Check if metric type is correct."
 
 	MsgIdentExists        = "Identification already exists."
 	MsgTargetPortExists   = "Target and port combination already exists."
 	MsgEmailExists        = "Email already exists."
 	MsgUsernameExists     = "Username already exists."
 	MsgRelationExists     = "User is already a member."
-	MsgSerialNumberExists = "Flex serial-number already exists. "
+	MsgSerialNumberExists = "Flex serial-number already exists."
+	MsgRefkeyExists       = "Metric reference key already exists."
 )
 
 type Message struct {

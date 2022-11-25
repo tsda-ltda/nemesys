@@ -22,6 +22,13 @@ type MetricsGetResponse struct {
 	Metric models.BaseMetric
 }
 
+type MetricsGetBasicResponse struct {
+	// Exists is the metric existence.
+	Exists bool
+	// Metric is the metric.
+	Metric models.Metric[struct{}]
+}
+
 type MetricsGetRTSConfigResponse struct {
 	// Exists is the metric existence.
 	Exists bool
@@ -49,11 +56,27 @@ type MetricsEnabledResponse struct {
 	ContainerEnabled bool
 }
 
-type GetMetricsRequestsAndIntervalsResult struct {
+type GetMetricRequestAndIntervalResult struct {
 	// MetricRequest is the metric request.
 	MetricRequest models.MetricRequest
 	// Interval is the interval in seconds
 	Interval int32
+}
+
+type GetMetricRequestResult struct {
+	// Exists is the metric request existence.
+	Exists bool
+	// MetricRequest is the metric request.
+	MetricRequest models.MetricRequest
+	// Enabled is the metric enabled status.
+	Enabled bool
+}
+
+type MetricDHSEnabledResult struct {
+	// Exists is the metric request existence.
+	Exists bool
+	// Enabled is the metric dhs enabled.
+	Enabled bool
 }
 
 const (
@@ -80,7 +103,39 @@ const (
 		c AS (SELECT enabled FROM containers WHERE id = (SELECT container_id FROM m))
 		SELECT (SELECT enabled FROM m), (SELECT enabled FROM c);`
 	sqlMetricsGetMetricsRequestsAndIntervals = `SELECT id, type, container_id, container_type, data_policy_id, dhs_interval FROM metrics WHERE dhs_enabled = true LIMIT $1 OFFSET $2;`
+	sqlMetricsGetRequest                     = `SELECT type, container_id, container_type, data_policy_id, enabled FROM metrics WHERE id = $1;`
+	sqlMetricsDHSEnabled                     = `SELECT dhs_enabled FROM metrics WHERE id = $1;`
 )
+
+func (pg *PG) GetBasicMetric(ctx context.Context, id int64) (r MetricsGetBasicResponse, err error) {
+	rows, err := pg.db.QueryContext(ctx, sqlMetricsGet, id)
+	if err != nil {
+		return r, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(
+			&r.Metric.Base.ContainerId,
+			&r.Metric.Base.ContainerType,
+			&r.Metric.Base.Name,
+			&r.Metric.Base.Descr,
+			&r.Metric.Base.Enabled,
+			&r.Metric.Base.DataPolicyId,
+			&r.Metric.Base.RTSPullingTimes,
+			&r.Metric.Base.RTSCacheDuration,
+			&r.Metric.Base.DHSEnabled,
+			&r.Metric.Base.DHSInterval,
+			&r.Metric.Base.Type,
+			&r.Metric.Base.EvaluableExpression,
+		)
+		if err != nil {
+			return r, err
+		}
+		r.Metric.Base.Id = id
+		r.Exists = true
+	}
+	return r, nil
+}
 
 func (pg *PG) GetMetric(ctx context.Context, id int64) (r MetricsGetResponse, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlMetricsGet, id)
@@ -137,6 +192,37 @@ func (pg *PG) GetMetricsSimplified(ctx context.Context, containerType types.Cont
 	return metrics, nil
 }
 
+func (pg *PG) GetMetricRequest(ctx context.Context, id int64) (r GetMetricRequestResult, err error) {
+	err = pg.db.QueryRowContext(ctx, sqlMetricsGetRequest, id).Scan(
+		&r.MetricRequest.MetricType,
+		&r.MetricRequest.ContainerId,
+		&r.MetricRequest.ContainerType,
+		&r.MetricRequest.DataPolicyId,
+		&r.Enabled,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return r, nil
+		}
+		return r, err
+	}
+	r.MetricRequest.MetricId = id
+	r.Exists = true
+	return r, nil
+}
+
+func (pg *PG) GetMetricDHSEnabled(ctx context.Context, id int64) (r MetricDHSEnabledResult, err error) {
+	err = pg.db.QueryRowContext(ctx, sqlMetricsDHSEnabled, id).Scan(&r.Enabled)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return r, nil
+		}
+		return r, err
+	}
+	r.Exists = true
+	return r, nil
+}
+
 func (pg *PG) createMetric(ctx context.Context, tx *sql.Tx, metric models.BaseMetric) (id int64, err error) {
 	err = tx.QueryRowContext(ctx, sqlMetricsCreate,
 		metric.ContainerId,
@@ -153,6 +239,42 @@ func (pg *PG) createMetric(ctx context.Context, tx *sql.Tx, metric models.BaseMe
 		metric.EvaluableExpression,
 	).Scan(&id)
 	return id, err
+}
+
+func (pg *PG) CreateBasicMetric(ctx context.Context, metric models.Metric[struct{}]) (id int64, err error) {
+	err = pg.db.QueryRowContext(ctx, sqlMetricsCreate,
+		metric.Base.ContainerId,
+		metric.Base.ContainerType,
+		metric.Base.Name,
+		metric.Base.Descr,
+		metric.Base.Enabled,
+		metric.Base.DataPolicyId,
+		metric.Base.RTSPullingTimes,
+		metric.Base.RTSCacheDuration,
+		metric.Base.DHSEnabled,
+		metric.Base.DHSInterval,
+		metric.Base.Type,
+		metric.Base.EvaluableExpression,
+	).Scan(&id)
+	return id, err
+}
+
+func (pg *PG) UpdateBasicMetric(ctx context.Context, metric models.Metric[struct{}]) (exists bool, err error) {
+	t, err := pg.db.ExecContext(ctx, sqlMetricsUpdate,
+		metric.Base.Name,
+		metric.Base.Descr,
+		metric.Base.Enabled,
+		metric.Base.DataPolicyId,
+		metric.Base.RTSPullingTimes,
+		metric.Base.RTSCacheDuration,
+		metric.Base.DHSEnabled,
+		metric.Base.DHSInterval,
+		metric.Base.Type,
+		metric.Base.EvaluableExpression,
+		metric.Base.Id,
+	)
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }
 
 func (pg *PG) updateMetric(ctx context.Context, tx *sql.Tx, metric models.BaseMetric) (exists bool, err error) {
@@ -248,15 +370,15 @@ func (pg *PG) MetricEnabled(ctx context.Context, id int32) (r MetricsEnabledResp
 	return r, nil
 }
 
-func (pg *PG) GetMetricsRequestsAndIntervals(ctx context.Context, limit int, offset int) (r []GetMetricsRequestsAndIntervalsResult, err error) {
+func (pg *PG) GetMetricsRequestsAndIntervals(ctx context.Context, limit int, offset int) (r []GetMetricRequestAndIntervalResult, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlMetricsGetMetricsRequestsAndIntervals, limit, offset)
 	if err != nil {
 		return r, err
 	}
 	defer rows.Close()
-	results := make([]GetMetricsRequestsAndIntervalsResult, 0, limit)
+	results := make([]GetMetricRequestAndIntervalResult, 0, limit)
 	for rows.Next() {
-		var result GetMetricsRequestsAndIntervalsResult
+		var result GetMetricRequestAndIntervalResult
 		err = rows.Scan(
 			&result.MetricRequest.MetricId,
 			&result.MetricRequest.MetricType,

@@ -11,6 +11,39 @@ type MetricPairId struct {
 	ContainerId int32
 }
 
+type BasicMetricAddDataForm struct {
+	// MetricId is the metric id.
+	MetricId int64
+	// MetricType is the metric type.
+	MetricType types.MetricType
+	// ContainerId is the container id.
+	ContainerId int32
+	// DataPolicyId is the data policy id.
+	DataPolicyId int16
+	// Enabled is the metric enabled status.
+	Enabled bool
+	// DHSEnabled is the DHS enabled status.
+	DHSEnabled bool
+}
+
+type MetricDataByRefkey struct {
+	// Refkye is the metric reference key.
+	Refkey string `json:"refkey" validate:"required,max=200"`
+	// Value is the value.
+	Value any `json:"value" validate:"-"`
+	// Timestamp is the timestamp in UNIX Epoch format
+	Timestamp int64 `json:"timestamp" validate:"min=0"`
+}
+
+type MetricRefkey struct {
+	// Id is the metric refkey unique identifier.
+	Id int64 `json:"id" validate:"-"`
+	// Refkey is the reference key.
+	Refkey string `json:"refkey" validate:"required,max=200"`
+	// MetricId is the metric id.
+	MetricId int64 `json:"metric-id" validate:"-"`
+}
+
 type Metric[T any] struct {
 	// Base is the base metric configuration.
 	Base BaseMetric `json:"base" validate:"required"`

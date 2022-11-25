@@ -9,7 +9,9 @@ import (
 	customquery "github.com/fernandotsda/nemesys/api-manager/internal/custom-query"
 	datapolicy "github.com/fernandotsda/nemesys/api-manager/internal/data-policy"
 	"github.com/fernandotsda/nemesys/api-manager/internal/metric"
+	metricdata "github.com/fernandotsda/nemesys/api-manager/internal/metric-data"
 	"github.com/fernandotsda/nemesys/api-manager/internal/middleware"
+	"github.com/fernandotsda/nemesys/api-manager/internal/refkey"
 	"github.com/fernandotsda/nemesys/api-manager/internal/roles"
 	"github.com/fernandotsda/nemesys/api-manager/internal/team"
 	"github.com/fernandotsda/nemesys/api-manager/internal/uauth"
@@ -27,6 +29,13 @@ func Set(api *api.API) {
 	// user authentication
 	r.POST("/login", middleware.Limiter(api, time.Second/2), uauth.LoginHandler(api))
 	r.POST("/logout", middleware.Protect(api, roles.Viewer), uauth.Logout(api))
+
+	// global data
+	global := r.Group("/global", middleware.Protect(api, roles.Admin))
+	{
+		global.GET("/refkeys/:refkey", refkey.GetHandler(api))
+		global.POST("/metrics/data", metricdata.AddHandler(api))
+	}
 
 	// users config
 	users := r.Group("/users")
@@ -89,6 +98,34 @@ func Set(api *api.API) {
 		dp.POST("/", datapolicy.CreateHandler(api))
 		dp.PATCH("/:id", datapolicy.UpdateHandler(api))
 		dp.DELETE("/:id", datapolicy.DeleteHandler(api))
+	}
+
+	// Basic metrics
+	basic := r.Group("/containers/basics", middleware.Protect(api, roles.Admin))
+	{
+		// container
+		basic.GET("/", container.MGet(api, types.CTBasic))
+		basic.GET("/:containerId", container.GetBasicHandler(api))
+		basic.POST("/", container.CreateBasicHandler(api))
+		basic.PATCH("/:containerId", container.UpdateBasicHandler(api))
+		basic.DELETE("/:containerId", container.DeleteHandler(api))
+
+		metrics := basic.Group("/:containerId/metrics")
+		{
+			metrics.GET("/", metric.MGet(api, types.CTBasic))
+			metrics.GET("/:metricId", metric.GetBasicHandler(api))
+			metrics.POST("/", metric.CreateBasicHandler(api))
+			metrics.PATCH("/:metricId", metric.UpdateBasicHandler(api))
+			metrics.DELETE("/:metricId", metric.DeleteHandler(api))
+
+			refkeys := metrics.Group("/:metricId/refkeys")
+			{
+				refkeys.GET("/", refkey.MGetHandler(api))
+				refkeys.POST("/", refkey.CreateHandler(api, types.CTBasic))
+				refkeys.PATCH("/:refkeyId", refkey.UpdateHandler(api, types.CTBasic))
+				refkeys.DELETE("/:refkeyId", refkey.DeleteHandler(api))
+			}
+		}
 	}
 
 	// SNMPv2c container and metrics

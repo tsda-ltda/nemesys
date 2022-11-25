@@ -29,11 +29,11 @@ func (c *Cache) SetSNMPAgent(ctx context.Context, containerId int32, agent model
 	if err != nil {
 		return err
 	}
-	return c.Set(ctx, b, rdb.CacheGoSNMPConfig(containerId), c.snmpAgentExp)
+	return c.Set(ctx, b, rdb.CacheGoSNMPConfigKey(containerId), c.snmpAgentExp)
 }
 
 func (c *Cache) GetSNMPAgent(ctx context.Context, containerId int32) (r GetGoSNMPConfigResponse, err error) {
-	b, err := c.Get(ctx, rdb.CacheGoSNMPConfig(containerId))
+	b, err := c.Get(ctx, rdb.CacheGoSNMPConfigKey(containerId))
 	if err != nil {
 		if err != redis.Nil {
 			return r, err
@@ -52,7 +52,7 @@ func (c *Cache) SetSNMPMetrics(ctx context.Context, metrics []models.SNMPMetric)
 		if err != nil {
 			return err
 		}
-		pipe.Set(ctx, rdb.CacheSNMPMetric(m.Id), b, c.snmpMetricExp)
+		pipe.Set(ctx, rdb.CacheSNMPMetricKey(m.Id), b, c.snmpMetricExp)
 	}
 	_, err = pipe.Exec(ctx)
 	return err
@@ -62,7 +62,7 @@ func (c *Cache) GetSNMPMetrics(ctx context.Context, ids []int64) (r []GetSNMPMet
 	pipe := c.redis.Pipeline()
 	cmds := make([]*redis.StringCmd, len(ids))
 	for i, id := range ids {
-		cmds[i] = pipe.Get(ctx, rdb.CacheSNMPMetric(id))
+		cmds[i] = pipe.Get(ctx, rdb.CacheSNMPMetricKey(id))
 	}
 	_, err = pipe.Exec(ctx)
 	if err != nil && err != redis.Nil {

@@ -81,6 +81,20 @@ var sqlCommands []string = []string{
 	`CREATE INDEX metrics_container_id_index ON metrics (container_id);`,
 	`CREATE INDEX metrics_container_type_index ON metrics (container_type);`,
 
+	// Create metrics ref table
+	`CREATE TABLE metrics_ref (
+		id SERIAL8 PRIMARY KEY,
+		refkey VARCHAR (200) UNIQUE NOT NULL,
+		metric_id INT8 NOT NULL,
+		CONSTRAINT fk_metric_id
+			FOREIGN KEY(metric_id)
+				REFERENCES metrics(id)
+				ON DELETE CASCADE
+	);`,
+
+	// Create metrics ref index
+	`CREATE INDEX metrics_ref_metric_id ON metrics_ref (metric_id);`,
+
 	// SNMP Container table
 	`CREATE TABLE snmpv2c_containers (
 		container_id INT4 UNIQUE NOT NULL,
