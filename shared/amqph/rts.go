@@ -19,14 +19,14 @@ func (a *Amqph) GetRTSData(r models.MetricRequest) (d amqp091.Delivery, err erro
 	// encode request
 	b, err := amqp.Encode(r)
 	if err != nil {
-		a.log.Error("fail to encode metric request", logger.ErrField(err))
+		a.log.Error("Fail to encode metric request", logger.ErrField(err))
 		return d, err
 	}
 
 	// generate uuid
 	uuid, err := uuid.New()
 	if err != nil {
-		a.log.Error("fail to create new uuid", logger.ErrField(err))
+		a.log.Error("Fail to create new uuid", logger.ErrField(err))
 		return d, err
 	}
 
@@ -57,7 +57,7 @@ func (a *Amqph) listenRTSMetricData() {
 	go func() {
 		msgs, err := a.Listen("", amqp.ExchangeRTSMetricDataResponse)
 		if err != nil {
-			a.log.Panic("fail to listen amqp messages", logger.ErrField(err))
+			a.log.Panic("Fail to listen amqp messages", logger.ErrField(err))
 			return
 		}
 		for d := range msgs {

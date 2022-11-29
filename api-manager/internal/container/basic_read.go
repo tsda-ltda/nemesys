@@ -30,7 +30,7 @@ func GetBasicHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get basic container", logger.ErrField(err))
+			api.Log.Error("Fail to get basic container", logger.ErrField(err))
 			return
 		}
 		if !r.Exists {

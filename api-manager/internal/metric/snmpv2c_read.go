@@ -31,7 +31,7 @@ func GetSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get metric", logger.ErrField(err))
+			api.Log.Error("Fail to get metric", logger.ErrField(err))
 			return
 		}
 		if !r.Exists {

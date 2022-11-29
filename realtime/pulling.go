@@ -64,11 +64,11 @@ func (s *RTS) startMetricPulling(r models.MetricRequest, config models.RTSMetric
 		if !ok {
 			res, err := s.pg.GetContainerRTSConfig(context.Background(), r.ContainerId)
 			if err != nil {
-				s.log.Error("fail to get containers's RTS info", logger.ErrField(err))
+				s.log.Error("Fail to get containers's RTS info", logger.ErrField(err))
 				return
 			}
 			if !res.Exists {
-				s.log.Warn("fail to start metric pulling, container does not exists")
+				s.log.Warn("Fail to start metric pulling, container does not exists")
 				return
 			}
 
@@ -84,11 +84,11 @@ func (s *RTS) startMetricPulling(r models.MetricRequest, config models.RTSMetric
 			s.pulling[r.ContainerId] = c
 			c.OnClose = func(cp *ContainerPulling) {
 				delete(s.pulling, cp.Id)
-				s.log.Debug("container pulling stoped, id: " + strconv.FormatInt(int64(cp.Id), 10))
+				s.log.Debug("Container pulling stoped, id: " + strconv.FormatInt(int64(cp.Id), 10))
 			}
 
 			go c.Run()
-			s.log.Debug("container pulling started, id: " + strconv.FormatInt(int64(r.ContainerId), 10))
+			s.log.Debug("Container pulling started, id: " + strconv.FormatInt(int64(r.ContainerId), 10))
 		}
 
 		m, ok := c.Metrics[r.MetricId]
@@ -151,7 +151,7 @@ func (c *ContainerPulling) Run() {
 
 			routingKey, err := amqp.GetDataRoutingKey(r.ContainerType)
 			if err != nil {
-				c.RTS.log.Error("fail ge data routing key", logger.ErrField(err))
+				c.RTS.log.Error("Fail get data routing key", logger.ErrField(err))
 				continue
 			}
 
@@ -179,7 +179,7 @@ func (c *ContainerPulling) AddMetric(m MetricPulling) {
 // Remove removes a metric.
 func (c *ContainerPulling) remove(metricId int64) {
 	delete(c.Metrics, metricId)
-	c.RTS.log.Debug("metric removed from pulling, metric id: " + strconv.FormatInt(metricId, 10))
+	c.RTS.log.Debug("Metric removed from pulling, metric id: " + strconv.FormatInt(metricId, 10))
 }
 
 // Close closes the container pulling.

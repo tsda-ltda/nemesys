@@ -46,7 +46,7 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check if target port exists", logger.ErrField(err))
+			api.Log.Error("Fail to check if target port exists", logger.ErrField(err))
 			return
 		}
 		if exists {
@@ -60,12 +60,12 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to crate snmpv2c container", logger.ErrField(err))
+			api.Log.Error("Fail to crate SNMPv2c container", logger.ErrField(err))
 			return
 		}
 		container.Base.Id = id
 		container.Protocol.Id = id
-		api.Log.Debug("snmp container crated, name: " + container.Base.Name)
+		api.Log.Debug("SNMPv2c container crated, name: " + container.Base.Name)
 		api.Amqph.NotifyContainerCreated(container.Base, container.Protocol, types.CTSNMPv2c)
 
 		c.Status(http.StatusOK)

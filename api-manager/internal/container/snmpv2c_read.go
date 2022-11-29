@@ -29,7 +29,7 @@ func GetSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get snmpv2c container")
+			api.Log.Error("Fail to get SNMPv2c container")
 			return
 		}
 		if !r.Exists {

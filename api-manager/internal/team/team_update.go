@@ -55,7 +55,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check if ident is available", logger.ErrField(err))
+			api.Log.Error("Fail to check if ident is available", logger.ErrField(err))
 			return
 		}
 		if exists {
@@ -70,7 +70,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to update team", logger.ErrField(err))
+			api.Log.Error("Fail to update team", logger.ErrField(err))
 			return
 		}
 		if !exists {
@@ -78,7 +78,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		api.Log.Debug("team updated successfully, id" + fmt.Sprint(id))
+		api.Log.Debug("Team updated successfully, id" + fmt.Sprint(id))
 
 		c.Status(http.StatusOK)
 	}

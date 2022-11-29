@@ -31,7 +31,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to delete custom query on database", logger.ErrField(err))
+			api.Log.Error("Fail to delete custom query on database", logger.ErrField(err))
 			return
 		}
 		if !exists {

@@ -31,14 +31,14 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to delete team", logger.ErrField(err))
+			api.Log.Error("Fail to delete team", logger.ErrField(err))
 			return
 		}
 		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTeamNotFound))
 			return
 		}
-		api.Log.Debug("team deleted, id: " + fmt.Sprint(id))
+		api.Log.Debug("Team deleted, id: " + fmt.Sprint(id))
 
 		c.Status(http.StatusNoContent)
 	}

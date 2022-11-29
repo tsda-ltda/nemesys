@@ -32,7 +32,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to delete user", logger.ErrField(err))
+			api.Log.Error("Fail to delete user", logger.ErrField(err))
 			return
 		}
 		if !exists {
@@ -40,7 +40,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		api.Log.Debug("user deleted with success, id: " + fmt.Sprint(id))
+		api.Log.Debug("User deleted with success, id: " + fmt.Sprint(id))
 		c.Status(http.StatusNoContent)
 	}
 }

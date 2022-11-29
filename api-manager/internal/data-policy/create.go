@@ -47,19 +47,19 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to count number of data polcies", logger.ErrField(err))
+			api.Log.Error("Fail to count number of data polcies", logger.ErrField(err))
 			return
 		}
 
 		max, err := strconv.ParseInt(env.MaxDataPolicies, 10, 0)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to parse env.MaxDataPolicies", logger.ErrField(err))
+			api.Log.Error("Fail to parse env.MaxDataPolicies", logger.ErrField(err))
 			return
 		}
 		if n >= max {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgMaxDataPolicy))
-			api.Log.Warn("attempt to create data-policy failed, maximum number reached")
+			api.Log.Warn("Attempt to create data-policy failed, maximum number reached")
 			return
 		}
 
@@ -68,7 +68,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			api.Log.Error("fail to create data policy on postgres", logger.ErrField(err))
+			api.Log.Error("Fail to create data policy on postgres", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -80,14 +80,14 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			api.Log.Error("fail to create data policy on influxdb", logger.ErrField(err))
+			api.Log.Error("Fail to create data policy on influxdb", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			err = tx.Rollback()
 			if err != nil {
 				if ctx.Err() != nil {
 					return
 				}
-				api.Log.Error("fail to rollback tx", logger.ErrField(err))
+				api.Log.Error("Fail to rollback tx", logger.ErrField(err))
 				return
 			}
 			return
@@ -98,11 +98,11 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to commit tx", logger.ErrField(err))
+			api.Log.Error("Fail to commit tx", logger.ErrField(err))
 			return
 		}
 
-		api.Log.Info("data policy created")
+		api.Log.Info("Data policy created")
 		c.Status(http.StatusOK)
 	}
 }

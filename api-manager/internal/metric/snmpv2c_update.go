@@ -65,7 +65,7 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check container and data policy existence", logger.ErrField(err))
+			api.Log.Error("Fail to check container and data policy existence", logger.ErrField(err))
 			return
 		}
 		if !r.Exists {
@@ -87,14 +87,14 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to update snmp metric", logger.ErrField(err))
+			api.Log.Error("Fail to update snmp metric", logger.ErrField(err))
 			return
 		}
 		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
 			return
 		}
-		api.Log.Debug("metric updated, name" + metric.Base.Name)
+		api.Log.Debug("Metric updated, name" + metric.Base.Name)
 		api.Amqph.NotifyMetricUpdated(metric.Base, metric.Protocol, types.CTSNMPv2c)
 
 		c.Status(http.StatusOK)

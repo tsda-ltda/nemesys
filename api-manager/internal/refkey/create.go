@@ -49,7 +49,7 @@ func CreateHandler(api *api.API, containerType types.ContainerType) func(c *gin.
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check if metric and refkey exists", logger.ErrField(err))
+			api.Log.Error("Fail to check if metric and refkey exists", logger.ErrField(err))
 			return
 		}
 		if !metricExists {
@@ -67,7 +67,7 @@ func CreateHandler(api *api.API, containerType types.ContainerType) func(c *gin.
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to create refkey", logger.ErrField(err))
+			api.Log.Error("Fail to create refkey", logger.ErrField(err))
 			return
 		}
 

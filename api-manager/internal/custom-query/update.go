@@ -55,7 +55,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check custom query ident existence", logger.ErrField(err))
+			api.Log.Error("Fail to check custom query ident existence", logger.ErrField(err))
 			return
 		}
 		if !r.Exists {
@@ -73,10 +73,10 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to update custom query", logger.ErrField(err))
+			api.Log.Error("Fail to update custom query", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("custom query updated, ident: " + cq.Ident)
+		api.Log.Debug("Custom query updated, ident: " + cq.Ident)
 
 		c.Status(http.StatusOK)
 	}

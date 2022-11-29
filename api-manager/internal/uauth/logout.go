@@ -27,7 +27,7 @@ func Logout(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get session metadata", logger.ErrField(err))
+			api.Log.Error("Fail to get session metadata", logger.ErrField(err))
 			return
 		}
 		err = api.Auth.RemoveSession(ctx, meta.UserId)
@@ -58,7 +58,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get session metadata", logger.ErrField(err))
+			api.Log.Error("Fail to get session metadata", logger.ErrField(err))
 			return
 		}
 
@@ -74,7 +74,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			api.Log.Error("fail to get user role", logger.ErrField(err))
+			api.Log.Error("Fail to get user role", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -96,7 +96,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgSessionAlreadyRemoved))
 			return
 		}
-		api.Log.Debug("user forcibly logout with success, id: " + rawId)
+		api.Log.Debug("User forcibly logout with success, id: " + rawId)
 		c.Status(http.StatusOK)
 	}
 }

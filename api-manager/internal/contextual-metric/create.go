@@ -49,7 +49,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check if context, metric and ident exists", logger.ErrField(err))
+			api.Log.Error("Fail to check if context, metric and ident exists", logger.ErrField(err))
 			return
 		}
 
@@ -74,7 +74,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		api.Log.Debug("contexual metric created, ident: " + cmetric.Ident)
+		api.Log.Debug("Contextual metric created, ident: " + cmetric.Ident)
 
 		c.Status(http.StatusOK)
 	}

@@ -48,7 +48,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check if username and email exists", logger.ErrField(err))
+			api.Log.Error("Fail to check if username and email exists", logger.ErrField(err))
 			return
 		}
 
@@ -65,7 +65,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		pwHashed, err := auth.Hash(user.Password, api.UserPWBcryptCost)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to hash password", logger.ErrField(err))
+			api.Log.Error("Fail to hash password", logger.ErrField(err))
 			return
 		}
 
@@ -82,7 +82,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to update user", logger.ErrField(err))
+			api.Log.Error("Fail to update user", logger.ErrField(err))
 			return
 		}
 		if exists {
@@ -90,7 +90,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		api.Log.Debug("user updated with success, username: " + user.Username)
+		api.Log.Debug("User updated with success, username: " + user.Username)
 		c.Status(http.StatusOK)
 	}
 }

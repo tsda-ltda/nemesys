@@ -41,7 +41,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check if username and email exists", logger.ErrField(err))
+			api.Log.Error("Fail to check if username and email exists", logger.ErrField(err))
 			return
 		}
 		if r.UsernameExists {
@@ -56,7 +56,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		pwHashed, err := auth.Hash(user.Password, api.UserPWBcryptCost)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to hash password", logger.ErrField(err))
+			api.Log.Error("Fail to hash password", logger.ErrField(err))
 			return
 		}
 
@@ -72,7 +72,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to create user", logger.ErrField(err))
+			api.Log.Error("Fail to create user", logger.ErrField(err))
 			return
 		}
 		api.Log.Debug("new user created, username: " + user.Username)

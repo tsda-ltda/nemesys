@@ -55,7 +55,7 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check container and data policy existence", logger.ErrField(err))
+			api.Log.Error("Fail to check container and data policy existence", logger.ErrField(err))
 			return
 		}
 		if !r.DataPolicyExists {
@@ -73,12 +73,12 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to create snmpv2c metric", logger.ErrField(err))
+			api.Log.Error("Fail to create snmpv2c metric", logger.ErrField(err))
 			return
 		}
 		metric.Base.Id = id
 		metric.Protocol.Id = id
-		api.Log.Debug("snmp metric created, name: " + metric.Base.Name)
+		api.Log.Debug("SNMPv2c metric created, name: " + metric.Base.Name)
 		api.Amqph.NotifyMetricCreated(metric.Base, metric.Protocol, types.CTSNMPv2c)
 
 		c.Status(http.StatusOK)

@@ -32,7 +32,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to delete data policy from postgres", logger.ErrField(err))
+			api.Log.Error("Fail to delete data policy from postgres", logger.ErrField(err))
 			return
 		}
 		if !exists {
@@ -46,12 +46,12 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to delete data policy from influxdb", logger.ErrField(err))
+			api.Log.Error("Fail to delete data policy from influxdb", logger.ErrField(err))
 			return
 		}
 		api.Amqph.NotifyDataPolicyDeleted(int16(id))
 
-		api.Log.Info("data policy deleted, id: " + fmt.Sprint(id))
+		api.Log.Info("Data policy deleted, id: " + fmt.Sprint(id))
 		c.Status(http.StatusNoContent)
 	}
 }

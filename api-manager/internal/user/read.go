@@ -28,7 +28,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		r, err := api.PG.GetUserWithoutPW(ctx, int32(id))
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check if user exists", logger.ErrField(err))
+			api.Log.Error("Fail to check if user exists", logger.ErrField(err))
 			return
 		}
 
@@ -70,7 +70,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to query users", logger.ErrField(err))
+			api.Log.Error("Fail to query users", logger.ErrField(err))
 			return
 		}
 

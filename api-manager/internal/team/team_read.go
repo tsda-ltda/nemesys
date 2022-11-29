@@ -29,7 +29,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			api.Log.Error("fail to get team", logger.ErrField(err))
+			api.Log.Error("Fail to get team", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -70,7 +70,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			api.Log.Error("fail to get teams", logger.ErrField(err))
+			api.Log.Error("Fail to get teams", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}

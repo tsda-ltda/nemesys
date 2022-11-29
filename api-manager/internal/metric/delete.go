@@ -37,7 +37,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check if container exists", logger.ErrField(err))
+			api.Log.Error("Fail to check if container exists", logger.ErrField(err))
 			return
 		}
 		if !exists {
@@ -51,7 +51,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to delete metric", logger.ErrField(err))
+			api.Log.Error("Fail to delete metric", logger.ErrField(err))
 			return
 		}
 
@@ -59,7 +59,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
 			return
 		}
-		api.Log.Debug("metric deleted, id: " + rawId)
+		api.Log.Debug("Metric deleted, id: " + rawId)
 		api.Amqph.NotifyMetricDeleted(id, int32(containerId))
 
 		c.Status(http.StatusNoContent)

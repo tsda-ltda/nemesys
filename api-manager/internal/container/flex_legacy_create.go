@@ -47,7 +47,7 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check if container, target port combination and serial-number exists", logger.ErrField(err))
+			api.Log.Error("Fail to check if container, target port combination and serial-number exists", logger.ErrField(err))
 			return
 		}
 		if r.TargetPortExists {
@@ -65,12 +65,12 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to create flex legacy container", logger.ErrField(err))
+			api.Log.Error("Fail to create flex legacy container", logger.ErrField(err))
 			return
 		}
 		container.Base.Id = id
 		container.Protocol.Id = id
-		api.Log.Debug("flex legacy container created with success, name: " + container.Base.Name)
+		api.Log.Debug("Flex legacy container created with success, name: " + container.Base.Name)
 		api.Amqph.NotifyContainerCreated(container.Base, container.Protocol, types.CTFlexLegacy)
 
 		c.Status(http.StatusOK)

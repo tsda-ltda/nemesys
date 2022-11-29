@@ -22,7 +22,7 @@ func Limiter(api *api.API, duration time.Duration) func(c *gin.Context) {
 				return
 			}
 			c.AbortWithStatus(http.StatusInternalServerError)
-			api.Log.Error("fail to get user limited on cache", logger.ErrField(err))
+			api.Log.Error("Fail to get user limited on cache", logger.ErrField(err))
 			return
 		}
 		if suspended {
@@ -35,7 +35,7 @@ func Limiter(api *api.API, duration time.Duration) func(c *gin.Context) {
 				return
 			}
 			c.AbortWithStatus(http.StatusInternalServerError)
-			api.Log.Error("fail to set user limited on cache", logger.ErrField(err))
+			api.Log.Error("Fail to set user limited on cache", logger.ErrField(err))
 			return
 		}
 		c.Next()

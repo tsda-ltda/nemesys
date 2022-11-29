@@ -10,7 +10,7 @@ func (a *Amqph) declareExchages() {
 	// open socket channel
 	ch, err := a.conn.Channel()
 	if err != nil {
-		a.log.Panic("fail to open socket channel")
+		a.log.Panic("Fail to open socket channel")
 	}
 	defer ch.Close()
 
@@ -26,7 +26,7 @@ func (a *Amqph) declareExchages() {
 			args,
 		)
 		if err != nil {
-			a.log.Panic("fail declare exchange ("+name+").", logger.ErrField(err))
+			a.log.Panic("Fail declare exchange ("+name+").", logger.ErrField(err))
 		}
 	}
 

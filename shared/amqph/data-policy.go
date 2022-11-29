@@ -33,14 +33,14 @@ func (a *Amqph) OnDataPolicyDeleted(queue ...string) <-chan int16 {
 	go func() {
 		msgs, err := a.Listen(q, amqp.ExchangeDataPolicyDeleted)
 		if err != nil {
-			a.log.Panic("fail to listen amqp messages", logger.ErrField(err))
+			a.log.Panic("Fail to listen amqp messages", logger.ErrField(err))
 			return
 		}
 		for d := range msgs {
 			var id int16
 			err = amqp.Decode(d.Body, &id)
 			if err != nil {
-				a.log.Error("fail to decode delivery body", logger.ErrField(err))
+				a.log.Error("Fail to decode delivery body", logger.ErrField(err))
 				continue
 			}
 			delivery <- id

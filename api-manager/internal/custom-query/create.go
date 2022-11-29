@@ -46,7 +46,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check custom query ident existence", logger.ErrField(err))
+			api.Log.Error("Fail to check custom query ident existence", logger.ErrField(err))
 			return
 		}
 
@@ -61,10 +61,10 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to create custom query", logger.ErrField(err))
+			api.Log.Error("Fail to create custom query", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("custom query created, ident: " + cq.Ident)
+		api.Log.Debug("Custom query created, ident: " + cq.Ident)
 
 		c.Status(http.StatusOK)
 	}

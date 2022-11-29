@@ -55,7 +55,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check if contextual metric exits", logger.ErrField(err))
+			api.Log.Error("Fail to check if contextual metric exits", logger.ErrField(err))
 			return
 		}
 		if ie {
@@ -71,14 +71,14 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to update contextual metric", logger.ErrField(err))
+			api.Log.Error("Fail to update contextual metric", logger.ErrField(err))
 			return
 		}
 		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
 			return
 		}
-		api.Log.Debug("contextual metric updated, id: " + rawId)
+		api.Log.Debug("Contextual metric updated, id: " + rawId)
 
 		c.Status(http.StatusOK)
 	}

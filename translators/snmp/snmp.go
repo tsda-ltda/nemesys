@@ -67,11 +67,11 @@ func New() service.Service {
 }
 
 func (s *SNMP) Run() {
-	s.log.Info("starting listeners...")
+	s.log.Info("Starting listeners...")
 	go s.getMetricListener()  // listen to metric data requests
 	go s.getMetricsListener() // listen to metrics data requests
 
-	s.log.Info("service is ready!")
+	s.log.Info("Service is ready!")
 	err := <-s.Done()
 	if err != nil {
 		s.log.Error("Service stopped with error", logger.ErrField(err))

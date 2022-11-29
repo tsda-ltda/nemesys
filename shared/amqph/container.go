@@ -85,14 +85,14 @@ func (a *Amqph) OnContainerCreated(queue ...string) <-chan ContainerNotification
 	go func() {
 		msgs, err := a.Listen(q, amqp.ExchangeContainerCreated)
 		if err != nil {
-			a.log.Panic("fail to listen amqp messages", logger.ErrField(err))
+			a.log.Panic("Fail to listen amqp messages", logger.ErrField(err))
 			return
 		}
 		for d := range msgs {
 			var n ContainerNotification
 			err = amqp.Decode(d.Body, &n)
 			if err != nil {
-				a.log.Error("fail to decode delivery body", logger.ErrField(err))
+				a.log.Error("Fail to decode delivery body", logger.ErrField(err))
 				continue
 			}
 			delivery <- n
@@ -110,14 +110,14 @@ func (a *Amqph) OnContainerUpdated(queue ...string) <-chan ContainerNotification
 	go func() {
 		msgs, err := a.Listen(q, amqp.ExchangeContainerUpdated)
 		if err != nil {
-			a.log.Panic("fail to listen amqp messages", logger.ErrField(err))
+			a.log.Panic("Fail to listen amqp messages", logger.ErrField(err))
 			return
 		}
 		for d := range msgs {
 			var n ContainerNotification
 			err = amqp.Decode(d.Body, &n)
 			if err != nil {
-				a.log.Error("fail to decode delivery body", logger.ErrField(err))
+				a.log.Error("Fail to decode delivery body", logger.ErrField(err))
 				continue
 			}
 			delivery <- n
@@ -135,14 +135,14 @@ func (a *Amqph) OnContainerDeleted(queue ...string) <-chan int32 {
 	go func() {
 		msgs, err := a.Listen(q, amqp.ExchangeContainerDeleted)
 		if err != nil {
-			a.log.Panic("fail to listen amqp messages", logger.ErrField(err))
+			a.log.Panic("Fail to listen amqp messages", logger.ErrField(err))
 			return
 		}
 		for d := range msgs {
 			var id int32
 			err = amqp.Decode(d.Body, &id)
 			if err != nil {
-				a.log.Error("fail to decode delivery body", logger.ErrField(err))
+				a.log.Error("Fail to decode delivery body", logger.ErrField(err))
 				continue
 			}
 			delivery <- id

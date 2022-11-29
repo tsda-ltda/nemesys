@@ -30,7 +30,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to delete refkey", logger.ErrField(err))
+			api.Log.Error("Fail to delete refkey", logger.ErrField(err))
 			return
 		}
 
@@ -52,7 +52,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to delete refkey", logger.ErrField(err))
+			api.Log.Error("Fail to delete refkey", logger.ErrField(err))
 			return
 		}
 		if !exists {

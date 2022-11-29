@@ -34,7 +34,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to delete container", logger.ErrField(err))
+			api.Log.Error("Fail to delete container", logger.ErrField(err))
 			return
 		}
 
@@ -43,7 +43,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
-		api.Log.Debug("container deleted, id: " + rawId)
+		api.Log.Debug("Container deleted, id: " + rawId)
 		api.Amqph.NotifyContainerDeleted(int32(id))
 
 		c.Status(http.StatusNoContent)

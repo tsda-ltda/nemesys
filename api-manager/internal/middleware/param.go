@@ -89,7 +89,7 @@ func ParseContextualMetricParams(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.AbortWithStatus(http.StatusInternalServerError)
-			api.Log.Error("fail to get ids on database", logger.ErrField(err))
+			api.Log.Error("Fail to get ids on database", logger.ErrField(err))
 			return
 		}
 		if !r.Exists {

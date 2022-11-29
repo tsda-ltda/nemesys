@@ -32,7 +32,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to delete contextual metric", logger.ErrField(err))
+			api.Log.Error("Fail to delete contextual metric", logger.ErrField(err))
 			return
 		}
 
@@ -40,7 +40,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
 			return
 		}
-		api.Log.Debug("contextual metric deleted, id: " + rawId)
+		api.Log.Debug("Contextual metric deleted, id: " + rawId)
 
 		c.Status(http.StatusNoContent)
 	}

@@ -55,7 +55,7 @@ func CreateBasicHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check container and data policy existence", logger.ErrField(err))
+			api.Log.Error("Fail to check container and data policy existence", logger.ErrField(err))
 			return
 		}
 		if !r.DataPolicyExists {
@@ -73,10 +73,10 @@ func CreateBasicHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to create basic metric", logger.ErrField(err))
+			api.Log.Error("Fail to create basic metric", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("basic metric created, name: " + metric.Base.Name)
+		api.Log.Debug("Basic metric created, name: " + metric.Base.Name)
 		api.Amqph.NotifyMetricCreated(metric.Base, metric.Protocol, types.CTFlexLegacy)
 
 		c.Status(http.StatusOK)

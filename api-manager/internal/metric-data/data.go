@@ -48,7 +48,7 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get metricAddDataForm on cache", logger.ErrField(err))
+			api.Log.Error("Fail to get metricAddDataForm on cache", logger.ErrField(err))
 			return
 		}
 		form = cacheRes.Form
@@ -60,7 +60,7 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 					return
 				}
 				c.Status(http.StatusInternalServerError)
-				api.Log.Error("fail to get refkey", logger.ErrField(err))
+				api.Log.Error("Fail to get refkey", logger.ErrField(err))
 				return
 			}
 			if !exists {
@@ -74,7 +74,7 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 					return
 				}
 				c.Status(http.StatusInternalServerError)
-				api.Log.Error("fail to get metric request", logger.ErrField(err))
+				api.Log.Error("Fail to get metric request", logger.ErrField(err))
 				return
 			}
 
@@ -84,7 +84,7 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 					return
 				}
 				c.Status(http.StatusInternalServerError)
-				api.Log.Error("fail to check if metric dhs_enabled is enabled", logger.ErrField(err))
+				api.Log.Error("Fail to check if metric dhs_enabled is enabled", logger.ErrField(err))
 				return
 			}
 
@@ -101,7 +101,7 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 					return
 				}
 				c.Status(http.StatusInternalServerError)
-				api.Log.Error("fail to set metricAddDataForm on cache", logger.ErrField(err))
+				api.Log.Error("Fail to set metricAddDataForm on cache", logger.ErrField(err))
 				return
 			}
 		}
@@ -143,16 +143,16 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 					return
 				}
 				c.Status(http.StatusInternalServerError)
-				api.Log.Error("fail to write point in influxdb", logger.ErrField(err))
+				api.Log.Error("Fail to write point in influxdb", logger.ErrField(err))
 				return
 			}
-			api.Log.Debug("metric data point saved on influxdb, metric id: " + metricIdString)
+			api.Log.Debug("Metric data point saved on influxdb, metric id: " + metricIdString)
 		}
 
 		b, err := amqp.Encode(metricDataResponse)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to encode metric data response", logger.ErrField(err))
+			api.Log.Error("Fail to encode metric data response", logger.ErrField(err))
 			return
 		}
 
@@ -165,7 +165,7 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 				Type:       amqp.FromMessageType(amqp.OK),
 			},
 		}
-		api.Log.Debug("metric data point sent to RTS, metric id: " + metricIdString)
+		api.Log.Debug("Metric data point sent to RTS, metric id: " + metricIdString)
 
 	}
 }

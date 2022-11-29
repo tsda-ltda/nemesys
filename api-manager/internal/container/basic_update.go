@@ -50,7 +50,7 @@ func UpdateBasicHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to create basic container", logger.ErrField(err))
+			api.Log.Error("Fail to update basic container", logger.ErrField(err))
 			return
 		}
 		if !exists {

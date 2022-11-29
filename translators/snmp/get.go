@@ -48,7 +48,7 @@ func (s *SNMP) getMetric(agent models.SNMPAgent, request models.MetricRequest, c
 	// open connection
 	err := gosnmp.Connect()
 	if err != nil {
-		s.log.Debug("fail to connect agent", logger.ErrField(err))
+		s.log.Debug("Fail to connect agent", logger.ErrField(err))
 		return
 	}
 	defer gosnmp.Conn.Close()
@@ -64,7 +64,7 @@ func (s *SNMP) getMetric(agent models.SNMPAgent, request models.MetricRequest, c
 		}},
 	})
 	if err != nil {
-		s.log.Debug("fail to get snmp metrics", logger.ErrField(err))
+		s.log.Debug("Fail to get snmp metrics", logger.ErrField(err))
 		return
 	}
 	oid := metrics[0].OID
@@ -72,7 +72,7 @@ func (s *SNMP) getMetric(agent models.SNMPAgent, request models.MetricRequest, c
 	// fetch data
 	pdus, err := s.get(gosnmp, []string{oid})
 	if err != nil {
-		s.log.Debug("fail to fetch data", logger.ErrField(err))
+		s.log.Debug("Fail to fetch data", logger.ErrField(err))
 		p.Type = amqp.FromMessageType(amqp.Failed)
 		return
 	}
@@ -89,7 +89,7 @@ func (s *SNMP) getMetric(agent models.SNMPAgent, request models.MetricRequest, c
 	// parse raw value
 	v, err := ParsePDU(pdu)
 	if err != nil {
-		s.log.Debug("fail to parse pdu value", logger.ErrField(err))
+		s.log.Debug("Fail to parse pdu value", logger.ErrField(err))
 		p.Type = amqp.FromMessageType(amqp.Failed)
 		return
 	}
@@ -97,7 +97,7 @@ func (s *SNMP) getMetric(agent models.SNMPAgent, request models.MetricRequest, c
 	// parse value to metric type
 	v, err = types.ParseValue(v, t)
 	if err != nil {
-		s.log.Debug("fail to parse pdu value to metric value", logger.ErrField(err))
+		s.log.Debug("Fail to parse pdu value to metric value", logger.ErrField(err))
 		p.Type = amqp.FromMessageType(amqp.InvalidParse)
 		return
 	}
@@ -105,7 +105,7 @@ func (s *SNMP) getMetric(agent models.SNMPAgent, request models.MetricRequest, c
 	// evaluate value
 	v, err = s.evaluator.Evaluate(v, request.MetricId, t)
 	if err != nil {
-		s.log.Warn("fail to evaluate metric value", logger.ErrField(err))
+		s.log.Warn("Fail to evaluate metric value", logger.ErrField(err))
 		p.Type = amqp.FromMessageType(amqp.EvaluateFailed)
 		return
 	}
@@ -124,7 +124,7 @@ func (s *SNMP) getMetric(agent models.SNMPAgent, request models.MetricRequest, c
 	// encode data
 	bytes, err := amqp.Encode(res)
 	if err != nil {
-		s.log.Error("fail to marshal data response", logger.ErrField(err))
+		s.log.Error("Fail to marshal data response", logger.ErrField(err))
 		p.Type = amqp.FromMessageType(amqp.InternalError)
 		return
 	}
@@ -133,7 +133,7 @@ func (s *SNMP) getMetric(agent models.SNMPAgent, request models.MetricRequest, c
 	p.Type = amqp.FromMessageType(amqp.OK)
 	p.Body = bytes
 
-	s.log.Debug("data published for metric: " + fmt.Sprint(request.MetricId))
+	s.log.Debug("Data published for metric: " + fmt.Sprint(request.MetricId))
 }
 
 func (s *SNMP) getMetrics(agent models.SNMPAgent, request models.MetricsRequest, correlationId string, routingKey string) {
@@ -171,7 +171,7 @@ func (s *SNMP) getMetrics(agent models.SNMPAgent, request models.MetricsRequest,
 	// connect
 	err := gosnmp.Connect()
 	if err != nil {
-		s.log.Error("fail to connect agent", logger.ErrField(err))
+		s.log.Error("Fail to connect agent", logger.ErrField(err))
 		return
 	}
 	defer gosnmp.Conn.Close()
@@ -183,7 +183,7 @@ func (s *SNMP) getMetrics(agent models.SNMPAgent, request models.MetricsRequest,
 		Metrics:       request.Metrics,
 	})
 	if err != nil {
-		s.log.Error("fail to get snmp metrics", logger.ErrField(err))
+		s.log.Error("Fail to get snmp metrics", logger.ErrField(err))
 	}
 
 	// get oids
@@ -195,7 +195,7 @@ func (s *SNMP) getMetrics(agent models.SNMPAgent, request models.MetricsRequest,
 	// fetch data
 	pdus, err := s.get(gosnmp, oids)
 	if err != nil {
-		s.log.Debug("fail to fetch data", logger.ErrField(err))
+		s.log.Debug("Fail to fetch data", logger.ErrField(err))
 		p.Type = amqp.FromMessageType(amqp.Failed)
 		return
 	}
@@ -221,7 +221,7 @@ func (s *SNMP) getMetrics(agent models.SNMPAgent, request models.MetricsRequest,
 					// parse SNMP response
 					v, err := ParsePDU(pdu)
 					if err != nil {
-						s.log.Debug("fail to parse PDU, name "+pdu.Name, logger.ErrField(err))
+						s.log.Debug("Fail to parse PDU, name "+pdu.Name, logger.ErrField(err))
 						res.Metrics[i].Failed = true
 						continue
 					}
@@ -229,7 +229,7 @@ func (s *SNMP) getMetrics(agent models.SNMPAgent, request models.MetricsRequest,
 					// parse value to metric type
 					v, err = types.ParseValue(v, r.Type)
 					if err != nil {
-						s.log.Warn("fail to parse SNMP value to metric value", logger.ErrField(err))
+						s.log.Warn("Fail to parse SNMP value to metric value", logger.ErrField(err))
 						res.Metrics[i].Failed = true
 						continue
 					}
@@ -237,7 +237,7 @@ func (s *SNMP) getMetrics(agent models.SNMPAgent, request models.MetricsRequest,
 					// evaluate value
 					v, err = s.evaluator.Evaluate(v, r.Id, r.Type)
 					if err != nil {
-						s.log.Warn("fail to evaluate value")
+						s.log.Warn("Fail to evaluate value")
 						res.Metrics[i].Failed = true
 						continue
 					}
@@ -255,14 +255,14 @@ func (s *SNMP) getMetrics(agent models.SNMPAgent, request models.MetricsRequest,
 	// encode response
 	bytes, err := amqp.Encode(res)
 	if err != nil {
-		s.log.Error("fail to encode metrics data response", logger.ErrField(err))
+		s.log.Error("Fail to encode metrics data response", logger.ErrField(err))
 		p.Type = amqp.FromMessageType(amqp.InternalError)
 		return
 	}
 
 	p.Type = amqp.FromMessageType(amqp.OK)
 	p.Body = bytes
-	s.log.Debug("metrics data published for container: " + fmt.Sprint(request.ContainerId))
+	s.log.Debug("Metrics data published for container: " + fmt.Sprint(request.ContainerId))
 }
 
 // Get fetch the OIDs's values. Returns an error only if an error is returned fo the SNMP Get request.

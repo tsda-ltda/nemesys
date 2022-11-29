@@ -25,7 +25,7 @@ func DataHandler(api *api.API) func(c *gin.Context) {
 		r, err := tools.GetMetricRequest(c)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get metric request", logger.ErrField(err))
+			api.Log.Error("Fail to get metric request", logger.ErrField(err))
 			return
 		}
 
@@ -37,7 +37,7 @@ func DataHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to publish data request", logger.ErrField(err))
+			api.Log.Error("Fail to publish data request", logger.ErrField(err))
 			return
 		}
 
@@ -55,7 +55,7 @@ func DataHandler(api *api.API) func(c *gin.Context) {
 		err = amqp.Decode(d.Body, &data)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to decode amqp body", logger.ErrField(err))
+			api.Log.Error("Fail to decode amqp body", logger.ErrField(err))
 			return
 		}
 
@@ -72,7 +72,7 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 		r, err := tools.GetMetricRequest(c)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get metric request", logger.ErrField(err))
+			api.Log.Error("Fail to get metric request", logger.ErrField(err))
 			return
 		}
 
@@ -112,7 +112,7 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 						return
 					}
 					c.Status(http.StatusInternalServerError)
-					api.Log.Error("fail to get custom query on cache", logger.ErrField(err))
+					api.Log.Error("Fail to get custom query on cache", logger.ErrField(err))
 					return
 				}
 
@@ -123,7 +123,7 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 							return
 						}
 						c.Status(http.StatusInternalServerError)
-						api.Log.Error("fail to get custom query on cache", logger.ErrField(err))
+						api.Log.Error("Fail to get custom query on cache", logger.ErrField(err))
 						return
 					}
 
@@ -139,7 +139,7 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 							return
 						}
 						c.Status(http.StatusInternalServerError)
-						api.Log.Error("fail to save custom query flux on cache", logger.ErrField(err))
+						api.Log.Error("Fail to save custom query flux on cache", logger.ErrField(err))
 						return
 					}
 				} else {
@@ -152,7 +152,7 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 						return
 					}
 					c.Status(http.StatusInternalServerError)
-					api.Log.Error("fail to get custom query on cache", logger.ErrField(err))
+					api.Log.Error("Fail to get custom query on cache", logger.ErrField(err))
 					return
 				}
 
@@ -163,7 +163,7 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 							return
 						}
 						c.Status(http.StatusInternalServerError)
-						api.Log.Error("fail to get custom query on cache", logger.ErrField(err))
+						api.Log.Error("Fail to get custom query on cache", logger.ErrField(err))
 						return
 					}
 
@@ -178,7 +178,7 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 							return
 						}
 						c.Status(http.StatusInternalServerError)
-						api.Log.Error("fail to save custom query flux on cache", logger.ErrField(err))
+						api.Log.Error("Fail to save custom query flux on cache", logger.ErrField(err))
 						return
 					}
 				} else {
@@ -197,7 +197,7 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to query metric data", logger.ErrField(err))
+			api.Log.Error("Fail to query metric data", logger.ErrField(err))
 			return
 		}
 		c.JSON(http.StatusOK, d)

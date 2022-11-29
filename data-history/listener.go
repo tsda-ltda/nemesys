@@ -20,7 +20,7 @@ func (d *DHS) metricsDataListener() {
 		},
 	)
 	if err != nil {
-		d.log.Panic("fail to listen metrics data")
+		d.log.Panic("Fail to listen metrics data")
 		return
 	}
 	for dv := range msgs {
@@ -34,7 +34,7 @@ func (d *DHS) metricsDataListener() {
 		var r models.MetricsDataResponse
 		err = amqp.Decode(dv.Body, &r)
 		if err != nil {
-			d.log.Error("fail to decode amqp message body", logger.ErrField(err))
+			d.log.Error("Fail to decode amqp message body", logger.ErrField(err))
 			continue
 		}
 
@@ -51,11 +51,11 @@ func (d *DHS) metricsDataListener() {
 				MetricBasicDataReponse: m,
 			}, time)
 			if err != nil {
-				d.log.Error("fail to write point", logger.ErrField(err))
+				d.log.Error("Fail to write point", logger.ErrField(err))
 				continue
 			}
 		}
-		d.log.Debug("metrics data points saved on influx buffer, container id: " + strconv.FormatInt(int64(r.ContainerId), 10))
+		d.log.Debug("Metrics data saved on influxdb, container id: " + strconv.FormatInt(int64(r.ContainerId), 10))
 	}
 }
 

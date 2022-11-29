@@ -40,7 +40,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get multi custom queries on database", logger.ErrField(err))
+			api.Log.Error("Fail to get multi custom queries on database", logger.ErrField(err))
 			return
 		}
 
@@ -69,7 +69,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to get custom query on database", logger.ErrField(err))
+			api.Log.Error("Fail to get custom query on database", logger.ErrField(err))
 			return
 		}
 		if !r.Exists {

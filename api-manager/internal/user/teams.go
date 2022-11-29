@@ -44,7 +44,7 @@ func TeamsHandler(api *api.API) func(c *gin.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			api.Log.Error("fail to get user's teams", logger.ErrField(err))
+			api.Log.Error("Fail to get user's teams", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}

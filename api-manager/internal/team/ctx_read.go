@@ -30,7 +30,7 @@ func GetContextHandler(api *api.API) func(c *gin.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			api.Log.Error("fail to get context", logger.ErrField(err))
+			api.Log.Error("Fail to get context", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -76,7 +76,7 @@ func MGetContextHandler(api *api.API) func(c *gin.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			api.Log.Error("fail to get contexts", logger.ErrField(err))
+			api.Log.Error("Fail to get contexts", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}

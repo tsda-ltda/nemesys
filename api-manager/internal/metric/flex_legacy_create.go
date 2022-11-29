@@ -55,7 +55,7 @@ func CreateFlexLegacyHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check container and data policy existence", logger.ErrField(err))
+			api.Log.Error("Fail to check container and data policy existence", logger.ErrField(err))
 			return
 		}
 		if !r.DataPolicyExists {
@@ -73,13 +73,13 @@ func CreateFlexLegacyHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to create flex legacy metric", logger.ErrField(err))
+			api.Log.Error("Fail to create flex legacy metric", logger.ErrField(err))
 			return
 		}
 		metric.Base.Id = id
 		metric.Protocol.Id = id
 
-		api.Log.Debug("flex legacy metric created, name: " + metric.Base.Name)
+		api.Log.Debug("Flex legacy metric created, name: " + metric.Base.Name)
 		api.Amqph.NotifyMetricCreated(metric.Base, metric.Protocol, types.CTFlexLegacy)
 
 		c.Status(http.StatusOK)

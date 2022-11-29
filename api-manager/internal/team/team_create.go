@@ -47,7 +47,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check if team ident exists", logger.ErrField(err))
+			api.Log.Error("Fail to check if team ident exists", logger.ErrField(err))
 			return
 		}
 		if exists {
@@ -65,10 +65,10 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to create team", logger.ErrField(err))
+			api.Log.Error("Fail to create team", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("new team created, ident: " + team.Ident)
+		api.Log.Debug("Team created, ident: " + team.Ident)
 
 		c.Status(http.StatusOK)
 	}

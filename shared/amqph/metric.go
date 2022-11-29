@@ -85,14 +85,14 @@ func (a *Amqph) OnMetricCreated(queue ...string) <-chan MetricNotification {
 	go func() {
 		msgs, err := a.Listen(q, amqp.ExchangeMetricCreated)
 		if err != nil {
-			a.log.Panic("fail to listen amqp messages", logger.ErrField(err))
+			a.log.Panic("Fail to listen amqp messages", logger.ErrField(err))
 			return
 		}
 		for d := range msgs {
 			var n MetricNotification
 			err = amqp.Decode(d.Body, &n)
 			if err != nil {
-				a.log.Error("fail to decode delivery body", logger.ErrField(err))
+				a.log.Error("Fail to decode delivery body", logger.ErrField(err))
 				continue
 			}
 			delivery <- n
@@ -110,14 +110,14 @@ func (a *Amqph) OnMetricUpdated(queue ...string) <-chan MetricNotification {
 	go func() {
 		msgs, err := a.Listen(q, amqp.ExchangeMetricUpdated)
 		if err != nil {
-			a.log.Panic("fail to listen amqp messages", logger.ErrField(err))
+			a.log.Panic("Fail to listen amqp messages", logger.ErrField(err))
 			return
 		}
 		for d := range msgs {
 			var n MetricNotification
 			err = amqp.Decode(d.Body, &n)
 			if err != nil {
-				a.log.Error("fail to decode delivery body", logger.ErrField(err))
+				a.log.Error("Fail to decode delivery body", logger.ErrField(err))
 				continue
 			}
 			delivery <- n
@@ -131,14 +131,14 @@ func (a *Amqph) OnMetricDeleted() <-chan models.MetricPairId {
 	go func() {
 		msgs, err := a.Listen("", amqp.ExchangeMetricDeleted)
 		if err != nil {
-			a.log.Panic("fail to listen amqp messages", logger.ErrField(err))
+			a.log.Panic("Fail to listen amqp messages", logger.ErrField(err))
 			return
 		}
 		for d := range msgs {
 			var p models.MetricPairId
 			err = amqp.Decode(d.Body, &p)
 			if err != nil {
-				a.log.Error("fail to decode delivery body", logger.ErrField(err))
+				a.log.Error("Fail to decode delivery body", logger.ErrField(err))
 				continue
 			}
 			delivery <- p

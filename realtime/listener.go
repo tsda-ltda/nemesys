@@ -61,7 +61,7 @@ func (s *RTS) notificationListener() {
 func (s *RTS) metricDataRequestListener() {
 	msgs, err := s.amqph.Listen(amqp.QueueRTSMetricDataRequest, amqp.ExchangeRTSMetricDataRequest)
 	if err != nil {
-		s.log.Panic("fail to listen amqp messages", logger.ErrField(err))
+		s.log.Panic("Fail to listen amqp messages", logger.ErrField(err))
 		return
 	}
 	for {
@@ -70,24 +70,24 @@ func (s *RTS) metricDataRequestListener() {
 			ctx := context.Background()
 
 			if len(d.CorrelationId) == 0 {
-				s.log.Warn("receive a rts data request but no correlation id was provided")
+				s.log.Warn("Received a rts data request but no correlation id was provided")
 				continue
 			}
 
 			var r models.MetricRequest
 			err = amqp.Decode(d.Body, &r)
 			if err != nil {
-				s.log.Error("fail to decode message body", logger.ErrField(err))
+				s.log.Error("Fail to decode message body", logger.ErrField(err))
 				continue
 			}
 
 			metricIdString := strconv.FormatInt(int64(r.ContainerId), 10)
-			s.log.Debug("get metric data request received, container id: " + metricIdString)
+			s.log.Debug("Get metric data request received, container id: " + metricIdString)
 
 			bytes, err := s.cache.Get(ctx, rdb.CacheMetricDataKey(r.MetricId))
 			if err != nil {
 				if err != redis.Nil {
-					s.log.Error("fail to get metric data on redis", logger.ErrField(err))
+					s.log.Error("Fail to get metric data on redis", logger.ErrField(err))
 					continue
 				}
 
@@ -107,7 +107,7 @@ func (s *RTS) metricDataRequestListener() {
 						ContainerId: r.ContainerId,
 					})
 					if err != nil {
-						s.log.Error("fail to encode amqp message", logger.ErrField(err))
+						s.log.Error("Fail to encode amqp message", logger.ErrField(err))
 						continue
 					}
 
@@ -122,7 +122,7 @@ func (s *RTS) metricDataRequestListener() {
 
 				config, err := s.getRTSMetricConfig(ctx, r.MetricId)
 				if err != nil {
-					s.log.Error("fail to get metric rts information", logger.ErrField(err))
+					s.log.Error("Fail to get metric rts information", logger.ErrField(err))
 					continue
 				}
 
@@ -146,7 +146,7 @@ func (s *RTS) metricDataRequestListener() {
 
 					res, err := s.plumber.Listen(correlationId, time.Second*25)
 					if err != nil {
-						s.log.Warn("plumber timeout, no data response was available")
+						s.log.Warn("Plumber timeout, no data response was available")
 						return
 					}
 
@@ -166,7 +166,7 @@ func (s *RTS) metricDataRequestListener() {
 				Type:          amqp.FromMessageType(amqp.OK),
 				CorrelationId: d.CorrelationId,
 			})
-			s.log.Debug("metric data fetched on cache, metric id: " + metricIdString)
+			s.log.Debug("Metric data fetched on cache, metric id: " + metricIdString)
 		case <-s.Done():
 			return
 		}
@@ -182,7 +182,7 @@ func (s *RTS) metricDataListener() {
 		},
 	)
 	if err != nil {
-		s.log.Panic("fail to listen amqp msgs", logger.ErrField(err))
+		s.log.Panic("Fail to listen amqp msgs", logger.ErrField(err))
 		return
 	}
 	for {
@@ -198,7 +198,7 @@ func (s *RTS) metricDataListener() {
 			var m models.MetricDataResponse
 			err := amqp.Decode(d.Body, &m)
 			if err != nil {
-				s.log.Error("fail to decode amqp message body", logger.ErrField(err))
+				s.log.Error("Fail to decode amqp message body", logger.ErrField(err))
 				continue
 			}
 
@@ -207,14 +207,14 @@ func (s *RTS) metricDataListener() {
 				var err error
 				config, err = s.getRTSMetricConfig(ctx, m.Id)
 				if err != nil {
-					s.log.Error("fail to get metric configuration", logger.ErrField(err))
+					s.log.Error("Fail to get metric configuration", logger.ErrField(err))
 					continue
 				}
 			}
 
 			err = s.cache.Set(ctx, d.Body, rdb.CacheMetricDataKey(m.Id), time.Millisecond*time.Duration(config.CacheDuration))
 			if err != nil {
-				s.log.Error("fail to save metric data on cache", logger.ErrField(err))
+				s.log.Error("Fail to save metric data on cache", logger.ErrField(err))
 				continue
 			}
 
@@ -234,7 +234,7 @@ func (s *RTS) metricsDataListener() {
 		},
 	)
 	if err != nil {
-		s.log.Panic("fail to listen amqp msgs", logger.ErrField(err))
+		s.log.Panic("Fail to listen amqp msgs", logger.ErrField(err))
 		return
 	}
 	for {
@@ -249,7 +249,7 @@ func (s *RTS) metricsDataListener() {
 			var m models.MetricsDataResponse
 			err := amqp.Decode(d.Body, &m)
 			if err != nil {
-				s.log.Error("fail to decode amqp message body", logger.ErrField(err))
+				s.log.Error("Fail to decode amqp message body", logger.ErrField(err))
 				continue
 			}
 
@@ -273,18 +273,18 @@ func (s *RTS) metricsDataListener() {
 					ContainerId:            m.ContainerId,
 				})
 				if err != nil {
-					s.log.Error("fail to encode metric response", logger.ErrField(err))
+					s.log.Error("Fail to encode metric response", logger.ErrField(err))
 					continue
 				}
 
 				err = s.cache.Set(ctx, b, rdb.CacheMetricDataKey(v.Id), time.Millisecond*time.Duration(mp.CacheDuration))
 				if err != nil {
-					s.log.Error("fail to save metric data on cache", logger.ErrField(err))
+					s.log.Error("Fail to save metric data on cache", logger.ErrField(err))
 					continue
 				}
 			}
 
-			s.log.Debug("metrics data received, container id: " + strconv.FormatInt(int64(m.ContainerId), 10))
+			s.log.Debug("Metrics data received, container id: " + strconv.FormatInt(int64(m.ContainerId), 10))
 		case <-s.Done():
 			return
 		}

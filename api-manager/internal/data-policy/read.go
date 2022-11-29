@@ -23,7 +23,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to read data policies", logger.ErrField(err))
+			api.Log.Error("Fail to read data policies", logger.ErrField(err))
 			return
 		}
 		c.JSON(http.StatusOK, dps)
@@ -50,7 +50,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to read data policy", logger.ErrField(err))
+			api.Log.Error("Fail to read data policy", logger.ErrField(err))
 			return
 		}
 		if !r.Exists {

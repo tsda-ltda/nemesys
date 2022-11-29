@@ -62,7 +62,7 @@ func New() service.Service {
 	// connect influxdb
 	influxClient, err := influxdb.Connect()
 	if err != nil {
-		log.Panic("fail to connect to influxdb", logger.ErrField(err))
+		log.Panic("Fail to connect to influxdb", logger.ErrField(err))
 		return nil
 	}
 	log.Info("Connected to influxdb")
@@ -89,15 +89,15 @@ func (d *DHS) Run() {
 	d.createFlexLegacyWorkers()
 	err := d.readDatabase()
 	if err != nil {
-		d.log.Panic("fail to read database", logger.ErrField(err))
+		d.log.Panic("Fail to read database", logger.ErrField(err))
 		return
 	}
-	d.log.Info("starting listeners...")
+	d.log.Info("Starting listeners...")
 	go d.metricsDataListener()
 	go d.notificationListener()
 
 	d.IsReady = true
-	d.log.Info("service is ready!")
+	d.log.Info("Service is ready!")
 
 	err = <-d.Done()
 	if err != nil {

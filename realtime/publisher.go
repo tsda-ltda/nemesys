@@ -11,5 +11,5 @@ func (s *RTS) publishRTSMetricData(p amqp091.Publishing) {
 		Exchange:   amqp.ExchangeRTSMetricDataResponse,
 		Publishing: p,
 	}
-	s.log.Debug("metric data published, id: <encoded>")
+	s.log.Debug("Metric data published, id: <encoded>")
 }

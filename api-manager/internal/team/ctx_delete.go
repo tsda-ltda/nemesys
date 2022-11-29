@@ -30,7 +30,7 @@ func DeleteContextHandler(api *api.API) func(c *gin.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			api.Log.Error("fail to delete context", logger.ErrField(err))
+			api.Log.Error("Fail to delete context", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -39,7 +39,7 @@ func DeleteContextHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		api.Log.Debug("context deleted, id: " + rawId)
+		api.Log.Debug("Context deleted, id: " + rawId)
 		c.Status(http.StatusNoContent)
 	}
 }

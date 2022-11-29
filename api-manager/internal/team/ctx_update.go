@@ -60,7 +60,7 @@ func UpdateContextHandler(api *api.API) func(c *gin.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			api.Log.Error("fail to get context existence", logger.ErrField(err))
+			api.Log.Error("Fail to get context existence", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -83,12 +83,12 @@ func UpdateContextHandler(api *api.API) func(c *gin.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			api.Log.Error("fail to create context", logger.ErrField(err))
+			api.Log.Error("Fail to create context", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
 
-		api.Log.Debug("context created with success, ident: " + context.Ident)
+		api.Log.Debug("Context created with success, ident: " + context.Ident)
 		c.Status(http.StatusOK)
 	}
 }

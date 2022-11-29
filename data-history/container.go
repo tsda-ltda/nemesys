@@ -83,7 +83,7 @@ func (d *DHS) AddMetricPulling(info models.MetricRequest, interval time.Duration
 		var err error
 		group, err = d.CreatePullingGroup(info.ContainerId, info.ContainerType, interval)
 		if err != nil {
-			d.log.Error("fail to create pulling metric", logger.ErrField(err))
+			d.log.Error("Fail to create pulling metric", logger.ErrField(err))
 			return
 		}
 	}
@@ -102,7 +102,7 @@ func (d *DHS) RemoveMetricPulling(metricId int64) {
 	}
 	group, ok := d.containersPulling[key]
 	if !ok {
-		d.log.Error("fail to remove metric pulling, metric id have a correspondent group key, but group does not exists.")
+		d.log.Error("Fail to remove metric pulling, metric id have a correspondent group key, but group does not exists.")
 		return
 	}
 	group.RemoveMetric(metricId)
@@ -147,7 +147,7 @@ func (g *containerPulling) AddMetric(info models.MetricBasicRequestInfo) {
 	var request models.MetricsRequest
 	err := amqp.Decode(g.encodedRequest, &request)
 	if err != nil {
-		g.dhs.log.Error("fail to decode encoded request", logger.ErrField(err))
+		g.dhs.log.Error("Fail to decode encoded request", logger.ErrField(err))
 		return
 	}
 
@@ -156,7 +156,7 @@ func (g *containerPulling) AddMetric(info models.MetricBasicRequestInfo) {
 	// encode request
 	b, err := amqp.Encode(request)
 	if err != nil {
-		g.dhs.log.Error("fail to encode metrics request", logger.ErrField(err))
+		g.dhs.log.Error("Fail to encode metrics request", logger.ErrField(err))
 		return
 	}
 	g.encodedRequest = b
@@ -169,7 +169,7 @@ func (c *containerPulling) RemoveMetric(metricId int64) {
 	var request models.MetricsRequest
 	err := amqp.Decode(c.encodedRequest, &request)
 	if err != nil {
-		c.dhs.log.Error("fail to decode encoded request", logger.ErrField(err))
+		c.dhs.log.Error("Fail to decode encoded request", logger.ErrField(err))
 		return
 	}
 
@@ -193,7 +193,7 @@ func (c *containerPulling) RemoveMetric(metricId int64) {
 	// encode request
 	b, err := amqp.Encode(request)
 	if err != nil {
-		c.dhs.log.Error("fail to encode metrics request", logger.ErrField(err))
+		c.dhs.log.Error("Fail to encode metrics request", logger.ErrField(err))
 		return
 	}
 	c.encodedRequest = b

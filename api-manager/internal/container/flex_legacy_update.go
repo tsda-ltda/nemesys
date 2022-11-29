@@ -57,7 +57,7 @@ func UpdateFlexLegacy(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to check if container, target port combination and serial-number exists", logger.ErrField(err))
+			api.Log.Error("Fail to check if container, target port combination and serial-number exists", logger.ErrField(err))
 			return
 		}
 		if !r.ContainerExists {
@@ -79,7 +79,7 @@ func UpdateFlexLegacy(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("fail to update flex legacy container", logger.ErrField(err))
+			api.Log.Error("Fail to update flex legacy container", logger.ErrField(err))
 			return
 		}
 
@@ -87,7 +87,7 @@ func UpdateFlexLegacy(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
-		api.Log.Debug("flex legacy container updated with success, name: " + container.Base.Name)
+		api.Log.Debug("Flex legacy container updated with success, name: " + container.Base.Name)
 		api.Amqph.NotifyContainerUpdated(container.Base, container.Protocol, types.CTFlexLegacy)
 
 		c.Status(http.StatusOK)

@@ -54,7 +54,7 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			api.Log.Error("fail to check if target port exists", logger.ErrField(err))
+			api.Log.Error("Fail to check if target port exists", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -67,7 +67,7 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			api.Log.Error("fail to update snmpv2c container", logger.ErrField(err))
+			api.Log.Error("Fail to update SNMPv2c container", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -75,7 +75,7 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
-		api.Log.Debug("snmp container updated, name: " + container.Base.Name)
+		api.Log.Debug("SNMPv2c container updated, name: " + container.Base.Name)
 		api.Amqph.NotifyContainerUpdated(container.Base, container.Protocol, types.CTSNMPv2c)
 
 		c.Status(http.StatusOK)
