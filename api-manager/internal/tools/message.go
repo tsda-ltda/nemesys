@@ -24,6 +24,7 @@ const (
 	MsgInvalidParams     = "Invalid route params."
 	MsgInvalidBody       = "Invalid body."
 	MsgInvalidMetricType = "Invalid metric type."
+	MsgInvalidAggrFn     = "Invalid data-policy aggregation function."
 	MsgInvalidJSONFields = "Invalid JSON fields."
 	MsgInvalidMetricData = "Invalid metric data, could not parse input data to metric type. Check if metric type is correct."
 

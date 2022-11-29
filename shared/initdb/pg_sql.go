@@ -37,10 +37,11 @@ var sqlCommands []string = []string{
 	`CREATE TABLE data_policies (
 		id SERIAL2  PRIMARY KEY,
 		descr VARCHAR (255) NOT NULL,
-		use_aggregation BOOLEAN NOT NULL,
 		retention INT4 NOT NULL,
-		aggregation_retention INT4 NOT NULL,
-		aggregation_interval INT4 NOT NULL
+		use_aggr BOOLEAN NOT NULL,
+		aggr_retention INT4 NOT NULL,
+		aggr_interval INT4 NOT NULL,
+		aggr_fn VARCHAR(50) NOT NULL
 	);`,
 
 	// Containers table

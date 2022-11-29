@@ -31,8 +31,8 @@ func (c *Client) CreateDataPolicy(ctx context.Context, dp models.DataPolicy) (er
 	}
 
 	// create aggregation bucket
-	if dp.UseAggregation {
-		err = c.createBucket(ctx, GetBucketName(dp.Id, true), dp.Descr, int64(dp.AggregationRetention*3600+dp.Retention*3600))
+	if dp.UseAggr {
+		err = c.createBucket(ctx, GetBucketName(dp.Id, true), dp.Descr, int64(dp.AggrRetention*3600+dp.Retention*3600))
 		if err != nil {
 			return err
 		}
@@ -53,11 +53,11 @@ func (c *Client) UpdateDataPolicy(ctx context.Context, dp models.DataPolicy) (er
 	}
 
 	aggrName := GetBucketName(dp.Id, true)
-	aggrRetention := int64(dp.AggregationRetention*3600 + dp.Retention*3600)
+	aggrRetention := int64(dp.AggrRetention*3600 + dp.Retention*3600)
 
 	// find aggregation bucket
 	_, err = api.FindBucketByName(ctx, aggrName)
-	if dp.UseAggregation {
+	if dp.UseAggr {
 		if err != nil {
 			err = c.createBucket(ctx, aggrName, dp.Descr, aggrRetention)
 			if err != nil {

@@ -8,6 +8,18 @@ import (
 	iapi "github.com/influxdata/influxdb-client-go/v2/api"
 )
 
+var aggrFns = []string{"mean", "median", "max", "min", "sum", "derivative", "nonnegative derivative", "distinct", "count", "increase", "skew", "spread", "stddev", "first", "last", "unique", "sort"}
+
+// ValidateAggrFunction validates the aggregation function.
+func ValidateAggrFunction(fn string) (valid bool) {
+	for _, v := range aggrFns {
+		if v == fn {
+			return true
+		}
+	}
+	return false
+}
+
 // getTaskName returns a task name for a data policy id.
 func getTaskName(dataPolicyId int16) string {
 	return fmt.Sprintf("%d-aggr-task", dataPolicyId)
@@ -21,15 +33,16 @@ func getTaskFlux(dp models.DataPolicy) string {
 			|> range(start: -%s, stop: -%s)
 			|> filter(fn: (r) => r._measurement == "metrics")
 		data
-			|> aggregateWindow(every: %ds, fn: mean, createEmpty: false)
+			|> aggregateWindow(every: %ds, fn: %s, createEmpty: false)
 			|> to(bucket: "%s")`,
 		getTaskName(dp.Id),
-		fmt.Sprintf("%ds", dp.AggregationInterval),
+		fmt.Sprintf("%ds", dp.AggrInterval),
 		fmt.Sprintf("%ds", dp.Retention*3600),
 		GetBucketName(dp.Id, false),
 		fmt.Sprintf("%ds", dp.Retention*3600),
-		fmt.Sprintf("%ds", dp.Retention*3600-dp.AggregationInterval),
-		dp.AggregationInterval,
+		fmt.Sprintf("%ds", dp.Retention*3600-dp.AggrInterval),
+		dp.AggrInterval,
+		dp.AggrFn,
 		GetBucketName(dp.Id, true),
 	)
 }

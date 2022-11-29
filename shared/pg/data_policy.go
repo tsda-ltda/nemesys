@@ -16,17 +16,12 @@ type DataPolicyGetResponse struct {
 }
 
 const (
-	sqlDPCount  = `SELECT COUNT(*) FROM data_policies;`
+	sqlDPCreate = `INSERT INTO data_policies (descr, use_aggr, retention, aggr_retention, aggr_interval, aggr_fn) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;`
+	sqlDPUpdate = `UPDATE data_policies SET (descr, retention, use_aggr, aggr_retention, agg_interval, aggr_fn) = ($1, $2, $3, $4, $5, $6) WHERE id = $7;`
 	sqlDPDelete = `DELETE FROM data_policies WHERE id = $1;`
-	sqlDPCreate = `INSERT INTO data_policies 
-		(descr, use_aggregation, retention, aggregation_retention, aggregation_interval)
-		VALUES ($1, $2, $3, $4, $5) RETURNING id;`
-	sqlDPMGet = `SELECT id, descr, retention, use_aggregation, aggregation_retention, aggregation_interval
-		FROM data_policies;`
-	sqlDPGet = `SELECT id, descr, retention, use_aggregation, aggregation_retention, aggregation_interval
-		FROM data_policies WHERE id = $1;`
-	sqlDPUpdate = `UPDATE data_policies SET (descr, retention, 
-		use_aggregation, aggregation_retention, aggregation_interval) = ($1, $2, $3, $4, $5) WHERE id = $6;`
+	sqlDPGet    = `SELECT id, descr, retention, use_aggr, aggr_retention, aggr_interval, aggr_fn FROM data_policies WHERE id = $1;`
+	sqlDPMGet   = `SELECT id, descr, retention, use_aggr, aggr_retention, aggr_interval, aggr_fn FROM data_policies;`
+	sqlDPCount  = `SELECT COUNT(*) FROM data_policies;`
 )
 
 func (pg *PG) CountDataPolicy(ctx context.Context) (n int64, err error) {
@@ -41,10 +36,11 @@ func (pg *PG) CreateDataPolicy(ctx context.Context, dp models.DataPolicy) (tx *s
 	}
 	err = c.QueryRowContext(ctx, sqlDPCreate,
 		&dp.Descr,
-		&dp.UseAggregation,
+		&dp.UseAggr,
 		&dp.Retention,
-		&dp.AggregationRetention,
-		&dp.AggregationInterval,
+		&dp.AggrRetention,
+		&dp.AggrInterval,
+		&dp.AggrFn,
 	).Scan(&id)
 	if err != nil {
 		return nil, id, err
@@ -60,10 +56,11 @@ func (pg *PG) UpdateDataPolicy(ctx context.Context, dp models.DataPolicy) (tx *s
 	t, err := c.ExecContext(ctx, sqlDPUpdate,
 		dp.Descr,
 		dp.Retention,
-		dp.UseAggregation,
-		dp.AggregationRetention,
-		dp.AggregationInterval,
+		dp.UseAggr,
+		dp.AggrRetention,
+		dp.AggrInterval,
 		dp.Id,
+		dp.AggrFn,
 	)
 	if err != nil {
 		return nil, false, err
@@ -89,9 +86,10 @@ func (pg *PG) GetDataPolicy(ctx context.Context, id int16) (r DataPolicyGetRespo
 			&r.DataPolicy.Id,
 			&r.DataPolicy.Descr,
 			&r.DataPolicy.Retention,
-			&r.DataPolicy.UseAggregation,
-			&r.DataPolicy.AggregationRetention,
-			&r.DataPolicy.AggregationInterval,
+			&r.DataPolicy.UseAggr,
+			&r.DataPolicy.AggrRetention,
+			&r.DataPolicy.AggrInterval,
+			&r.DataPolicy.AggrFn,
 		)
 		if err != nil {
 			return r, err
@@ -114,9 +112,10 @@ func (pg *PG) GetDataPolicies(ctx context.Context) (dps []models.DataPolicy, err
 			&dp.Id,
 			&dp.Descr,
 			&dp.Retention,
-			&dp.UseAggregation,
-			&dp.AggregationRetention,
-			&dp.AggregationInterval,
+			&dp.UseAggr,
+			&dp.AggrRetention,
+			&dp.AggrInterval,
+			&dp.AggrFn,
 		)
 		if err != nil {
 			return nil, err

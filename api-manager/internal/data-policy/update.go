@@ -7,6 +7,7 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	"github.com/fernandotsda/nemesys/shared/influxdb"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
@@ -39,6 +40,11 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		err = api.Validate.Struct(dp)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			return
+		}
+
+		if !influxdb.ValidateAggrFunction(dp.AggrFn) {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidAggrFn))
 			return
 		}
 
