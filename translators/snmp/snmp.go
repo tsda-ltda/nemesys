@@ -14,7 +14,7 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-type SNMPService struct {
+type SNMP struct {
 	service.Tools
 	// log is the logger handler.
 	log *logger.Logger
@@ -34,7 +34,7 @@ type SNMPService struct {
 	stopDataPublisher chan any
 }
 
-func New() service.Service {
+func New() *SNMP {
 	amqpConn, err := amqp.Dial()
 	if err != nil {
 		stdlog.Panicf("Fail to dial with amqp server, err: %s", err.Error())
@@ -53,7 +53,7 @@ func New() service.Service {
 	log.Info("Connected to amqp server")
 
 	pg := pg.New()
-	return &SNMPService{
+	return &SNMP{
 		Tools:             service.NewTools(),
 		amqph:             amqph.New(amqpConn, log),
 		amqpConn:          amqpConn,
@@ -66,7 +66,7 @@ func New() service.Service {
 	}
 }
 
-func (s *SNMPService) Run() {
+func (s *SNMP) Run() {
 	s.log.Info("starting listeners...")
 	go s.getMetricListener()  // listen to metric data requests
 	go s.getMetricsListener() // listen to metrics data requests
@@ -81,7 +81,7 @@ func (s *SNMPService) Run() {
 }
 
 // Close all connections.
-func (s *SNMPService) Close() error {
+func (s *SNMP) Close() error {
 	s.stopDataPublisher <- nil
 	s.stopGetListener <- nil
 	s.DispatchDone(nil)

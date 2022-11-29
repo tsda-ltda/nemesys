@@ -7,7 +7,7 @@ import (
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
-func (s *SNMPService) getSNMPMetrics(request models.MetricsRequest) (metrics []models.SNMPMetric, err error) {
+func (s *SNMP) getSNMPMetrics(request models.MetricsRequest) (metrics []models.SNMPMetric, err error) {
 	ctx := context.Background()
 	metricIds := make([]int64, len(request.Metrics))
 	for i, m := range request.Metrics {

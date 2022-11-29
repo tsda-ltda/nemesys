@@ -13,7 +13,7 @@ import (
 
 var ErrContainerNotExists = errors.New("container does not exists")
 
-func (s *SNMPService) getContainerAgent(containerId int32, t types.ContainerType) (agent models.SNMPAgent, err error) {
+func (s *SNMP) getContainerAgent(containerId int32, t types.ContainerType) (agent models.SNMPAgent, err error) {
 	ctx := context.Background()
 
 	r, err := s.cache.GetSNMPAgent(ctx, containerId)

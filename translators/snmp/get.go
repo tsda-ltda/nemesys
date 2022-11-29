@@ -13,7 +13,7 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-func (s *SNMPService) getMetric(agent models.SNMPAgent, request models.MetricRequest, correlationId string, routingKey string) {
+func (s *SNMP) getMetric(agent models.SNMPAgent, request models.MetricRequest, correlationId string, routingKey string) {
 	p := amqp091.Publishing{
 		Headers:       amqp.RouteHeader(routingKey),
 		CorrelationId: correlationId,
@@ -48,7 +48,7 @@ func (s *SNMPService) getMetric(agent models.SNMPAgent, request models.MetricReq
 	// open connection
 	err := gosnmp.Connect()
 	if err != nil {
-		s.log.Error("fail to connect agent", logger.ErrField(err))
+		s.log.Debug("fail to connect agent", logger.ErrField(err))
 		return
 	}
 	defer gosnmp.Conn.Close()
@@ -64,7 +64,7 @@ func (s *SNMPService) getMetric(agent models.SNMPAgent, request models.MetricReq
 		}},
 	})
 	if err != nil {
-		s.log.Error("fail to get snmp metrics", logger.ErrField(err))
+		s.log.Debug("fail to get snmp metrics", logger.ErrField(err))
 		return
 	}
 	oid := metrics[0].OID
@@ -136,7 +136,7 @@ func (s *SNMPService) getMetric(agent models.SNMPAgent, request models.MetricReq
 	s.log.Debug("data published for metric: " + fmt.Sprint(request.MetricId))
 }
 
-func (s *SNMPService) getMetrics(agent models.SNMPAgent, request models.MetricsRequest, correlationId string, routingKey string) {
+func (s *SNMP) getMetrics(agent models.SNMPAgent, request models.MetricsRequest, correlationId string, routingKey string) {
 	p := amqp091.Publishing{
 		Headers:       amqp.RouteHeader(routingKey),
 		CorrelationId: correlationId,
@@ -266,7 +266,7 @@ func (s *SNMPService) getMetrics(agent models.SNMPAgent, request models.MetricsR
 }
 
 // Get fetch the OIDs's values. Returns an error only if an error is returned fo the SNMP Get request.
-func (s *SNMPService) get(agent *gosnmp.GoSNMP, oids []string) (res []gosnmp.SnmpPDU, err error) {
+func (s *SNMP) get(agent *gosnmp.GoSNMP, oids []string) (res []gosnmp.SnmpPDU, err error) {
 	// oids buffer
 	var oidsBuff []string
 	if len(oids) >= agent.MaxOids {

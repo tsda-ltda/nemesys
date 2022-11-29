@@ -8,7 +8,7 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
-func (s *SNMPService) getMetricListener() {
+func (s *SNMP) getMetricListener() {
 	msgs, err := s.amqph.Listen(amqp.QueueSNMPMetricDataRequest, amqp.ExchangeMetricDataRequest,
 		models.ListenerOptions{Bind: models.QueueBindOptions{RoutingKey: "snmp"}},
 	)
@@ -46,7 +46,7 @@ func (s *SNMPService) getMetricListener() {
 	}
 }
 
-func (s *SNMPService) getMetricsListener() {
+func (s *SNMP) getMetricsListener() {
 	msgs, err := s.amqph.Listen(amqp.QueueSNMPMetricsDataRequest, amqp.ExchangeMetricsDataRequest,
 		models.ListenerOptions{Bind: models.QueueBindOptions{RoutingKey: "snmp"}},
 	)
