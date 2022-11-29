@@ -39,7 +39,7 @@ type DHS struct {
 	IsReady bool
 }
 
-func New() *DHS {
+func New() service.Service {
 	// connect to amqp server
 	amqpConn, err := amqp.Dial()
 	if err != nil {
