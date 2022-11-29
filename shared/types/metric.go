@@ -11,6 +11,11 @@ const (
 	MTInvalid
 )
 
+// ValidateMetricType validates the metric type.
+func ValidateMetricType(t MetricType) bool {
+	return t > MTUnknown && t < MTInvalid
+}
+
 // Parse Asn1BER type to Metric type.
 func ParseAsn1BER(b byte) MetricType {
 	switch b {

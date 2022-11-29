@@ -49,6 +49,11 @@ func UpdateBasicHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
+		if !types.ValidateMetricType(metric.Base.Type) {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidMetricType))
+			return
+		}
+
 		metric.Base.Id = id
 		metric.Base.ContainerId = int32(containerId)
 		metric.Base.ContainerType = types.CTBasic
