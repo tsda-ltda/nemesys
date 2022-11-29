@@ -96,4 +96,5 @@ func Init() {
 	set("SERVICE_RECOVERY_LOG_FILE", &ServiceRecoveryLogFile)
 
 	set("DHS_FLEX_LEGACY_DATALOG_WORKERS", &DHSFlexLegacyDatalogWorkers)
+	set("DHS_FLEX_LEGACY_DATALOG_REQUEST_INTERVAL", &DHSFlexLegacyDatlogRequestInterval)
 }

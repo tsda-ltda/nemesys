@@ -1,5 +1,7 @@
 package models
 
+import "github.com/fernandotsda/nemesys/shared/types"
+
 type FlexLegacyContainer struct {
 	// Id is the unique indentifier.
 	Id int32 `json:"id" validate:"-"`
@@ -57,4 +59,30 @@ type FlexLegacyMetric struct {
 	Port int16 `json:"port" validate:"-"`
 	// PortType is the port type
 	PortType int16 `json:"port-type" validate:"-"`
+}
+
+type FlexLegacyDatalogDownloadRegistry struct {
+	// ContainerId is the container identifier.
+	ContainerId int32
+	// Metering is the log type Metering.
+	Metering int64
+	// Status is the log type Status.
+	Status int64
+	// Command is the log type Command.
+	Command int64
+	// Virtual is the log type Virtual.
+	Virtual int64
+}
+
+type FlexLegacyDatalogMetricRequest struct {
+	// Id is the metric identifier.
+	Id int64
+	// Type is the metric type.
+	Type types.MetricType
+	// DataPolicyId is the data policy id.
+	DataPolicyId int16
+	// Port is the flex legacy port.
+	Port int16
+	// PortType is the flex legacy port type.
+	PortType types.FlexLegacyPortType
 }

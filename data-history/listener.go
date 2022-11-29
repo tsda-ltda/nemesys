@@ -8,6 +8,7 @@ import (
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/fernandotsda/nemesys/shared/types"
 )
 
 func (d *DHS) metricsDataListener() {
@@ -37,6 +38,8 @@ func (d *DHS) metricsDataListener() {
 			continue
 		}
 
+		time := time.Now()
+
 		// write points
 		for _, m := range r.Metrics {
 			if m.Failed {
@@ -46,7 +49,7 @@ func (d *DHS) metricsDataListener() {
 			err = d.influxClient.WritePoint(ctx, models.MetricDataResponse{
 				ContainerId:            r.ContainerId,
 				MetricBasicDataReponse: m,
-			})
+			}, time)
 			if err != nil {
 				d.log.Error("fail to write point", logger.ErrField(err))
 				continue
@@ -60,19 +63,65 @@ func (d *DHS) notificationListener() {
 	for {
 		select {
 		case <-d.amqph.OnDataPolicyDeleted():
-			for _, dpg := range d.dataPullingGroups {
-				dpg.Close()
+			for _, p := range d.containersPulling {
+				p.Close()
 			}
-			d.readDatabase(100, 0)
+			for _, p := range d.flexsLegacyPulling {
+				p.Close()
+			}
+			for _, w := range d.flexLegacyDatalogWorkers {
+				w.Close()
+			}
+			d.readDatabase()
+		case c := <-d.amqph.OnContainerCreated():
+			if !c.Base.Enabled {
+				continue
+			}
+			d.newFlexLegacyPulling(c.Base.Id)
+		case c := <-d.amqph.OnContainerUpdated():
+			if !c.Base.Enabled {
+				switch c.Base.Type {
+				case types.CTFlexLegacy:
+					p, ok := d.flexsLegacyPulling[c.Base.Id]
+					if !ok {
+						continue
+					}
+					p.Close()
+				default:
+					for _, p := range d.containersPulling {
+						if p.ContainerId == c.Base.Id {
+							p.Close()
+							continue
+						}
+					}
+				}
+			} else {
+				switch c.Base.Type {
+				case types.CTFlexLegacy:
+					_, ok := d.flexsLegacyPulling[c.Base.Id]
+					if ok {
+						continue
+					}
+					d.newFlexLegacyPulling(c.Base.Id)
+				default:
+					continue
+				}
+			}
 		case id := <-d.amqph.OnContainerDeleted():
-			for k, dpg := range d.dataPullingGroups {
+			for _, dpg := range d.containersPulling {
 				if dpg.ContainerId == id {
-					delete(d.dataPullingGroups, k)
-					break
+					dpg.Close()
+					continue
+				}
+			}
+			for _, flp := range d.flexsLegacyPulling {
+				if flp.id == id {
+					flp.Close()
+					continue
 				}
 			}
 		case n := <-d.amqph.OnMetricCreated():
-			if !n.Base.DHSEnabled || !n.Base.Enabled {
+			if !n.Base.DHSEnabled || !n.Base.Enabled || n.Base.ContainerType == types.CTFlexLegacy {
 				continue
 			}
 			d.AddMetricPulling(models.MetricRequest{
@@ -97,6 +146,8 @@ func (d *DHS) notificationListener() {
 			}, time.Second*time.Duration(n.Base.DHSInterval))
 		case p := <-d.amqph.OnMetricDeleted():
 			d.RemoveMetricPulling(p.Id)
+		case <-d.Done():
+			return
 		}
 	}
 }

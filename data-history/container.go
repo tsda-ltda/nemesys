@@ -16,8 +16,8 @@ func getPullingGroupKey(containerId int32, interval time.Duration) string {
 	return strconv.FormatInt(int64(containerId), 10) + "_" + strconv.FormatInt(interval.Milliseconds(), 10)
 }
 
-// DataPullingGroup is desgined for non-flex containers to fetch data periodically.
-type DataPullingGroup struct {
+// containerPulling is desgined for non-flex containers to fetch data periodically.
+type containerPulling struct {
 	// ContainerId is the container id.
 	ContainerId int32
 	// containerIdString is the container id formated as string.
@@ -33,43 +33,43 @@ type DataPullingGroup struct {
 	// close is the close channel.
 	close chan any
 	// OnClose is the callback called on close.
-	OnClose func(*DataPullingGroup)
+	OnClose func(*containerPulling)
 	// DHS is the Data History service pointer.
 	dhs *DHS
 	// nMetrics is the number of metrics running on this group.
 	nMetrics int
 }
 
-func (g *DataPullingGroup) Run() {
-	defer g.ticker.Stop()
+func (c *containerPulling) Run() {
+	defer c.ticker.Stop()
 	for {
 		select {
-		case <-g.ticker.C:
-			if !g.dhs.IsReady {
+		case <-c.ticker.C:
+			if !c.dhs.IsReady {
 				continue
 			}
-			if g.nMetrics == 0 {
-				g.dhs.log.Debug("skipping pulling, encoded request is empty, container id: " + g.containerIdString)
+			if c.nMetrics == 0 {
+				c.dhs.log.Debug("skipping pulling, encoded request is empty, container id: " + c.containerIdString)
 				continue
 			}
 
-			routingKey, err := amqp.GetDataRoutingKey(g.ContainerType)
+			routingKey, err := amqp.GetDataRoutingKey(c.ContainerType)
 			if err != nil {
 				continue
 			}
 
 			// publish request
-			g.dhs.amqph.PublisherCh <- models.DetailedPublishing{
+			c.dhs.amqph.PublisherCh <- models.DetailedPublishing{
 				Exchange:   amqp.ExchangeMetricsDataRequest,
 				RoutingKey: routingKey,
 				Publishing: amqp091.Publishing{
 					Headers:    amqp.RouteHeader("dhs"),
 					Expiration: amqp.DefaultExp,
-					Body:       g.encodedRequest,
+					Body:       c.encodedRequest,
 				},
 			}
-			g.dhs.log.Debug("metrics data request sent, container id: " + g.containerIdString)
-		case <-g.close:
+			c.dhs.log.Debug("metrics data request sent, container id: " + c.containerIdString)
+		case <-c.close:
 			return
 		}
 	}
@@ -78,7 +78,7 @@ func (g *DataPullingGroup) Run() {
 // AddMetricPulling adds a metric to a DataPullingGroup. If DataPullingGroup does not exists, will create a new one.
 func (d *DHS) AddMetricPulling(info models.MetricRequest, interval time.Duration) {
 	key := getPullingGroupKey(info.ContainerId, interval)
-	group, ok := d.dataPullingGroups[key]
+	group, ok := d.containersPulling[key]
 	if !ok {
 		var err error
 		group, err = d.CreatePullingGroup(info.ContainerId, info.ContainerType, interval)
@@ -96,11 +96,11 @@ func (d *DHS) AddMetricPulling(info models.MetricRequest, interval time.Duration
 
 // RemoveMetricPulling removes a metric pulling if it exists.
 func (d *DHS) RemoveMetricPulling(metricId int64) {
-	key, ok := d.metricsGroupsMap[metricId]
+	key, ok := d.metricsContainerMap[metricId]
 	if !ok {
 		return
 	}
-	group, ok := d.dataPullingGroups[key]
+	group, ok := d.containersPulling[key]
 	if !ok {
 		d.log.Error("fail to remove metric pulling, metric id have a correspondent group key, but group does not exists.")
 		return
@@ -109,7 +109,7 @@ func (d *DHS) RemoveMetricPulling(metricId int64) {
 }
 
 // CreatePullingGroup creates a new DataPullingGroup.
-func (d *DHS) CreatePullingGroup(containerId int32, containerType types.ContainerType, interval time.Duration) (*DataPullingGroup, error) {
+func (d *DHS) CreatePullingGroup(containerId int32, containerType types.ContainerType, interval time.Duration) (*containerPulling, error) {
 	// create and encode request
 	request := models.MetricsRequest{
 		ContainerId:   containerId,
@@ -121,7 +121,7 @@ func (d *DHS) CreatePullingGroup(containerId int32, containerType types.Containe
 		return nil, err
 	}
 
-	group := DataPullingGroup{
+	group := containerPulling{
 		ticker:            time.NewTicker(interval),
 		interval:          interval,
 		ContainerId:       containerId,
@@ -130,19 +130,19 @@ func (d *DHS) CreatePullingGroup(containerId int32, containerType types.Containe
 		dhs:               d,
 		encodedRequest:    b,
 		containerIdString: strconv.FormatInt(int64(containerId), 10),
-		OnClose: func(g *DataPullingGroup) {
-			delete(d.dataPullingGroups, getPullingGroupKey(containerId, interval))
+		OnClose: func(g *containerPulling) {
+			delete(d.containersPulling, getPullingGroupKey(containerId, interval))
 		},
 	}
 
 	key := getPullingGroupKey(containerId, interval)
-	d.dataPullingGroups[key] = &group
+	d.containersPulling[key] = &group
 	go group.Run()
 	return &group, nil
 }
 
-// AddMetric adds a metric to the DataPullingGroup.
-func (g *DataPullingGroup) AddMetric(info models.MetricBasicRequestInfo) {
+// AddMetric adds a metric.
+func (g *containerPulling) AddMetric(info models.MetricBasicRequestInfo) {
 	// decode current request
 	var request models.MetricsRequest
 	err := amqp.Decode(g.encodedRequest, &request)
@@ -160,16 +160,16 @@ func (g *DataPullingGroup) AddMetric(info models.MetricBasicRequestInfo) {
 		return
 	}
 	g.encodedRequest = b
-	g.dhs.metricsGroupsMap[info.Id] = getPullingGroupKey(g.ContainerId, g.interval)
+	g.dhs.metricsContainerMap[info.Id] = getPullingGroupKey(g.ContainerId, g.interval)
 	g.nMetrics++
 }
 
-func (g *DataPullingGroup) RemoveMetric(metricId int64) {
+func (c *containerPulling) RemoveMetric(metricId int64) {
 	// decode current request
 	var request models.MetricsRequest
-	err := amqp.Decode(g.encodedRequest, &request)
+	err := amqp.Decode(c.encodedRequest, &request)
 	if err != nil {
-		g.dhs.log.Error("fail to decode encoded request", logger.ErrField(err))
+		c.dhs.log.Error("fail to decode encoded request", logger.ErrField(err))
 		return
 	}
 
@@ -183,7 +183,7 @@ func (g *DataPullingGroup) RemoveMetric(metricId int64) {
 
 	// check if no metrics remain
 	if len(metrics) == 0 {
-		g.Close()
+		c.Close()
 		return
 	}
 
@@ -193,20 +193,20 @@ func (g *DataPullingGroup) RemoveMetric(metricId int64) {
 	// encode request
 	b, err := amqp.Encode(request)
 	if err != nil {
-		g.dhs.log.Error("fail to encode metrics request", logger.ErrField(err))
+		c.dhs.log.Error("fail to encode metrics request", logger.ErrField(err))
 		return
 	}
-	g.encodedRequest = b
-	delete(g.dhs.metricsGroupsMap, metricId)
-	g.nMetrics--
+	c.encodedRequest = b
+	delete(c.dhs.metricsContainerMap, metricId)
+	c.nMetrics--
 }
 
 // Interval returns the current ticker interval.
-func (g *DataPullingGroup) Interval() time.Duration {
-	return g.interval
+func (c *containerPulling) Interval() time.Duration {
+	return c.interval
 }
 
-func (g *DataPullingGroup) Close() {
-	g.close <- nil
-	g.OnClose(g)
+func (c *containerPulling) Close() {
+	c.close <- nil
+	c.OnClose(c)
 }

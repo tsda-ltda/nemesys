@@ -23,11 +23,11 @@ var sqlCommands []string = []string{
 	`CREATE TABLE users_teams (
 			user_id INT4,
 		team_id INT4,
-		CONSTRAINT fk_user_id
+		CONSTRAINT users_teams_fk_user_id
 		FOREIGN KEY(user_id)
 				REFERENCES users(id)
 				ON DELETE CASCADE,
-		CONSTRAINT fk_team_id
+		CONSTRAINT users_teams_fk_team_id
 			FOREIGN KEY(team_id)
 				REFERENCES teams(id)
 				ON DELETE CASCADE
@@ -71,7 +71,7 @@ var sqlCommands []string = []string{
 		dhs_enabled BOOLEAN NOT NULL,
 		dhs_interval INT4 NOT NULL,
 		ev_expression VARCHAR (255) NOT NULL,
-		CONSTRAINT fk_container_id
+		CONSTRAINT metrics_fk_container_id
 			FOREIGN KEY(container_id)
 				REFERENCES containers(id)
 				ON DELETE CASCADE
@@ -86,7 +86,7 @@ var sqlCommands []string = []string{
 		id SERIAL8 PRIMARY KEY,
 		refkey VARCHAR (200) UNIQUE NOT NULL,
 		metric_id INT8 NOT NULL,
-		CONSTRAINT fk_metric_id
+		CONSTRAINT metrics_ref_fk_metric_id
 			FOREIGN KEY(metric_id)
 				REFERENCES metrics(id)
 				ON DELETE CASCADE
@@ -105,10 +105,11 @@ var sqlCommands []string = []string{
 		retries INT2 NOT NULL,
 		max_oids INT2 NOT NULL,
 		timeout INT4 NOT NULL,
-		CONSTRAINT fk_container_id
+		CONSTRAINT snmpv2c_containers_fk_container_id
 			FOREIGN KEY(container_id)
 				REFERENCES containers(id)
 				ON DELETE CASCADE
+				DEFERRABLE INITIALLY DEFERRED
 	);`,
 
 	// Create index on target and port
@@ -124,29 +125,43 @@ var sqlCommands []string = []string{
 		retries INT2 NOT NULL,
 		max_oids INT2 NOT NULL,
 		timeout INT4 NOT NULL,
-		cache_duration INT4 NOT NULL,
 		serial_number INT4 UNIQUE NOT NULL,
 		model INT2 NOT NULL,
 		city VARCHAR (50) NOT NULL,
 		region VARCHAR (50) NOT NULL,
 		country VARCHAR (50) NOT NULL,
-		CONSTRAINT fk_container_id
+		CONSTRAINT flex_legacy_containers_fk_container_id
 			FOREIGN KEY(container_id)
 				REFERENCES containers(id)
 				ON DELETE CASCADE
+				DEFERRABLE INITIALLY DEFERRED
 	);`,
 
 	// Create index on target and port
 	`CREATE UNIQUE INDEX flex_legacy_target_port_index ON flex_legacy_containers (target, port);`,
 
+	// Create flex legacy datalog download registry
+	`CREATE TABLE flex_legacy_datalog_download_registry (
+		container_id INT4 UNIQUE NOT NULL,
+		metering INT8 NOT NULL,
+		status INT8 NOT NULL,
+		command INT8 NOT NULL,
+		virtual INT8 NOT NULL,
+		CONSTRAINT flex_legacy_datalog_download_registry_fk_container_id
+			FOREIGN KEY(container_id)
+				REFERENCES containers(id)
+				ON DELETE CASCADE
+	);`,
+
 	// SNMP metrics table
 	`CREATE TABLE snmpv2c_metrics (
 		metric_id INT8 UNIQUE NOT NULL,
 		oid VARCHAR (128) NOT NULL,
-		CONSTRAINT fk_metric_id
+		CONSTRAINT snmpv2c_metrics_fk_metric_id
 			FOREIGN KEY(metric_id)
 				REFERENCES metrics(id)
 				ON DELETE CASCADE
+				DEFERRABLE INITIALLY DEFERRED
 	);`,
 
 	// Flex Legacy metrics table
@@ -155,10 +170,11 @@ var sqlCommands []string = []string{
 		oid VARCHAR (128) NOT NULL,
 		port INT2 NOT NULL,
 		port_type INT2 NOT NULL,
-		CONSTRAINT fk_metric_id
+		CONSTRAINT flex_legacy_metrics_fk_metric_id
 			FOREIGN KEY(metric_id)
 				REFERENCES metrics(id)
 				ON DELETE CASCADE
+				DEFERRABLE INITIALLY DEFERRED
 	);`,
 
 	// Context table
@@ -185,11 +201,11 @@ var sqlCommands []string = []string{
 		ident VARCHAR (50) NOT NULL,
 		name VARCHAR (50) NOT NULL,
 		descr VARCHAR (255) NOT NULL,
-		CONSTRAINT fk_ctx_id
+		CONSTRAINT contextual_metrics_fk_ctx_id
 			FOREIGN KEY(ctx_id)
 				REFERENCES contexts(id)
 				ON DELETE CASCADE,
-		CONSTRAINT fk_metric_id
+		CONSTRAINT contextual_metrics_fk_metric_id
 			FOREIGN KEY(metric_id)
 				REFERENCES metrics(id)
 				ON DELETE CASCADE

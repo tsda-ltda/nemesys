@@ -2,6 +2,7 @@ package pg
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/fernandotsda/nemesys/shared/models"
 )
@@ -52,19 +53,20 @@ const (
 		EXISTS (SELECT 1 FROM containers WHERE id = $1),
 		EXISTS (SELECT 1 FROM flex_legacy_containers WHERE target = $2 AND port = $3 AND container_id != $1),
 		EXISTS (SELECT 1 FROM flex_legacy_containers WHERE serial_number = $4 AND container_id != $1);`
+	sqlFlexLegacyContainersGetTarget = `SELECT target FROM flex_legacy_containers WHERE container_id = $1;`
 )
 
-func (pg *PG) CreateFlexLegacyContainer(ctx context.Context, container models.Container[models.FlexLegacyContainer]) (err error) {
+func (pg *PG) CreateFlexLegacyContainer(ctx context.Context, container models.Container[models.FlexLegacyContainer]) (id int32, err error) {
 	c, err := pg.db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return id, err
 	}
-	id, err := pg.createContainer(ctx, c, container.Base)
+	id, err = pg.createContainer(ctx, c, container.Base)
 	if err != nil {
 		c.Rollback()
-		return err
+		return id, err
 	}
-	_, err = pg.db.ExecContext(ctx, sqlFlexLegacyContainersCreate,
+	_, err = c.ExecContext(ctx, sqlFlexLegacyContainersCreate,
 		id,
 		container.Protocol.Target,
 		container.Protocol.Port,
@@ -81,10 +83,10 @@ func (pg *PG) CreateFlexLegacyContainer(ctx context.Context, container models.Co
 	)
 	if err != nil {
 		c.Rollback()
-		return err
+		return id, err
 	}
 
-	return c.Commit()
+	return id, c.Commit()
 }
 
 func (pg *PG) UpdateFlexLegacyContainer(ctx context.Context, container models.Container[models.FlexLegacyContainer]) (exists bool, err error) {
@@ -100,7 +102,7 @@ func (pg *PG) UpdateFlexLegacyContainer(ctx context.Context, container models.Co
 	if !exists {
 		return false, nil
 	}
-	t, err := pg.db.ExecContext(ctx, sqlFlexLegacyContainersUpdate,
+	t, err := c.ExecContext(ctx, sqlFlexLegacyContainersUpdate,
 		container.Protocol.Target,
 		container.Protocol.Port,
 		container.Protocol.Transport,
@@ -203,4 +205,15 @@ func (pg *PG) ExistsFlexLegacyContainerTargetPortAndSerialNumber(ctx context.Con
 		&r.TargetPortExists,
 		&r.SerialNumberExists,
 	)
+}
+
+func (pg *PG) GetFlexLegacyContainerTarget(ctx context.Context, id int32) (exists bool, target string, err error) {
+	err = pg.db.QueryRowContext(ctx, sqlFlexLegacyContainersGetTarget, id).Scan(&target)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, target, nil
+		}
+		return false, target, err
+	}
+	return true, target, nil
 }

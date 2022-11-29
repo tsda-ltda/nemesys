@@ -39,7 +39,7 @@ func (pg *PG) CreateDataPolicy(ctx context.Context, dp models.DataPolicy) (tx *s
 	if err != nil {
 		return nil, id, err
 	}
-	err = pg.db.QueryRowContext(ctx, sqlDPCreate,
+	err = c.QueryRowContext(ctx, sqlDPCreate,
 		&dp.Descr,
 		&dp.UseAggregation,
 		&dp.Retention,
@@ -57,7 +57,7 @@ func (pg *PG) UpdateDataPolicy(ctx context.Context, dp models.DataPolicy) (tx *s
 	if err != nil {
 		return nil, false, err
 	}
-	t, err := pg.db.ExecContext(ctx, sqlDPUpdate,
+	t, err := c.ExecContext(ctx, sqlDPUpdate,
 		dp.Descr,
 		dp.Retention,
 		dp.UseAggregation,

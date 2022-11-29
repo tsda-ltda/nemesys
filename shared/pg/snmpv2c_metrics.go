@@ -27,23 +27,23 @@ const (
 	sqlSNMPMetricsUpdate   = `UPDATE snmpv2c_metrics SET (oid, metric_id) = ($1, $2) WHERE metric_id = $3;`
 )
 
-func (pg *PG) CreateSNMPv2cMetric(ctx context.Context, m models.Metric[models.SNMPMetric]) error {
+func (pg *PG) CreateSNMPv2cMetric(ctx context.Context, m models.Metric[models.SNMPMetric]) (id int64, err error) {
 	c, err := pg.db.BeginTx(ctx, nil)
 	if err != nil {
 		c.Rollback()
-		return err
+		return id, err
 	}
-	id, err := pg.createMetric(ctx, c, m.Base)
+	id, err = pg.createMetric(ctx, c, m.Base)
 	if err != nil {
 		c.Rollback()
-		return err
+		return id, err
 	}
-	_, err = pg.db.ExecContext(ctx, sqlSNMPMetricsCreate, m.Protocol.OID, id)
+	_, err = c.ExecContext(ctx, sqlSNMPMetricsCreate, m.Protocol.OID, id)
 	if err != nil {
 		c.Rollback()
-		return err
+		return id, err
 	}
-	return c.Commit()
+	return id, c.Commit()
 }
 
 func (pg *PG) UpdateSNMPv2cMetric(ctx context.Context, m models.Metric[models.SNMPMetric]) (exists bool, err error) {
@@ -60,7 +60,7 @@ func (pg *PG) UpdateSNMPv2cMetric(ctx context.Context, m models.Metric[models.SN
 	if !exists {
 		return false, nil
 	}
-	t, err := pg.db.ExecContext(ctx, sqlSNMPMetricsUpdate, m.Protocol.OID, m.Protocol.Id, m.Protocol.Id)
+	t, err := c.ExecContext(ctx, sqlSNMPMetricsUpdate, m.Protocol.OID, m.Protocol.Id, m.Protocol.Id)
 	if err != nil {
 		c.Rollback()
 		return false, err

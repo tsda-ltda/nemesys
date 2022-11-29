@@ -40,19 +40,23 @@ const (
 	sqlFlexLegacyMetricsGetProtocol          = `SELECT oid, port, port_type FROM flex_legacy_metrics WHERE metric_id = $1;`
 	sqlFlexLegacyMetricsGetAsSNMPMetric      = `SELECT oid FROM flex_legacy_metrics WHERE metric_id = $1;`
 	sqlFlexLegacyMetricsGetByIdsAsSNMPMetric = `SELECT metric_id, oid FROM flex_legacy_metrics WHERE metric_id = ANY ($1);`
+	sqlFlexLegacyMetricsGetMetricsRequests   = `SELECT
+		m.id, m.type, m.data_policy_id, f.port, f.port_type 
+		FROM metrics m FULL JOIN flex_legacy_metrics f ON m.id = f.metric_id
+		WHERE m.enabled = true AND m.container_id = $1 AND m.dhs_enabled = true;`
 )
 
-func (pg *PG) CreateFlexLegacyMetric(ctx context.Context, metric models.Metric[models.FlexLegacyMetric]) (err error) {
+func (pg *PG) CreateFlexLegacyMetric(ctx context.Context, metric models.Metric[models.FlexLegacyMetric]) (id int64, err error) {
 	c, err := pg.db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return id, err
 	}
-	id, err := pg.createMetric(ctx, c, metric.Base)
+	id, err = pg.createMetric(ctx, c, metric.Base)
 	if err != nil {
 		c.Rollback()
-		return err
+		return id, err
 	}
-	_, err = pg.db.ExecContext(ctx, sqlFlexLegacyMetricsCreate,
+	_, err = c.ExecContext(ctx, sqlFlexLegacyMetricsCreate,
 		id,
 		metric.Protocol.OID,
 		metric.Protocol.Port,
@@ -60,9 +64,9 @@ func (pg *PG) CreateFlexLegacyMetric(ctx context.Context, metric models.Metric[m
 	)
 	if err != nil {
 		c.Rollback()
-		return err
+		return id, err
 	}
-	return c.Commit()
+	return id, c.Commit()
 }
 
 func (pg *PG) UpdateFlexLegacyMetric(ctx context.Context, metric models.Metric[models.FlexLegacyMetric]) (exists bool, err error) {
@@ -78,7 +82,7 @@ func (pg *PG) UpdateFlexLegacyMetric(ctx context.Context, metric models.Metric[m
 	if !exists {
 		return false, nil
 	}
-	t, err := pg.db.ExecContext(ctx, sqlFlexLegacyMetricsUpdate,
+	t, err := c.ExecContext(ctx, sqlFlexLegacyMetricsUpdate,
 		metric.Base.Id,
 		metric.Protocol.OID,
 		metric.Protocol.Port,
@@ -163,6 +167,24 @@ func (pg *PG) FlexLegacyMetricsByIdsAsSNMPMetric(ctx context.Context, ids []int6
 			&m.Id,
 			&m.OID,
 		)
+		if err != nil {
+			return nil, err
+		}
+		metrics = append(metrics, m)
+	}
+	return metrics, nil
+}
+
+func (pg *PG) GetFlexLegacyMetricsRequests(ctx context.Context, containerId int32) (metrics []models.FlexLegacyDatalogMetricRequest, err error) {
+	rows, err := pg.db.QueryContext(ctx, sqlFlexLegacyMetricsGetMetricsRequests, containerId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	metrics = []models.FlexLegacyDatalogMetricRequest{}
+	for rows.Next() {
+		var m models.FlexLegacyDatalogMetricRequest
+		err = rows.Scan(&m.Id, &m.Type, &m.DataPolicyId, &m.Port, &m.PortType)
 		if err != nil {
 			return nil, err
 		}

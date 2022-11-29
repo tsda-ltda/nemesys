@@ -110,4 +110,7 @@ var (
 
 	// DHSFlexLegacyDatalogWorkers is the number of flex-legacy datalog workers. Default is "3".
 	DHSFlexLegacyDatalogWorkers = "3"
+
+	// DHSFlexLegacyDatlogRequestInterval is the interval in hours between each datalog request of a flex. Default is "6".
+	DHSFlexLegacyDatlogRequestInterval = "6"
 )

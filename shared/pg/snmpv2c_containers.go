@@ -30,17 +30,17 @@ const (
 		retries, max_oids, timeout) = ($1, $2, $3, $4, $5, $6, $7) WHERE container_id = $8;`
 )
 
-func (pg *PG) CreateSNMPv2cContainer(ctx context.Context, container models.Container[models.SNMPv2cContainer]) error {
+func (pg *PG) CreateSNMPv2cContainer(ctx context.Context, container models.Container[models.SNMPv2cContainer]) (id int32, err error) {
 	c, err := pg.db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return id, err
 	}
-	id, err := pg.createContainer(ctx, c, container.Base)
+	id, err = pg.createContainer(ctx, c, container.Base)
 	if err != nil {
 		c.Rollback()
-		return err
+		return id, err
 	}
-	_, err = pg.db.ExecContext(ctx, sqlSNMPv2cContainerCreate,
+	_, err = c.ExecContext(ctx, sqlSNMPv2cContainerCreate,
 		id,
 		container.Protocol.Target,
 		container.Protocol.Port,
@@ -52,9 +52,9 @@ func (pg *PG) CreateSNMPv2cContainer(ctx context.Context, container models.Conta
 	)
 	if err != nil {
 		c.Rollback()
-		return err
+		return id, err
 	}
-	return c.Commit()
+	return id, c.Commit()
 }
 
 func (pg *PG) UpdateSNMPv2cContainer(ctx context.Context, container models.Container[models.SNMPv2cContainer]) (exists bool, err error) {
@@ -70,7 +70,7 @@ func (pg *PG) UpdateSNMPv2cContainer(ctx context.Context, container models.Conta
 	if !exists {
 		return false, nil
 	}
-	t, err := pg.db.ExecContext(ctx, sqlSNMPv2cContainerUpdate,
+	t, err := c.ExecContext(ctx, sqlSNMPv2cContainerUpdate,
 		container.Protocol.Target,
 		container.Protocol.Port,
 		container.Protocol.Transport,

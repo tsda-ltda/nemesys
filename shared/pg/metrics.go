@@ -102,7 +102,7 @@ const (
 		m AS (SELECT enabled, container_id FROM metrics WHERE id = $1),
 		c AS (SELECT enabled FROM containers WHERE id = (SELECT container_id FROM m))
 		SELECT (SELECT enabled FROM m), (SELECT enabled FROM c);`
-	sqlMetricsGetMetricsRequestsAndIntervals = `SELECT id, type, container_id, container_type, data_policy_id, dhs_interval FROM metrics WHERE dhs_enabled = true LIMIT $1 OFFSET $2;`
+	sqlMetricsGetMetricsRequestsAndIntervals = `SELECT id, type, container_id, container_type, data_policy_id, dhs_interval FROM metrics WHERE dhs_enabled = true AND container_type != $1 LIMIT $2 OFFSET $3;`
 	sqlMetricsGetRequest                     = `SELECT type, container_id, container_type, data_policy_id, enabled FROM metrics WHERE id = $1;`
 	sqlMetricsDHSEnabled                     = `SELECT dhs_enabled FROM metrics WHERE id = $1;`
 )
@@ -371,7 +371,7 @@ func (pg *PG) MetricEnabled(ctx context.Context, id int32) (r MetricsEnabledResp
 }
 
 func (pg *PG) GetMetricsRequestsAndIntervals(ctx context.Context, limit int, offset int) (r []GetMetricRequestAndIntervalResult, err error) {
-	rows, err := pg.db.QueryContext(ctx, sqlMetricsGetMetricsRequestsAndIntervals, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sqlMetricsGetMetricsRequestsAndIntervals, types.CTFlexLegacy, limit, offset)
 	if err != nil {
 		return r, err
 	}
