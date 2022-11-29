@@ -3,14 +3,15 @@ package logger
 import (
 	"os"
 
-	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/fernandotsda/nemesys/shared/amqp"
+	"github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 type Logger struct {
 	*zap.Logger
-	conn       *amqp.Connection
+	conn       *amqp091.Connection
 	WrapConfig Config
 	amqpWriter *AMQPLoggerWriter
 }
@@ -25,12 +26,23 @@ type Config struct {
 }
 
 // Return a production zap logger configurated to log to console and to amqp server.
-func New(conn *amqp.Connection, config Config) (logger *Logger, err error) {
+func New(conn *amqp091.Connection, config Config) (logger *Logger, err error) {
 	// create amqp socket channel
 	ch, err := conn.Channel()
 	if err != nil {
 		return nil, err
 	}
+	go func() {
+		closed, canceled := amqp.OnChannelCloseOrCancel(ch)
+		for {
+			select {
+			case err := <-closed:
+				panic(err)
+			case err := <-canceled:
+				panic(err)
+			}
+		}
+	}()
 
 	// exchange declare
 	err = ch.ExchangeDeclare(
@@ -46,34 +58,33 @@ func New(conn *amqp.Connection, config Config) (logger *Logger, err error) {
 		return nil, err
 	}
 
-	// create amqp logger writer
 	amqpW := &AMQPLoggerWriter{
 		ch: ch,
 	}
 
-	// create zap conf
 	zapConfig := zap.NewProductionEncoderConfig()
 	zapConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
-	// json encoder
 	jsonEncoder := zapcore.NewJSONEncoder(zapConfig)
 	jsonEncoder.AddString("serv", config.Service)
 
-	// encode for console
 	consoleEncoder := zapcore.NewConsoleEncoder(zapConfig)
 
-	// create zap core
+	logfile, err := os.OpenFile(config.Service+".errors.logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return nil, err
+	}
+
 	core := zapcore.NewTee(
 		zapcore.NewCore(jsonEncoder, zapcore.AddSync(amqpW), config.BroadcastLevel),      // log broadcast
 		zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), config.ConsoleLevel), // log to console
+		zapcore.NewCore(consoleEncoder, zapcore.AddSync(logfile), zap.ErrorLevel),        // log to file
 	)
 
-	// create zap logger
 	z := zap.New(core,
 		zap.AddCaller(),
 		zap.AddStacktrace(zapcore.ErrorLevel),
 	)
-	// create logger
 	logger = &Logger{
 		conn:       conn,
 		Logger:     z,
