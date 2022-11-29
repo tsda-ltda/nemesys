@@ -7,6 +7,8 @@ const (
 	QueueRTSMetricDataResponse  = "services.rts.metric.data_response"
 	QueueRTSMetricsDataResponse = "services.rts.metrics.data_response"
 	QueueDHSMetricsDataResponse = "services.dhs.metrics.data_response"
+	QueueDHSMetricCreated       = "services.dhs.notification.metric.create"
+	QueueDHSContainerCreated    = "services.dhs.notification.container.create"
 
 	ExchangeContainerCreated      = "notfication.container.create"
 	ExchangeContainerUpdated      = "notfication.container.update"

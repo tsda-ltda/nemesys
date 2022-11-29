@@ -76,10 +76,14 @@ func (a *Amqph) NotifyMetricDeleted(id int64, containerId int32) error {
 	return nil
 }
 
-func (a *Amqph) OnMetricCreated() <-chan MetricNotification {
+func (a *Amqph) OnMetricCreated(queue ...string) <-chan MetricNotification {
+	var q string
+	if len(queue) > 0 {
+		q = queue[0]
+	}
 	delivery := make(chan MetricNotification)
 	go func() {
-		msgs, err := a.Listen("", amqp.ExchangeMetricCreated)
+		msgs, err := a.Listen(q, amqp.ExchangeMetricCreated)
 		if err != nil {
 			a.log.Panic("fail to listen amqp messages", logger.ErrField(err))
 			return
@@ -97,10 +101,14 @@ func (a *Amqph) OnMetricCreated() <-chan MetricNotification {
 	return delivery
 }
 
-func (a *Amqph) OnMetricUpdated() <-chan MetricNotification {
+func (a *Amqph) OnMetricUpdated(queue ...string) <-chan MetricNotification {
+	var q string
+	if len(queue) > 0 {
+		q = queue[0]
+	}
 	delivery := make(chan MetricNotification)
 	go func() {
-		msgs, err := a.Listen("", amqp.ExchangeMetricUpdated)
+		msgs, err := a.Listen(q, amqp.ExchangeMetricUpdated)
 		if err != nil {
 			a.log.Panic("fail to listen amqp messages", logger.ErrField(err))
 			return

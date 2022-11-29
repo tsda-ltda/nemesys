@@ -24,10 +24,14 @@ func (a *Amqph) NotifyDataPolicyDeleted(id int16) error {
 	return nil
 }
 
-func (a *Amqph) OnDataPolicyDeleted() <-chan int16 {
+func (a *Amqph) OnDataPolicyDeleted(queue ...string) <-chan int16 {
+	var q string
+	if len(queue) > 0 {
+		q = queue[0]
+	}
 	delivery := make(chan int16)
 	go func() {
-		msgs, err := a.Listen("", amqp.ExchangeDataPolicyDeleted)
+		msgs, err := a.Listen(q, amqp.ExchangeDataPolicyDeleted)
 		if err != nil {
 			a.log.Panic("fail to listen amqp messages", logger.ErrField(err))
 			return

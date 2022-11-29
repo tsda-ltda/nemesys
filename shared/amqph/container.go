@@ -76,10 +76,14 @@ func (a *Amqph) NotifyContainerDeleted(id int32) error {
 	return nil
 }
 
-func (a *Amqph) OnContainerCreated() <-chan ContainerNotification {
+func (a *Amqph) OnContainerCreated(queue ...string) <-chan ContainerNotification {
+	var q string
+	if len(queue) > 0 {
+		q = queue[0]
+	}
 	delivery := make(chan ContainerNotification)
 	go func() {
-		msgs, err := a.Listen("", amqp.ExchangeContainerCreated)
+		msgs, err := a.Listen(q, amqp.ExchangeContainerCreated)
 		if err != nil {
 			a.log.Panic("fail to listen amqp messages", logger.ErrField(err))
 			return
@@ -97,10 +101,14 @@ func (a *Amqph) OnContainerCreated() <-chan ContainerNotification {
 	return delivery
 }
 
-func (a *Amqph) OnContainerUpdated() <-chan ContainerNotification {
+func (a *Amqph) OnContainerUpdated(queue ...string) <-chan ContainerNotification {
+	var q string
+	if len(queue) > 0 {
+		q = queue[0]
+	}
 	delivery := make(chan ContainerNotification)
 	go func() {
-		msgs, err := a.Listen("", amqp.ExchangeContainerUpdated)
+		msgs, err := a.Listen(q, amqp.ExchangeContainerUpdated)
 		if err != nil {
 			a.log.Panic("fail to listen amqp messages", logger.ErrField(err))
 			return
@@ -118,10 +126,14 @@ func (a *Amqph) OnContainerUpdated() <-chan ContainerNotification {
 	return delivery
 }
 
-func (a *Amqph) OnContainerDeleted() <-chan int32 {
+func (a *Amqph) OnContainerDeleted(queue ...string) <-chan int32 {
+	var q string
+	if len(queue) > 0 {
+		q = queue[0]
+	}
 	delivery := make(chan int32)
 	go func() {
-		msgs, err := a.Listen("", amqp.ExchangeContainerDeleted)
+		msgs, err := a.Listen(q, amqp.ExchangeContainerDeleted)
 		if err != nil {
 			a.log.Panic("fail to listen amqp messages", logger.ErrField(err))
 			return

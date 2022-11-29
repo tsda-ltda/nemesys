@@ -73,7 +73,7 @@ func (d *DHS) notificationListener() {
 				w.Close()
 			}
 			d.readDatabase()
-		case c := <-d.amqph.OnContainerCreated():
+		case c := <-d.amqph.OnContainerCreated(amqp.QueueDHSContainerCreated):
 			if !c.Base.Enabled {
 				continue
 			}
@@ -120,7 +120,7 @@ func (d *DHS) notificationListener() {
 					continue
 				}
 			}
-		case n := <-d.amqph.OnMetricCreated():
+		case n := <-d.amqph.OnMetricCreated(amqp.QueueDHSMetricCreated):
 			if !n.Base.DHSEnabled || !n.Base.Enabled || n.Base.ContainerType == types.CTFlexLegacy {
 				continue
 			}

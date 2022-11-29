@@ -29,10 +29,13 @@ func (a *Amqph) publisher() {
 				a.log.Error("fail to publish message", logger.ErrField(err))
 			}
 		case err := <-closed:
-			a.log.Warn("publisher channel closed", logger.ErrField(err))
+			if err != nil {
+				panic(err)
+				// a.log.Panic("publisher channel closed", logger.ErrField(err))
+			}
 			return
 		case r := <-canceled:
-			a.log.Warn("publisher channel canceled, reason: " + r)
+			a.log.DPanic("publisher channel canceled, reason: " + r)
 			return
 		}
 	}
