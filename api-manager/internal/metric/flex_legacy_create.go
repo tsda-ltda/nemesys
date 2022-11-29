@@ -62,7 +62,7 @@ func CreateFlexLegacyHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		err = api.PG.CreateFlexLegacyMetric(ctx, metric)
+		id, err := api.PG.CreateFlexLegacyMetric(ctx, metric)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -71,6 +71,9 @@ func CreateFlexLegacyHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("fail to create flex legacy metric", logger.ErrField(err))
 			return
 		}
+		metric.Base.Id = id
+		metric.Protocol.Id = id
+
 		api.Log.Debug("flex legacy metric created, name: " + metric.Base.Name)
 		api.Amqph.NotifyMetricCreated(metric.Base, metric.Protocol, types.CTFlexLegacy)
 

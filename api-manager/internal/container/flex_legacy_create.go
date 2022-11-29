@@ -59,14 +59,17 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		err = api.PG.CreateFlexLegacyContainer(ctx, container)
+		id, err := api.PG.CreateFlexLegacyContainer(ctx, container)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
 			}
+			c.Status(http.StatusInternalServerError)
 			api.Log.Error("fail to create flex legacy container", logger.ErrField(err))
 			return
 		}
+		container.Base.Id = id
+		container.Protocol.Id = id
 		api.Log.Debug("flex legacy container created with success, name: " + container.Base.Name)
 		api.Amqph.NotifyContainerCreated(container.Base, container.Protocol, types.CTFlexLegacy)
 

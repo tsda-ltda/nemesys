@@ -54,7 +54,7 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		err = api.PG.CreateSNMPv2cContainer(ctx, container)
+		id, err := api.PG.CreateSNMPv2cContainer(ctx, container)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -63,6 +63,8 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("fail to crate snmpv2c container", logger.ErrField(err))
 			return
 		}
+		container.Base.Id = id
+		container.Protocol.Id = id
 		api.Log.Debug("snmp container crated, name: " + container.Base.Name)
 		api.Amqph.NotifyContainerCreated(container.Base, container.Protocol, types.CTSNMPv2c)
 
