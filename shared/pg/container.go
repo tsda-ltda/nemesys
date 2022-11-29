@@ -121,8 +121,8 @@ func (pg *PG) GetBasicContainer(ctx context.Context, id int32) (r BasicContainer
 	return r, nil
 }
 
-func (pg *PG) GetContainer(ctx context.Context, id int32) (r BaseContainerGetResponse, err error) {
-	rows, err := pg.db.QueryContext(ctx, sqlContainersGet, id)
+func (pg *PG) GetContainer(ctx context.Context, id int32, t types.ContainerType) (r BaseContainerGetResponse, err error) {
+	rows, err := pg.db.QueryContext(ctx, sqlContainersGet, id, t)
 	if err != nil {
 		return r, err
 	}

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/fernandotsda/nemesys/shared/types"
 )
 
 type FlexLegacyContainersGetProtocolResponse struct {
@@ -130,7 +131,7 @@ func (pg *PG) DeleteFlexLegacyContainer(ctx context.Context, id int32) (exists b
 }
 
 func (pg *PG) GetFlexLegacyContainer(ctx context.Context, id int32) (r FlexLegacyContainersGetResponse, err error) {
-	baseR, err := pg.GetContainer(ctx, id)
+	baseR, err := pg.GetContainer(ctx, id, types.CTFlexLegacy)
 	if err != nil {
 		return r, err
 	}

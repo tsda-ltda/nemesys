@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/fernandotsda/nemesys/shared/types"
 )
 
 type SNMPv2cContainersGetResponse struct {
@@ -93,7 +94,7 @@ func (pg *PG) DeleteSNMPv2cContainer(ctx context.Context, id int32) (exists bool
 }
 
 func (pg *PG) GetSNMPv2cContainer(ctx context.Context, id int32) (r SNMPv2cContainersGetResponse, err error) {
-	baseR, err := pg.GetContainer(ctx, id)
+	baseR, err := pg.GetContainer(ctx, id, types.CTSNMPv2c)
 	if err != nil {
 		return r, err
 	}
