@@ -18,11 +18,14 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/user"
 
 	"github.com/fernandotsda/nemesys/shared/env"
+	"github.com/fernandotsda/nemesys/shared/service"
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
 // Set all api routes
-func Set(api *api.API) {
+func Set(s service.Service) {
+	api := s.(*api.API)
+
 	// get api routes
 	r := api.Router.Group(env.APIManagerRoutesPrefix)
 

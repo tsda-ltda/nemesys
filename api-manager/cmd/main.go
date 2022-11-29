@@ -7,9 +7,5 @@ import (
 )
 
 func main() {
-	service.Start(func() service.Service {
-		api := api.New()
-		router.Set(api)
-		return api
-	})
+	service.Start("api-manager", api.New, router.Set)
 }

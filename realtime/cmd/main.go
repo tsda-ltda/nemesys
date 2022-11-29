@@ -6,7 +6,5 @@ import (
 )
 
 func main() {
-	service.Start(func() service.Service {
-		return rts.New()
-	})
+	service.Start("rts", rts.New)
 }

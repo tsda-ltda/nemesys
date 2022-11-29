@@ -2,10 +2,8 @@ package service
 
 import (
 	"log"
-	"time"
 
 	"github.com/fernandotsda/nemesys/shared/env"
-	recovery "github.com/fernandotsda/nemesys/shared/service-recovery"
 )
 
 type Tools struct {
@@ -37,29 +35,14 @@ type Service interface {
 	Close() error
 }
 
-func Start(instantiator func() Service, recoveryOptions ...recovery.Options) {
-	if len(recoveryOptions) > 1 {
-		log.Fatal("Invalid recovery options lenght")
-		return
-	}
-
-	var opts recovery.Options
-	if len(recoveryOptions) == 0 {
-		opts = recovery.Options{
-			MaxRecovers:          5,
-			RecoverTimeout:       time.Second * 30,
-			ResetRecoversTimeout: time.Minute * 5,
-		}
-	} else {
-		opts = recoveryOptions[0]
-	}
-
+func Start(name string, instantiator func() Service, setups ...func(Service)) {
 	err := env.LoadEnvFile()
 	if err != nil {
 		log.Printf("Fail to load enviroment file, err:%s", err)
 	}
 	env.Init()
-
 	service := instantiator()
-	recovery.Run(service, opts)
+	for _, setup := range setups {
+		setup(service)
+	}
 }

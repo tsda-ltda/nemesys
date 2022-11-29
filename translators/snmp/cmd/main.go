@@ -6,7 +6,5 @@ import (
 )
 
 func main() {
-	service.Start(func() service.Service {
-		return snmp.New()
-	})
+	service.Start("snmp", snmp.New)
 }
