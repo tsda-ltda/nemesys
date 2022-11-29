@@ -151,3 +151,10 @@ type MetricBasicDataReponse struct {
 	// Failed is the failed status.
 	Failed bool
 }
+
+type MetricEvaluableExpression struct {
+	// Id is the metric identifier.
+	Id int64
+	// Expression is the metric expression.
+	Expression string
+}

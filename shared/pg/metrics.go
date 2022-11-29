@@ -95,10 +95,11 @@ const (
 	sqlMetricsGet = `SELECT 
 		container_id, container_type, name, descr, enabled, data_policy_id, 
 		rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression FROM metrics WHERE id = $1;`
-	sqlMetricsDelete                 = `DELETE FROM metrics WHERE id = $1;`
-	sqlMetricsMGetSimplified         = `SELECT id, container_id, name, descr, enabled FROM metrics WHERE container_id = $1 AND container_type = $2 LIMIT $3 OFFSET $4;`
-	sqlMetricsGetEvaluableExpression = `SELECT ev_expression FROM metrics WHERE id = $1;`
-	sqlMetricsEnabled                = `WITH 
+	sqlMetricsDelete                  = `DELETE FROM metrics WHERE id = $1;`
+	sqlMetricsMGetSimplified          = `SELECT id, container_id, name, descr, enabled FROM metrics WHERE container_id = $1 AND container_type = $2 LIMIT $3 OFFSET $4;`
+	sqlMetricsGetEvaluableExpression  = `SELECT ev_expression FROM metrics WHERE id = $1;`
+	sqlMetricsGetEvaluableExpressions = `SELECT id, ev_expression FROM metrics WHERE id = ANY($1);`
+	sqlMetricsEnabled                 = `WITH 
 		m AS (SELECT enabled, container_id FROM metrics WHERE id = $1),
 		c AS (SELECT enabled FROM containers WHERE id = (SELECT container_id FROM m))
 		SELECT (SELECT enabled FROM m), (SELECT enabled FROM c);`
@@ -315,6 +316,24 @@ func (pg *PG) GetMetricEvaluableExpression(ctx context.Context, id int64) (r Met
 		r.Exists = true
 	}
 	return r, err
+}
+
+func (pg *PG) GetMetricsEvaluableExpressions(ctx context.Context, ids []int64) (expressions []models.MetricEvaluableExpression, err error) {
+	rows, err := pg.db.QueryContext(ctx, sqlMetricsGetEvaluableExpressions, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	expressions = make([]models.MetricEvaluableExpression, 0, len(ids))
+	for rows.Next() {
+		var e models.MetricEvaluableExpression
+		var err = rows.Scan(&e.Id, &e.Expression)
+		if err != nil {
+			return nil, err
+		}
+		expressions = append(expressions, e)
+	}
+	return expressions, err
 }
 
 func (pg *PG) GetMetricRTSConfig(ctx context.Context, id int64) (r MetricsGetRTSConfigResponse, err error) {

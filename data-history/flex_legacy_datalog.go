@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/fernandotsda/nemesys/shared/env"
+	"github.com/fernandotsda/nemesys/shared/evaluator"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
@@ -142,6 +143,20 @@ func (w *flexLegacyDatalogWorker) Run() {
 				continue
 			}
 
+			ids := make([]int64, len(metricsRequests))
+			for i, m := range metricsRequests {
+				ids[i] = m.Id
+			}
+			expressionsMap := make(map[int64]string, len(metricsRequests))
+			expressions, err := w.dhs.pg.GetMetricsEvaluableExpressions(ctx, ids)
+			if err != nil {
+				w.dhs.log.Error("Fail to get metrics evaluable expressions", logger.ErrField(err), logField)
+				continue
+			}
+			for _, e := range expressions {
+				expressionsMap[e.Id] = e.Expression
+			}
+
 			requests, err := processDownloadControlFile(txt, registry, metricsRequests)
 			if err != nil {
 				w.dhs.log.Error("Fail to process DownloadControl", logger.ErrField(err), logField)
@@ -160,11 +175,17 @@ func (w *flexLegacyDatalogWorker) Run() {
 						continue
 					}
 
+					v, err := evaluator.DirectEvaluation(data.Value, data.MetricType, expressionsMap[data.MetricId])
+					if err != nil {
+						w.dhs.log.Warn("Fail to do direct evaluation of datalog point, metric id: "+strconv.FormatInt(data.MetricId, 10), logField)
+						continue
+					}
+
 					err = w.dhs.influxClient.WritePoint(ctx, models.MetricDataResponse{
 						MetricBasicDataReponse: models.MetricBasicDataReponse{
 							Id:           data.MetricId,
 							Type:         data.MetricType,
-							Value:        data.Value,
+							Value:        v,
 							DataPolicyId: data.DataPolicyId,
 							Failed:       false,
 						},
@@ -175,7 +196,6 @@ func (w *flexLegacyDatalogWorker) Run() {
 					}
 
 					// do something with alarmed ...
-
 				}
 
 				t := req.Timestamp.Unix()

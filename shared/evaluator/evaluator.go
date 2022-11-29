@@ -47,28 +47,26 @@ func (e *Evaluator) Evaluate(v any, metricId int64, mt types.MetricType) (any, e
 		}
 	}
 
-	if expression == "" {
-		return v, nil
-	}
+	return evaluate(v, mt, expression)
+}
 
+func DirectEvaluation(value any, mt types.MetricType, expression string) (result any, err error) {
+	return evaluate(value, mt, expression)
+}
+
+func evaluate(value any, mt types.MetricType, expression string) (result any, err error) {
+	if expression == "" {
+		return value, nil
+	}
 	exp, err := govaluate.NewEvaluableExpression(expression)
 	if err != nil {
 		return nil, err
 	}
-
 	params := make(map[string]any, 1)
-	params["x"] = v
-
+	params["x"] = value
 	r, err := exp.Evaluate(params)
 	if err != nil {
 		return nil, err
 	}
-
-	parsed, err := types.ParseValue(r, mt)
-	if err != nil {
-		return nil, err
-	}
-
-	return parsed, nil
-
+	return types.ParseValue(r, mt)
 }
