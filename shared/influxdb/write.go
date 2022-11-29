@@ -3,6 +3,7 @@ package influxdb
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
@@ -24,8 +25,8 @@ func getField(mt types.MetricType) string {
 	}
 }
 
-// WritePoint writes a data point into influxdb client buffer.
-func (c *Client) WritePoint(ctx context.Context, data models.MetricDataResponse) error {
+// WritePoint writes a data point into influxdb client buffer. ContainerId is ignored.
+func (c *Client) WritePoint(ctx context.Context, data models.MetricDataResponse, timestamp time.Time) error {
 	if data.Failed {
 		return ErrMetricDataResponseIsFailed
 	}
@@ -41,6 +42,7 @@ func (c *Client) WritePoint(ctx context.Context, data models.MetricDataResponse)
 	p := influxdb2.NewPointWithMeasurement("metrics")
 	p.AddTag("metric_id", strconv.Itoa(int(data.Id)))
 	p.AddField(getField(data.Type), data.Value)
+	p.SetTime(timestamp)
 
 	// write point
 	c.WriteAPI(*c.DefaultOrg.Id, *bucket.Id).WritePoint(p)
