@@ -3,6 +3,7 @@ package metricdata
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -129,7 +130,14 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 
 		metricIdString := strconv.FormatInt(form.MetricId, 10)
 		if form.DHSEnabled {
-			err = api.Influx.WritePoint(ctx, metricDataResponse)
+			var timestamp time.Time
+			if data.Timestamp > 0 {
+				timestamp = time.Unix(data.Timestamp, 0)
+			} else {
+				timestamp = time.Now()
+			}
+
+			err = api.Influx.WritePoint(ctx, metricDataResponse, timestamp)
 			if err != nil {
 				if ctx.Err() != nil {
 					return
