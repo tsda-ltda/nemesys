@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	stdlog "log"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"github.com/fernandotsda/nemesys/shared/cache"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/influxdb"
+	"github.com/fernandotsda/nemesys/shared/initdb"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/fernandotsda/nemesys/shared/rdb"
@@ -42,15 +44,13 @@ type API struct {
 	Log *logger.Logger
 }
 
-func New() service.Service {
-	// connect to amqp
+func New() *API {
 	amqpConn, err := amqp.Dial()
 	if err != nil {
 		stdlog.Panicf("Fail to dial with amqp server, err: %s", err)
 		return nil
 	}
 
-	// create logger
 	log, err := logger.New(amqpConn, logger.Config{
 		Service:        "api-manager",
 		ConsoleLevel:   logger.ParseLevelEnv(env.LogConsoleLevelAPIManager),
@@ -62,7 +62,15 @@ func New() service.Service {
 	}
 	log.Info("Connected to amqp server")
 
-	// connect to redis auth
+	initialized, err := initdb.PG()
+	if err != nil {
+		log.Error("Fail to inicialize database", logger.ErrField(err))
+		return nil
+	}
+	if initialized {
+		log.Info("Database inicialized with success")
+	}
+
 	rdbAuth, err := rdb.NewAuthClient()
 	if err != nil {
 		log.Panic("Fail to create auth client", logger.ErrField(err))
@@ -70,14 +78,12 @@ func New() service.Service {
 	}
 	log.Info("Connected to redis client (auth client)")
 
-	// create authentication handler
 	auth, err := auth.New(rdbAuth)
 	if err != nil {
 		log.Panic("Fail to create auth handler", logger.ErrField(err))
 		return nil
 	}
 
-	// connect to influxdb
 	influxClient, err := influxdb.Connect()
 	if err != nil {
 		log.Panic("Fail to connect to influxdb", logger.ErrField(err))
@@ -85,24 +91,19 @@ func New() service.Service {
 	}
 	log.Info("Connected to influxdb")
 
-	// parse bcrypt coast
 	bcryptCost, err := strconv.Atoi(env.UserPWBcryptCost)
 	if err != nil {
 		log.Fatal("Fail to parse env.UserPWBcryptCost", logger.ErrField(err))
 		return nil
 	}
 
-	// create gin engine
 	gin.SetMode(gin.ReleaseMode)
 	log.Info("Gin mode setted to 'release'")
 	r := gin.New()
 
-	// create validator
 	validate := validator.New()
-
-	// create and run amqp handler
 	amqph := amqph.New(amqpConn, log)
-	return &API{
+	api := &API{
 		Tools:            service.NewTools(),
 		PG:               pg.New(),
 		Influx:           &influxClient,
@@ -114,6 +115,17 @@ func New() service.Service {
 		Amqph:            amqph,
 		UserPWBcryptCost: bcryptCost,
 	}
+	if !initialized {
+		return api
+	}
+
+	err = CreateDefaultUser(context.Background(), api)
+	if err != nil {
+		log.Panic("Fail to create dafault user", logger.ErrField(err))
+		return nil
+	}
+	log.Info("Default master user created")
+	return api
 }
 
 func (api *API) Run() {
