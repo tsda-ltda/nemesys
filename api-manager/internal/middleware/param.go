@@ -15,7 +15,7 @@ func ParseContextParams(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		teamRawId := c.Param("id")
+		teamRawId := c.Param("teamId")
 		ctxRawId := c.Param("ctxId")
 
 		_, err1 := strconv.ParseInt(teamRawId, 10, 32)
@@ -67,7 +67,7 @@ func ParseContextualMetricParams(api *api.API) func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		metricRawId := c.Param("metricId")
-		teamRawId := c.Param("id")
+		teamRawId := c.Param("teamId")
 		ctxRawId := c.Param("ctxId")
 
 		_, err1 := strconv.ParseInt(metricRawId, 10, 64)

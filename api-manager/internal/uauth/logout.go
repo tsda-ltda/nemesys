@@ -62,7 +62,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		rawId := c.Param("id")
+		rawId := c.Param("userId")
 		id, err := strconv.ParseInt(rawId, 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))

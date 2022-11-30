@@ -5,13 +5,14 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
+	"github.com/fernandotsda/nemesys/api-manager/internal/roles"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 )
 
-// Creates a new user on database.
+// Create user on database.
 // Responses:
 //   - 400 If invalid body.
 //   - 400 If json fields are invalid.
@@ -32,6 +33,11 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		err = api.Validate.Struct(user)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			return
+		}
+
+		if !roles.ValidateRole(user.Role) {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidRole))
 			return
 		}
 

@@ -22,7 +22,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		id, err := strconv.ParseInt(c.Param("id"), 0, 32)
+		id, err := strconv.ParseInt(c.Param("cqId"), 0, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return

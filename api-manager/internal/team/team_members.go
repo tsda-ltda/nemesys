@@ -22,7 +22,7 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		teamId, err := strconv.ParseInt(c.Param("id"), 10, 32)
+		teamId, err := strconv.ParseInt(c.Param("teamId"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
@@ -87,7 +87,7 @@ func RemoveMemberHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		rawTeamId := c.Param("id")
+		rawTeamId := c.Param("teamId")
 		rawUserId := c.Param("userId")
 
 		teamId, err := strconv.ParseInt(rawTeamId, 10, 32)
@@ -133,7 +133,7 @@ func MGetMembersHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		id, err := strconv.ParseInt(c.Param("id"), 10, 32)
+		id, err := strconv.ParseInt(c.Param("teamId"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return

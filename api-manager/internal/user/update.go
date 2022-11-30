@@ -6,24 +6,25 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
+	"github.com/fernandotsda/nemesys/api-manager/internal/roles"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 )
 
-// Creates a new user on database.
+// Updates user on database.
 // Responses:
 //   - 400 If invalid body.
 //   - 400 If json fields are invalid.
 //   - 400 If username or email already in use.
-//   - 404 If user not founded.
+//   - 404 If user not found.
 //   - 200 If succeeded.
 func UpdateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		id, err := strconv.ParseInt(c.Param("id"), 10, 32)
+		id, err := strconv.ParseInt(c.Param("userId"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
@@ -39,6 +40,11 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		err = api.Validate.Struct(user)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			return
+		}
+
+		if !roles.ValidateRole(user.Role) {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidRole))
 			return
 		}
 
