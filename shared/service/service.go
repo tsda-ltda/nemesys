@@ -45,4 +45,5 @@ func Start(name string, instantiator func() Service, setups ...func(Service)) {
 	for _, setup := range setups {
 		setup(service)
 	}
+	service.Run()
 }
