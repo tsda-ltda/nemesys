@@ -21,6 +21,5 @@ func NewToken(n int) (string, error) {
 		}
 		ret[i] = tokenChars[num.Int64()]
 	}
-
 	return string(ret), nil
 }
