@@ -13,6 +13,14 @@ func AuthReverseSessionKey(userId int32) string {
 	return "auth:users:sessions:" + strconv.FormatInt(int64(userId), 10)
 }
 
+func AuthAPIKeyKey(apikey string) string {
+	return "auth:apikey:" + apikey
+}
+
+func AuthReverseAPIKeyKey(apikeyId int32) string {
+	return "auth:apikey:id:" + strconv.FormatInt(int64(apikeyId), 10)
+}
+
 func CacheUserLimited(ip string) string {
 	return "cache:user-limited:" + ip
 }

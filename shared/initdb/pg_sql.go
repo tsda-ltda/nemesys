@@ -11,6 +11,19 @@ var sqlCommands []string = []string{
 		role INT2 NOT NULL
 	);`,
 
+	// API Keys table
+	`CREATE TABLE apikeys (
+		id SERIAL4 PRIMARY KEY,
+		user_id INT4 NOT NULL,
+		descr VARCHAR(255) NOT NULL, 
+		ttl INT2 NOT NULL,
+		created_at INT8 NOT NULL,
+		CONSTRAINT apikeys_fk_user_id
+		FOREIGN KEY(user_id)
+				REFERENCES users(id)
+				ON DELETE CASCADE
+	);`,
+
 	// Teams table
 	`CREATE TABLE teams (
 		id SERIAL4 PRIMARY KEY,
@@ -21,7 +34,7 @@ var sqlCommands []string = []string{
 
 	// Users teams table
 	`CREATE TABLE users_teams (
-			user_id INT4,
+		user_id INT4,
 		team_id INT4,
 		CONSTRAINT users_teams_fk_user_id
 		FOREIGN KEY(user_id)

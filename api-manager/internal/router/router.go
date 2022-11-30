@@ -26,54 +26,49 @@ import (
 func Set(s service.Service) {
 	api := s.(*api.API)
 
-	// get api routes
 	r := api.Router.Group(env.APIManagerRoutesPrefix)
 
-	// user authentication
 	r.POST("/login", middleware.Limiter(api, time.Second/2), uauth.LoginHandler(api))
 	r.POST("/logout", middleware.Protect(api, roles.Viewer), uauth.Logout(api))
 
-	// global data
 	global := r.Group("/global", middleware.Protect(api, roles.Admin))
 	{
 		global.GET("/refkeys/:refkey", refkey.GetHandler(api))
 		global.POST("/metrics/data", metricdata.AddHandler(api))
 	}
 
-	// users config
 	users := r.Group("/users")
 	{
-		// force logout
-		users.POST("/:id/logout", middleware.Protect(api, roles.Admin), uauth.ForceLogout(api))
+		users.POST("/:userId/logout", middleware.Protect(api, roles.Admin), uauth.ForceLogout(api))
 
-		// user
 		users.GET("/", middleware.Protect(api, roles.TeamsManager), user.MGetHandler(api))
-		users.GET("/:id", middleware.ProtectUser(api, roles.Admin), user.GetHandler(api))
+		users.GET("/:userId", middleware.ProtectUser(api, roles.Admin), user.GetHandler(api))
+		users.GET("/:userId/teams", middleware.ProtectUser(api, roles.Admin), user.TeamsHandler(api))
 		users.POST("/", middleware.Protect(api, roles.Admin), user.CreateHandler(api))
-		users.PATCH("/:id", middleware.Protect(api, roles.Admin), user.UpdateHandler(api))
-		users.DELETE("/:id", middleware.Protect(api, roles.Admin), user.DeleteHandler(api))
+		users.PATCH("/:userId", middleware.Protect(api, roles.Admin), user.UpdateHandler(api))
+		users.DELETE("/:userId", middleware.Protect(api, roles.Admin), user.DeleteHandler(api))
 
-		// user's teams
-		users.GET("/:id/teams", middleware.ProtectUser(api, roles.Admin), user.TeamsHandler(api))
+		apikeys := users.Group("/:userId/api-keys", middleware.ProtectUser(api, roles.Admin))
+		{
+			apikeys.GET("/", user.MGetAPIKeyHandler(api))
+			apikeys.POST("/", user.CreateAPIKeyHandler(api))
+			apikeys.DELETE("/:apikeyId", user.DeleteAPIKeyHandler(api))
+		}
 	}
 
-	// teams and context config
 	teams := r.Group("/teams", middleware.Protect(api, roles.TeamsManager))
 	{
-		// teams
 		teams.GET("/", team.MGetHandler(api))
-		teams.GET("/:id", team.GetHandler(api))
+		teams.GET("/:teamId", team.GetHandler(api))
 		teams.POST("/", team.CreateHandler(api))
-		teams.PATCH("/:id", team.UpdateHandler(api))
-		teams.DELETE("/:id", team.DeleteHandler(api))
+		teams.PATCH("/:teamId", team.UpdateHandler(api))
+		teams.DELETE("/:teamId", team.DeleteHandler(api))
 
-		// members
-		teams.GET("/:id/members", team.MGetMembersHandler(api))
-		teams.POST("/:id/members", team.AddMemberHandler(api))
-		teams.DELETE("/:id/members/:userId", team.RemoveMemberHandler(api))
+		teams.GET("/:teamId/members", team.MGetMembersHandler(api))
+		teams.POST("/:teamId/members", team.AddMemberHandler(api))
+		teams.DELETE("/:teamId/members/:userId", team.RemoveMemberHandler(api))
 
-		// contexts
-		ctx := teams.Group("/:id/ctx")
+		ctx := teams.Group("/:teamId/ctx")
 		{
 			ctx.GET("/", team.MGetContextHandler(api))
 			ctx.GET("/:ctxId", middleware.ParseContextParams(api), team.MGetContextHandler(api))
@@ -82,7 +77,6 @@ func Set(s service.Service) {
 			ctx.DELETE("/:ctxId", middleware.ParseContextParams(api), team.DeleteContextHandler(api))
 		}
 
-		// contextual metrics
 		ctxMetrics := ctx.Group("/:ctxId/metrics")
 		{
 			ctxMetrics.GET("/", middleware.ParseContextParams(api), ctxmetric.MGet(api))
@@ -93,20 +87,17 @@ func Set(s service.Service) {
 		}
 	}
 
-	// data-policies
 	dp := r.Group("/data-policies", middleware.Protect(api, roles.Master))
 	{
 		dp.GET("/", datapolicy.MGetHandler(api))
-		dp.GET("/:id", datapolicy.GetHandler(api))
+		dp.GET("/:dpId", datapolicy.GetHandler(api))
 		dp.POST("/", datapolicy.CreateHandler(api))
-		dp.PATCH("/:id", datapolicy.UpdateHandler(api))
-		dp.DELETE("/:id", datapolicy.DeleteHandler(api))
+		dp.PATCH("/:dpId", datapolicy.UpdateHandler(api))
+		dp.DELETE("/:dpId", datapolicy.DeleteHandler(api))
 	}
 
-	// Basic metrics
 	basic := r.Group("/containers/basics", middleware.Protect(api, roles.Admin))
 	{
-		// container
 		basic.GET("/", container.MGet(api, types.CTBasic))
 		basic.GET("/:containerId", container.GetBasicHandler(api))
 		basic.POST("/", container.CreateBasicHandler(api))
@@ -131,10 +122,8 @@ func Set(s service.Service) {
 		}
 	}
 
-	// SNMPv2c container and metrics
 	SNMPv2c := r.Group("/containers/snmpv2c", middleware.Protect(api, roles.Admin))
 	{
-		// container
 		SNMPv2c.GET("/", container.MGet(api, types.CTSNMPv2c))
 		SNMPv2c.GET("/:containerId", container.GetSNMPv2cHandler(api))
 		SNMPv2c.POST("/", container.CreateSNMPv2cHandler(api))
@@ -172,22 +161,21 @@ func Set(s service.Service) {
 	customQuery := r.Group("/custom-queries")
 	{
 		customQuery.GET("/", middleware.Protect(api, roles.Viewer), customquery.MGetHandler(api))
-		customQuery.GET("/:id", middleware.Protect(api, roles.Viewer), customquery.GetHandler(api))
+		customQuery.GET("/:cqId", middleware.Protect(api, roles.Viewer), customquery.GetHandler(api))
 		customQuery.POST("/", middleware.Protect(api, roles.TeamsManager), customquery.CreateHandler(api))
-		customQuery.PATCH("/:id", middleware.Protect(api, roles.TeamsManager), customquery.UpdateHandler(api))
-		customQuery.DELETE("/:id", middleware.Protect(api, roles.TeamsManager), customquery.DeleteHandler(api))
+		customQuery.PATCH("/:cqId", middleware.Protect(api, roles.TeamsManager), customquery.UpdateHandler(api))
+		customQuery.DELETE("/:cqId", middleware.Protect(api, roles.TeamsManager), customquery.DeleteHandler(api))
 	}
 
-	// metric data
 	{
-		r.GET("/teams/:id/ctx/:ctxId/metrics/:metricId/data",
+		r.GET("/teams/:teamId/ctx/:ctxId/metrics/:metricId/data",
 			middleware.Limiter(api, time.Millisecond*300),
 			middleware.Protect(api, roles.Viewer),
 			middleware.ParseContextualMetricParams(api),
 			middleware.MetricRequest(api),
 			ctxmetric.DataHandler(api),
 		)
-		r.GET("/teams/:id/ctx/:ctxId/metrics/:metricId/data/history",
+		r.GET("/teams/:teamId/ctx/:ctxId/metrics/:metricId/data/history",
 			middleware.Limiter(api, time.Millisecond*650),
 			middleware.Protect(api, roles.Viewer),
 			middleware.ParseContextualMetricParams(api),
