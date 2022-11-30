@@ -16,18 +16,22 @@ type Amqph struct {
 	plumber *models.AMQPPlumber
 	// PublisherCh is the channel to pubish messages.
 	PublisherCh chan models.DetailedPublishing
+	// serviceIdent is the service identification.
+	serviceIdent string
 }
 
 // New returns a new Amqph.
-func New(conn *amqp091.Connection, log *logger.Logger) *Amqph {
+func New(conn *amqp091.Connection, log *logger.Logger, serviceIdent string) *Amqph {
 	amqph := &Amqph{
-		conn:        conn,
-		log:         log,
-		plumber:     models.NewAMQPPlumber(),
-		PublisherCh: make(chan models.DetailedPublishing),
+		conn:         conn,
+		log:          log,
+		plumber:      models.NewAMQPPlumber(),
+		serviceIdent: serviceIdent,
+		PublisherCh:  make(chan models.DetailedPublishing),
 	}
 	amqph.declareExchages()
 	go amqph.publisher()
+	go amqph.pingHandler()
 	return amqph
 }
 

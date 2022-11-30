@@ -34,7 +34,7 @@ type SNMP struct {
 	stopDataPublisher chan any
 }
 
-func New() service.Service {
+func New(serviceNumber service.NumberType) service.Service {
 	amqpConn, err := amqp.Dial()
 	if err != nil {
 		stdlog.Panicf("Fail to dial with amqp server, err: %s", err.Error())
@@ -53,9 +53,10 @@ func New() service.Service {
 	log.Info("Connected to amqp server")
 
 	pg := pg.New()
+	tools := service.NewTools(service.RTS, serviceNumber)
 	return &SNMP{
-		Tools:             service.NewTools(),
-		amqph:             amqph.New(amqpConn, log),
+		Tools:             tools,
+		amqph:             amqph.New(amqpConn, log, tools.ServiceIdent),
 		amqpConn:          amqpConn,
 		pg:                pg,
 		log:               log,

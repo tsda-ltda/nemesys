@@ -44,7 +44,7 @@ type API struct {
 	Log *logger.Logger
 }
 
-func New() service.Service {
+func New(serviceNumber service.NumberType) service.Service {
 	amqpConn, err := amqp.Dial()
 	if err != nil {
 		stdlog.Panicf("Fail to dial with amqp server, err: %s", err)
@@ -102,9 +102,10 @@ func New() service.Service {
 	r := gin.New()
 
 	validate := validator.New()
-	amqph := amqph.New(amqpConn, log)
+	tools := service.NewTools(service.APIManager, serviceNumber)
+	amqph := amqph.New(amqpConn, log, tools.ServiceIdent)
 	api := &API{
-		Tools:            service.NewTools(),
+		Tools:            tools,
 		PG:               pg.New(),
 		Influx:           &influxClient,
 		Router:           r,
@@ -119,12 +120,11 @@ func New() service.Service {
 		return api
 	}
 
-	err = CreateDefaultUser(context.Background(), api)
+	err = api.createDefaultUser(context.Background())
 	if err != nil {
 		log.Panic("Fail to create dafault user", logger.ErrField(err))
 		return nil
 	}
-	log.Info("Default master user created")
 	return api
 }
 

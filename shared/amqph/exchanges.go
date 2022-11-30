@@ -47,4 +47,15 @@ func (a *Amqph) declareExchages() {
 
 	declare(amqp.ExchangeRTSMetricDataRequest, "direct", true, false, false, false, nil)
 	declare(amqp.ExchangeRTSMetricDataResponse, "direct", true, false, false, false, nil)
+
+	declare(amqp.ExchangeServicesStatus, "fanout", true, false, false, false, nil)
+	declare(amqp.ExchangeServiceLogs, "fanout", true, false, false, false, nil)
+
+	declare(amqp.ExchangeServiceUnregister, "fanout", true, false, false, false, nil)
+	declare(amqp.ExchangeServiceRegisterRequest, "fanout", true, false, false, false, nil)
+	declare(amqp.ExchangeServiceRegisterResponse, "fanout", true, false, false, false, nil)
+
+	declare(amqp.ExchangeServicePing, "direct", true, false, false, false, nil)
+	declare(amqp.ExchangeServicePong, "direct", true, false, false, false, nil)
+
 }

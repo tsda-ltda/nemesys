@@ -20,8 +20,8 @@ func GetDataRoutingKey(t types.ContainerType) (string, error) {
 	}
 }
 
-func RouteHeader(serviceName string) amqp091.Table {
-	return amqp091.Table{"routing_key": serviceName}
+func RouteHeader(serviceIdent string) amqp091.Table {
+	return amqp091.Table{"routing_key": serviceIdent}
 }
 
 func GetRoutingKeyFromHeader(h amqp091.Table) (string, error) {

@@ -28,6 +28,7 @@ func Set(s service.Service) {
 
 	r := api.Router.Group(env.APIManagerRoutesPrefix)
 
+	r.GET("/session", middleware.Protect(api, roles.Viewer), user.SessionInfoHandler(api))
 	r.POST("/login", middleware.Limiter(api, time.Second/2), uauth.LoginHandler(api))
 	r.POST("/logout", middleware.Protect(api, roles.Viewer), uauth.Logout(api))
 

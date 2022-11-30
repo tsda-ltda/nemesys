@@ -39,7 +39,7 @@ type RTS struct {
 	pendingMetricDataRequest map[string]models.RTSMetricConfig
 }
 
-func New() service.Service {
+func New(serviceNumber service.NumberType) service.Service {
 	amqpConn, err := amqp.Dial()
 	if err != nil {
 		stdlog.Panicf("Fail to dial with amqp server, err: %s", err)
@@ -59,9 +59,10 @@ func New() service.Service {
 	}
 	log.Info("Connected to amqp server")
 
-	amqph := amqph.New(amqpConn, log)
+	tools := service.NewTools(service.RTS, serviceNumber)
+	amqph := amqph.New(amqpConn, log, tools.ServiceIdent)
 	return &RTS{
-		Tools:                    service.NewTools(),
+		Tools:                    tools,
 		log:                      log,
 		pg:                       pg.New(),
 		amqp:                     amqpConn,

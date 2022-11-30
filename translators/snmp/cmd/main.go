@@ -6,5 +6,5 @@ import (
 )
 
 func main() {
-	service.Start("snmp", snmp.New)
+	service.Start(service.SNMP, snmp.New)
 }

@@ -43,6 +43,7 @@ type UsersGetRoleResponse struct {
 }
 
 const (
+	sqlUsersCountWithLimit      = `SELECT COUNT(*) FROM users LIMIT $1;`
 	sqlUsersExistsUsernameEmail = `SELECT 
 		EXISTS (SELECT 1 FROM users WHERE username = $2 AND id != $1), 
 		EXISTS (SELECT 1 FROM users WHERE email = $3 AND id != $1);`
@@ -59,6 +60,10 @@ const (
 		LEFT JOIN users_teams ut ON ut.team_id = t.id 
 		WHERE ut.user_id = $1 LIMIT $2 OFFSET $3;`
 )
+
+func (pg *PG) CountUsersWithLimit(ctx context.Context, limit int) (users int, err error) {
+	return users, pg.db.QueryRowContext(ctx, sqlUsersCountWithLimit, limit).Scan(&users)
+}
 
 func (pg *PG) UserExists(ctx context.Context, id int32) (exists bool, err error) {
 	return exists, pg.db.QueryRowContext(ctx, sqlUsersExists, id).Scan(&exists)

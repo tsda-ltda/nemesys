@@ -9,12 +9,12 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
-func CreateDefaultUser(ctx context.Context, api *API) error {
-	exists, err := api.PG.UsernameExists(ctx, env.DefaultUsername)
+func (api *API) createDefaultUser(ctx context.Context) error {
+	usersLen, err := api.PG.CountUsersWithLimit(ctx, 1)
 	if err != nil {
 		return err
 	}
-	if exists {
+	if usersLen == 1 {
 		return nil
 	}
 
@@ -33,6 +33,7 @@ func CreateDefaultUser(ctx context.Context, api *API) error {
 	if err != nil {
 		return err
 	}
+	api.Log.Info("Default master user created")
 
 	return nil
 }

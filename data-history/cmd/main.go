@@ -6,5 +6,5 @@ import (
 )
 
 func main() {
-	service.Start("dhs", dhs.New)
+	service.Start(service.DHS, dhs.New)
 }

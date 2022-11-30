@@ -39,7 +39,7 @@ type DHS struct {
 	IsReady bool
 }
 
-func New() service.Service {
+func New(serviceNumber service.NumberType) service.Service {
 	// connect to amqp server
 	amqpConn, err := amqp.Dial()
 	if err != nil {
@@ -67,10 +67,10 @@ func New() service.Service {
 	}
 	log.Info("Connected to influxdb")
 
-	// create amqph
-	amqph := amqph.New(amqpConn, log)
+	tools := service.NewTools(service.RTS, serviceNumber)
+	amqph := amqph.New(amqpConn, log, tools.ServiceIdent)
 	return &DHS{
-		Tools:                    service.NewTools(),
+		Tools:                    tools,
 		influxClient:             &influxClient,
 		pg:                       pg.New(),
 		amqpConn:                 amqpConn,

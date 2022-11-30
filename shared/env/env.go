@@ -4,6 +4,14 @@ package env
 var (
 	// LOG LEVELS = (debug, info, warn, error, dpanic, panic, fatal)
 
+	// ServiceManagerPingInterval is the interval of ping in seconds. Default is "5".
+	ServiceManagerPingInterval = "5"
+
+	// LogConsoleLevelAPIManager is the log level for console in API Manager service. Default is debug.
+	LogConsoleLevelServiceManager = "debug"
+	// LogBroadcastLevelAPIManager is the log level for broadcast in API Manager service. Default is info.
+	LogBroadcastLevelServiceManager = "info"
+
 	// LogConsoleLevelAPIManager is the log level for console in API Manager service. Default is debug.
 	LogConsoleLevelAPIManager = "debug"
 	// LogBroadcastLevelAPIManager is the log level for broadcast in API Manager service. Default is info.

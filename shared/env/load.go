@@ -37,6 +37,9 @@ func LoadEnvFile() error {
 // Init initialize all variables in the package according to the enviroment.
 func Init() {
 	// set config
+	set("LOG_CONSOLE_LEVEL_SERVICE_MANAGER", &LogConsoleLevelServiceManager)
+	set("LOG_BROADCAST_LEVEL_SERVICE_MANAGER", &LogBroadcastLevelServiceManager)
+
 	set("LOG_CONSOLE_LEVEL_API_MANAGER", &LogConsoleLevelAPIManager)
 	set("LOG_BROADCAST_LEVEL_API_MANAGER", &LogBroadcastLevelAPIManager)
 
