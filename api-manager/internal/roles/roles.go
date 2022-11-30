@@ -3,8 +3,14 @@ package roles
 type Role = uint8
 
 const (
-	Viewer       Role = 1
-	TeamsManager Role = 2
-	Admin        Role = 3
-	Master       Role = 4
+	Unknown Role = iota
+	Viewer
+	TeamsManager
+	Admin
+	Master
+	Invalid
 )
+
+func ValidateRole(role Role) bool {
+	return role > Unknown && role < Invalid
+}
