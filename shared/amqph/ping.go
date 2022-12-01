@@ -27,7 +27,6 @@ func (a *Amqph) pingHandler() {
 					CorrelationId: d.CorrelationId,
 				},
 			}
-			a.log.Debug("Pong sent")
 		case <-a.conn.NotifyClose(make(chan *amqp091.Error)):
 			return
 		}
