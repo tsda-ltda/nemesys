@@ -3,6 +3,7 @@ package router
 import (
 	"time"
 
+	alarmexp "github.com/fernandotsda/nemesys/api-manager/internal/alarm-expression"
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/container"
 	ctxmetric "github.com/fernandotsda/nemesys/api-manager/internal/contextual-metric"
@@ -17,6 +18,7 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/team"
 	"github.com/fernandotsda/nemesys/api-manager/internal/uauth"
 	"github.com/fernandotsda/nemesys/api-manager/internal/user"
+	"github.com/gin-gonic/gin"
 
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/service"
@@ -123,6 +125,7 @@ func Set(s service.Service) {
 				refkeys.DELETE("/:refkeyId", refkey.DeleteHandler(api))
 			}
 		}
+		setupAlarmExpressionRoutes(api, metrics)
 	}
 
 	SNMPv2c := r.Group("/containers/snmpv2c", middleware.Protect(api, roles.Admin))
@@ -141,6 +144,7 @@ func Set(s service.Service) {
 			metrics.PATCH("/:metricId", metric.UpdateSNMPv2cHandler(api))
 			metrics.DELETE("/:metricId", metric.DeleteHandler(api))
 		}
+		setupAlarmExpressionRoutes(api, metrics)
 	}
 
 	flexLegacy := r.Group("/containers/flex-legacy", middleware.Protect(api, roles.Admin))
@@ -159,6 +163,7 @@ func Set(s service.Service) {
 			metrics.PATCH("/:metricId", metric.UpdateFlexLegacyHandler(api))
 			metrics.DELETE("/:metricId", metric.DeleteHandler(api))
 		}
+		setupAlarmExpressionRoutes(api, metrics)
 	}
 
 	customQuery := r.Group("/custom-queries")
@@ -185,5 +190,15 @@ func Set(s service.Service) {
 			middleware.MetricRequest(api),
 			ctxmetric.QueryDataHandler(api),
 		)
+	}
+}
+
+func setupAlarmExpressionRoutes(api *api.API, r *gin.RouterGroup) {
+	a := r.Group("/:metricId/alarm-expression")
+	{
+		a.GET("/", alarmexp.GetHandler(api))
+		a.POST("/", alarmexp.CreateHandler(api))
+		a.PATCH("/", alarmexp.UpdateHandler(api))
+		a.DELETE("/", alarmexp.DeleteHandler(api))
 	}
 }

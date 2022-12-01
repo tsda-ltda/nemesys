@@ -236,4 +236,55 @@ var sqlCommands []string = []string{
 		descr VARCHAR (255) NOT NULL,
 		flux VARCHAR (1000) NOT NULL
 	);`,
+
+	// Create alarm expression table
+	`CREATE TABLE alarm_expressions (
+		metric_id INT8 UNIQUE NOT NULL,
+		minor_expression VARCHAR (255) NOT NULL,
+		major_expression VARCHAR (255) NOT NULL,
+		critical_expression VARCHAR (255) NOT NULL,
+		CONSTRAINT alarm_expressions_fk_metric_id
+			FOREIGN KEY(metric_id)
+				REFERENCES metrics(id)
+				ON DELETE CASCADE
+	);`,
+
+	// Create alarm profile table
+	`CREATE TABLE alarm_profiles (
+		id SERIAL4 PRIMARY KEY,
+		name VARCHAR (50) NOT NULL,
+		minor BOOLEAN NOT NULL,
+		major BOOLEAN NOT NULL,
+		critical BOOLEAN NOT NULL,
+		emails VARCHAR(255) ARRAY NOT NULL,
+		wpp VARCHAR(255) ARRAY NOT NULL,
+		sms VARCHAR(255) ARRAY NOT NULL,
+		telegrams VARCHAR(255) ARRAY NOT NULL
+	);`,
+
+	// Create alarm profile relation table
+	`CREATE TABLE alarm_profiles_rel (
+		alarm_profile_id INT4 NOT NULL,
+		metric_id INT8 NOT NULL,
+		CONSTRAINT alarm_profiles_rel_fk_metric_id
+			FOREIGN KEY(metric_id)
+				REFERENCES metrics(id)
+				ON DELETE CASCADE,
+		CONSTRAINT alarm_profiles_rel_fk_alarm_profile_id
+			FOREIGN KEY(alarm_profile_id)
+				REFERENCES alarm_profiles(id)
+				ON DELETE CASCADE
+	);`,
+
+	// Create metric alarm state table
+	`CREATE TABLE alarm_states (
+		metric_id INT8 UNIQUE NOT NULL,
+		state INT2 NOT NULL,
+		last_minor_time INT8 NOT NULL,
+		last_major_time INT8 NOT NULL,
+		last_critical_time INT8 NOT NULL,
+		last_recognization_time INT8 NOT NULL,
+		always_alarmed_on_new_alarm BOOLEAN NOT NULL,
+		recognization_max_lifetime INT8 NOT NULL	
+	);`,
 }
