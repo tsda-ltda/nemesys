@@ -40,7 +40,7 @@ type DHS struct {
 }
 
 func New(serviceNumber int) service.Service {
-	tools := service.NewTools(service.RTS, serviceNumber)
+	tools := service.NewTools(service.DHS, serviceNumber)
 	amqpConn, err := amqp.Dial()
 	if err != nil {
 		stdlog.Panicf("Fail to dial with amqp server, err: %s", err)
