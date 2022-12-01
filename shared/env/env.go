@@ -79,6 +79,9 @@ var (
 	// InfluxTLSKeyFilePath is the path for the TLS key file. Default is "".
 	InfluxTLSKeyFilePath = ""
 
+	// DefaultLogsBucketRetention is the default retention in hours of the logs bucket. Default is "72".
+	DefaultLogsBucketRetention = "72"
+
 	// RDBAuthHost is redis for auth host. Default is "localhost".
 	RDBAuthHost = "localhost"
 	// RDBAuthPort is the redis for auth port. Default is "6379".

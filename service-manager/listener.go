@@ -1,28 +1,37 @@
 package manager
 
 import (
+	"context"
+
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/service"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/rabbitmq/amqp091-go"
 )
 
-// func (s *ServiceManager) logListener() {
-// 	msgs, err := s.amqph.Listen("", amqp.ExchangeServiceLogs)
-// 	if err != nil {
-// 		s.log.Fatal("Fail to listen service unregister requests", logger.ErrField(err))
-// 		return
-// 	}
-// 	for {
-// 		select {
-// 		case <-msgs:
-
-// 		case <-s.Done():
-// 			return
-// 		}
-// 	}
-// }
+func (s *ServiceManager) logListener() {
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
+	msgs, err := s.amqph.Listen("", amqp.ExchangeServiceLogs)
+	if err != nil {
+		s.log.Fatal("Fail to listen service unregister requests", logger.ErrField(err))
+		return
+	}
+	for {
+		select {
+		case d := <-msgs:
+			var log map[string]any
+			err := json.Unmarshal(d.Body, &log)
+			if err != nil {
+				continue
+			}
+			s.influxClient.WriteLog(context.Background(), log)
+		case <-s.Done():
+			return
+		}
+	}
+}
 
 func (s *ServiceManager) registryListener() {
 	register, err := s.amqph.Listen("", amqp.ExchangeServiceRegisterRequest)

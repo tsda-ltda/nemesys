@@ -40,6 +40,7 @@ type RTS struct {
 }
 
 func New(serviceNumber service.NumberType) service.Service {
+	tools := service.NewTools(service.RTS, serviceNumber)
 	amqpConn, err := amqp.Dial()
 	if err != nil {
 		stdlog.Panicf("Fail to dial with amqp server, err: %s", err)
@@ -49,7 +50,7 @@ func New(serviceNumber service.NumberType) service.Service {
 	log, err := logger.New(
 		amqpConn,
 		logger.Config{
-			Service:        "rts",
+			Service:        tools.ServiceIdent,
 			ConsoleLevel:   logger.ParseLevelEnv(env.LogConsoleLevelRTS),
 			BroadcastLevel: logger.ParseLevelEnv(env.LogBroadcastLevelRTS),
 		},
@@ -58,15 +59,12 @@ func New(serviceNumber service.NumberType) service.Service {
 		stdlog.Panicf("Fail to create logger, err: %s", err)
 	}
 	log.Info("Connected to amqp server")
-
-	tools := service.NewTools(service.RTS, serviceNumber)
-	amqph := amqph.New(amqpConn, log, tools.ServiceIdent)
 	return &RTS{
 		Tools:                    tools,
 		log:                      log,
 		pg:                       pg.New(),
 		amqp:                     amqpConn,
-		amqph:                    amqph,
+		amqph:                    amqph.New(amqpConn, log, tools.ServiceIdent),
 		cache:                    cache.New(),
 		plumber:                  models.NewAMQPPlumber(),
 		pendingMetricDataRequest: make(map[string]models.RTSMetricConfig),

@@ -45,6 +45,8 @@ type API struct {
 }
 
 func New(serviceNumber service.NumberType) service.Service {
+	tools := service.NewTools(service.APIManager, serviceNumber)
+
 	amqpConn, err := amqp.Dial()
 	if err != nil {
 		stdlog.Panicf("Fail to dial with amqp server, err: %s", err)
@@ -52,7 +54,7 @@ func New(serviceNumber service.NumberType) service.Service {
 	}
 
 	log, err := logger.New(amqpConn, logger.Config{
-		Service:        "api-manager",
+		Service:        tools.ServiceIdent,
 		ConsoleLevel:   logger.ParseLevelEnv(env.LogConsoleLevelAPIManager),
 		BroadcastLevel: logger.ParseLevelEnv(env.LogBroadcastLevelAPIManager),
 	})
@@ -102,8 +104,6 @@ func New(serviceNumber service.NumberType) service.Service {
 	r := gin.New()
 
 	validate := validator.New()
-	tools := service.NewTools(service.APIManager, serviceNumber)
-	amqph := amqph.New(amqpConn, log, tools.ServiceIdent)
 	api := &API{
 		Tools:            tools,
 		PG:               pg.New(),
@@ -113,7 +113,7 @@ func New(serviceNumber service.NumberType) service.Service {
 		Validate:         validate,
 		Log:              log,
 		Cache:            cache.New(),
-		Amqph:            amqph,
+		Amqph:            amqph.New(amqpConn, log, tools.ServiceIdent),
 		UserPWBcryptCost: bcryptCost,
 	}
 	if !initialized {

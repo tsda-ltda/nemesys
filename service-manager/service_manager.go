@@ -61,6 +61,20 @@ func Start() {
 	}
 	log.Info("Connected to influxdb")
 
+	logsRetention, err := strconv.ParseInt(env.DefaultLogsBucketRetention, 0, 64)
+	if err != nil {
+		log.Fatal("Fail to parse env.DefaultLogsBucketRetention", logger.ErrField(err))
+		return
+	}
+	created, err := influxClient.CreateLogsBucket(logsRetention)
+	if err != nil {
+		log.Fatal("Fail to create logs bucket", logger.ErrField(err))
+		return
+	}
+	if created {
+		log.Info("Logs bucket created with success")
+	}
+
 	amqph := amqph.New(amqpConn, log, service.GetServiceIdent(service.ServiceManager, 1))
 
 	s := ServiceManager{
@@ -95,6 +109,7 @@ func Start() {
 
 	go s.registryListener()
 	go s.pingHandler()
+	go s.logListener()
 	go s.pongHandler()
 
 	log.Info("Service is ready!")

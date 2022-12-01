@@ -35,6 +35,7 @@ type SNMP struct {
 }
 
 func New(serviceNumber service.NumberType) service.Service {
+	tools := service.NewTools(service.RTS, serviceNumber)
 	amqpConn, err := amqp.Dial()
 	if err != nil {
 		stdlog.Panicf("Fail to dial with amqp server, err: %s", err.Error())
@@ -42,7 +43,7 @@ func New(serviceNumber service.NumberType) service.Service {
 	}
 
 	log, err := logger.New(amqpConn, logger.Config{
-		Service:        "snmp",
+		Service:        tools.ServiceIdent,
 		ConsoleLevel:   logger.ParseLevelEnv(env.LogConsoleLevelSNMP),
 		BroadcastLevel: logger.ParseLevelEnv(env.LogBroadcastLevelSNMP),
 	})
@@ -53,7 +54,6 @@ func New(serviceNumber service.NumberType) service.Service {
 	log.Info("Connected to amqp server")
 
 	pg := pg.New()
-	tools := service.NewTools(service.RTS, serviceNumber)
 	return &SNMP{
 		Tools:             tools,
 		amqph:             amqph.New(amqpConn, log, tools.ServiceIdent),

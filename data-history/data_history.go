@@ -40,16 +40,15 @@ type DHS struct {
 }
 
 func New(serviceNumber service.NumberType) service.Service {
-	// connect to amqp server
+	tools := service.NewTools(service.RTS, serviceNumber)
 	amqpConn, err := amqp.Dial()
 	if err != nil {
 		stdlog.Panicf("Fail to dial with amqp server, err: %s", err)
 		return nil
 	}
 
-	// create logger
 	log, err := logger.New(amqpConn, logger.Config{
-		Service:        "dhs",
+		Service:        tools.ServiceIdent,
 		ConsoleLevel:   logger.ParseLevelEnv(env.LogConsoleLevelDHS),
 		BroadcastLevel: logger.ParseLevelEnv(env.LogBroadcastLevelDHS),
 	})
@@ -59,22 +58,18 @@ func New(serviceNumber service.NumberType) service.Service {
 	}
 	log.Info("Connected to amqp server")
 
-	// connect influxdb
 	influxClient, err := influxdb.Connect()
 	if err != nil {
 		log.Panic("Fail to connect to influxdb", logger.ErrField(err))
 		return nil
 	}
 	log.Info("Connected to influxdb")
-
-	tools := service.NewTools(service.RTS, serviceNumber)
-	amqph := amqph.New(amqpConn, log, tools.ServiceIdent)
 	return &DHS{
 		Tools:                    tools,
 		influxClient:             &influxClient,
 		pg:                       pg.New(),
 		amqpConn:                 amqpConn,
-		amqph:                    amqph,
+		amqph:                    amqph.New(amqpConn, log, tools.ServiceIdent),
 		log:                      log,
 		containersPulling:        make(map[string]*containerPulling),
 		metricsContainerMap:      make(map[int64]string),

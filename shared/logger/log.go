@@ -46,13 +46,13 @@ func New(conn *amqp091.Connection, config Config) (logger *Logger, err error) {
 
 	// exchange declare
 	err = ch.ExchangeDeclare(
-		"logs",   // name
-		"fanout", // type
-		true,     // durable
-		false,    // auto-deleted
-		false,    // internal
-		false,    // no-wait
-		nil,      // arguments
+		amqp.ExchangeServiceLogs, // name
+		"fanout",                 // type
+		true,                     // durable
+		false,                    // auto-deleted
+		false,                    // internal
+		false,                    // no-wait
+		nil,                      // arguments
 	)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,10 @@ func New(conn *amqp091.Connection, config Config) (logger *Logger, err error) {
 	zapConfig := zap.NewProductionEncoderConfig()
 	zapConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
-	jsonEncoder := zapcore.NewJSONEncoder(zapConfig)
+	jsonConfig := zap.NewProductionEncoderConfig()
+	jsonConfig.EncodeTime = zapcore.RFC3339NanoTimeEncoder
+
+	jsonEncoder := zapcore.NewJSONEncoder(jsonConfig)
 	jsonEncoder.AddString("serv", config.Service)
 
 	consoleEncoder := zapcore.NewConsoleEncoder(zapConfig)
