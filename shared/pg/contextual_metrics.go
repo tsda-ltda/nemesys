@@ -198,12 +198,18 @@ func (pg *PG) UpdateContextualMetric(ctx context.Context, m models.ContextualMet
 		m.Descr,
 		m.Id,
 	)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }
 
 func (pg *PG) DeleteContextualMetric(ctx context.Context, id int64) (exists bool, err error) {
 	t, err := pg.db.ExecContext(ctx, sqlCtxMetricsDelete, id)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }

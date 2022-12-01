@@ -86,6 +86,9 @@ func (pg *PG) CreateUser(ctx context.Context, user models.User) (id int32, err e
 
 func (pg *PG) DeleteUser(ctx context.Context, id int32) (e bool, err error) {
 	t, err := pg.db.ExecContext(ctx, sqlUsersDelete, id)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }

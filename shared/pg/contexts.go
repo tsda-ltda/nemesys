@@ -73,12 +73,18 @@ func (pg *PG) UpdateContext(ctx context.Context, context models.Context) (exists
 		context.Name,
 		context.Id,
 	)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }
 
 func (pg *PG) DeleteContext(ctx context.Context, id int32) (exists bool, err error) {
 	t, err := pg.db.ExecContext(ctx, sqlCtxDelete, id)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }

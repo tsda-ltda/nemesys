@@ -58,6 +58,9 @@ func (pg *PG) CreateTeam(ctx context.Context, team models.Team) (id int32, err e
 
 func (pg *PG) DeleteTeam(ctx context.Context, id int32) (exists bool, err error) {
 	t, err := pg.db.ExecContext(ctx, sqlTeamsDelete, id)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }
@@ -113,6 +116,9 @@ func (pg *PG) UpdateTeam(ctx context.Context, team models.Team) (exists bool, er
 		team.Descr,
 		team.Id,
 	)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }
@@ -132,6 +138,9 @@ func (pg *PG) AddTeamMember(ctx context.Context, userId int32, teamId int32) err
 
 func (pg *PG) RemoveTeamMember(ctx context.Context, userId int32, teamId int32) (exists bool, err error) {
 	t, err := pg.db.ExecContext(ctx, sqlTeamsRemMember, userId, teamId)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }

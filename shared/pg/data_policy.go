@@ -71,6 +71,9 @@ func (pg *PG) UpdateDataPolicy(ctx context.Context, dp models.DataPolicy) (tx *s
 
 func (pg *PG) DeleteDataPolicy(ctx context.Context, id int16) (exists bool, err error) {
 	t, err := pg.db.ExecContext(ctx, sqlDPDelete, id)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }

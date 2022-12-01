@@ -25,6 +25,9 @@ func (pg *PG) CreateMetricRefkey(ctx context.Context, rk models.MetricRefkey) (i
 
 func (pg *PG) UpdateMetricRefkey(ctx context.Context, rk models.MetricRefkey) (exists bool, err error) {
 	t, err := pg.db.ExecContext(ctx, sqlRefkeyUpdate, rk.Refkey, rk.MetricId, rk.Id)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }
@@ -32,6 +35,9 @@ func (pg *PG) UpdateMetricRefkey(ctx context.Context, rk models.MetricRefkey) (e
 func (pg *PG) DeleteMetricRefkey(ctx context.Context, id int64) (exists bool, err error) {
 	t, err := pg.db.ExecContext(ctx, sqlRefKeyDelete, id)
 	rowsAffected, _ := t.RowsAffected()
+	if err != nil {
+		return false, err
+	}
 	return rowsAffected != 0, err
 }
 

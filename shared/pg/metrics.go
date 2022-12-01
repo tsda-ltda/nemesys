@@ -275,6 +275,9 @@ func (pg *PG) UpdateBasicMetric(ctx context.Context, metric models.Metric[struct
 		metric.Base.EvaluableExpression,
 		metric.Base.Id,
 	)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }
@@ -293,12 +296,18 @@ func (pg *PG) updateMetric(ctx context.Context, tx *sql.Tx, metric models.BaseMe
 		metric.EvaluableExpression,
 		metric.Id,
 	)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }
 
 func (pg *PG) DeleteMetric(ctx context.Context, id int64) (exists bool, err error) {
 	t, err := pg.db.ExecContext(ctx, sqlMetricsDelete, id)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }

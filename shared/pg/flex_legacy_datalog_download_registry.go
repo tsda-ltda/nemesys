@@ -35,6 +35,9 @@ func (pg *PG) UpdateFlexLegacyDatalogDownloadRegistry(ctx context.Context, r mod
 		r.Virtual,
 		r.ContainerId,
 	)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }

@@ -59,6 +59,9 @@ func (pg *PG) UpdateCustomQuery(ctx context.Context, cq models.CustomQuery) (exi
 		cq.Flux,
 		cq.Id,
 	)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }
@@ -124,6 +127,9 @@ func (pg *PG) GetCustomQueryByIdent(ctx context.Context, ident string) (r Custom
 func (pg *PG) DeleteCustomQuery(ctx context.Context, id int32) (exists bool, err error) {
 
 	t, err := pg.db.ExecContext(ctx, sqlCustomQueriesDelete, id)
+	if err != nil {
+		return false, err
+	}
 	if err != nil {
 		return false, err
 	}

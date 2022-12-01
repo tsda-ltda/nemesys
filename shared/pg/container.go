@@ -76,6 +76,9 @@ func (pg *PG) UpdateBasicContainer(ctx context.Context, container models.Contain
 		container.Base.RTSPullingInterval,
 		container.Base.Id,
 	)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }
@@ -88,12 +91,18 @@ func (pg *PG) updateContainer(ctx context.Context, tx *sql.Tx, container models.
 		container.RTSPullingInterval,
 		container.Id,
 	)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }
 
 func (pg *PG) DeleteContainer(ctx context.Context, id int32) (exists bool, err error) {
 	t, err := pg.db.ExecContext(ctx, sqlContainersDelete, id)
+	if err != nil {
+		return false, err
+	}
 	rowsAffected, _ := t.RowsAffected()
 	return rowsAffected != 0, err
 }
