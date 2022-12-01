@@ -76,7 +76,7 @@ func (s *ServiceManager) registryListener() {
 				continue
 			}
 			founded := false
-			newServices := make([]Service, len(s.services)-1)
+			newServices := make([]service.ServiceStatus, len(s.services)-1)
 			for _, serv := range s.services {
 				if serv.Ident == ident {
 					founded = true

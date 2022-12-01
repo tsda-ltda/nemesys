@@ -10,6 +10,7 @@ const (
 	QueueDHSMetricCreated       = "services.dhs.notification.metric.create"
 	QueueDHSContainerCreated    = "services.dhs.notification.container.create"
 
+	ExchangeMetricAlarmed           = "services.alarm.metric_alarmed"
 	ExchangeContainerCreated        = "notfication.container.create"
 	ExchangeContainerUpdated        = "notfication.container.update"
 	ExchangeContainerDeleted        = "notfication.container.delete"

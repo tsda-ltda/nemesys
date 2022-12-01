@@ -3,6 +3,7 @@ package service
 import (
 	stdlog "log"
 	"strconv"
+	"time"
 
 	"github.com/fernandotsda/nemesys/shared/env"
 )
@@ -15,6 +16,23 @@ type Service interface {
 	GetServiceNumber() int
 	GetServiceIdent() string
 	Close() error
+}
+
+type ServiceStatus struct {
+	// Name is the service name.
+	Name string `json:"name"`
+	// Ident is the service ident.
+	Ident string `json:"ident"`
+	// Number is the service number.
+	Number int `json:"number"`
+	// Online is the online status;
+	Online bool `json:"online"`
+	// LastPing is the time of the last ping
+	LastPing time.Time `json:"last-ping"`
+	// LostConnectionTime is the time of the connection lost.
+	LostConnectionTime time.Time `json:"lost-connection-time"`
+	// Type is the service type.
+	Type Type `json:"type"`
 }
 
 type Type uint8

@@ -3,7 +3,6 @@ package manager
 import (
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/fernandotsda/nemesys/shared/service"
 )
@@ -19,26 +18,9 @@ var (
 	rtsN        = service.DefaultServiceNumber
 )
 
-type Service struct {
-	// Name is the service name.
-	Name string
-	// Ident is the service ident.
-	Ident string
-	// Number is the service number.
-	Number int
-	// Online is the online status;
-	Online bool
-	// LastPing is the time of the last ping
-	LastPing time.Time
-	// LostConnectionTime is the time of the connection lost.
-	LostConnectionTime time.Time
-	// Type is the service type.
-	Type service.Type
-}
-
-func (s *ServiceManager) newService(t service.Type) Service {
+func (s *ServiceManager) newService(t service.Type) service.ServiceStatus {
 	n := s.getServiceNumber(t)
-	service := Service{
+	service := service.ServiceStatus{
 		Name:   service.GetServiceName(t),
 		Ident:  service.GetServiceIdent(t, n),
 		Number: n,

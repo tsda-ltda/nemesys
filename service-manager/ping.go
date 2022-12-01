@@ -6,6 +6,7 @@ import (
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/fernandotsda/nemesys/shared/service"
 	"github.com/fernandotsda/nemesys/shared/uuid"
 	"github.com/rabbitmq/amqp091-go"
 )
@@ -17,7 +18,7 @@ func (s *ServiceManager) pingHandler() {
 		select {
 		case t := <-ticker.C:
 			for i, serv := range s.services {
-				go func(i int, serv Service) {
+				go func(i int, serv service.ServiceStatus) {
 					online := s.pingService(serv.Ident)
 
 					if !serv.Online && online {

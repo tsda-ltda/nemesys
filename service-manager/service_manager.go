@@ -27,7 +27,7 @@ type ServiceManager struct {
 	// log is the log.
 	log *logger.Logger
 	// services is all services registered.
-	services []Service
+	services []service.ServiceStatus
 	// pingPlumber is the ping plumber.
 	pingPlumber models.AMQPPlumber
 	// pingInterval is the ping interval.
@@ -81,7 +81,7 @@ func Start() {
 		amqpConn:     amqpConn,
 		influxClient: &influxClient,
 		log:          log,
-		services:     make([]Service, 0),
+		services:     make([]service.ServiceStatus, 0),
 		Tools:        service.NewTools(service.ServiceManager, 1),
 		amqph:        amqph,
 		pingPlumber:  *models.NewAMQPPlumber(),
