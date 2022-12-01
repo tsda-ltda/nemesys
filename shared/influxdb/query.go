@@ -12,7 +12,7 @@ import (
 )
 
 type QueryOptions struct {
-	// Start is the start range. Can be ommited.
+	// Start is the start range.
 	Start string
 	// Stop is the end range. Can be ommited.
 	Stop string
@@ -26,7 +26,7 @@ type QueryOptions struct {
 	MetricType types.MetricType
 }
 
-func (c *Client) Query(ctx context.Context, opts QueryOptions) (queryPoints *[][]any, err error) {
+func (c *Client) Query(ctx context.Context, opts QueryOptions) (points [][]any, err error) {
 	queryApi := c.QueryAPI(*c.DefaultOrg.Id)
 
 	rawBucket, err := c.getBucketLocal(GetBucketName(opts.DataPolicyId, false))
@@ -50,12 +50,12 @@ func (c *Client) Query(ctx context.Context, opts QueryOptions) (queryPoints *[][
 		return nil, err
 	}
 
-	points := make([][]any, 0)
+	points = make([][]any, 0)
 	for table.Next() {
 		r := table.Record()
 		points = append(points, []any{r.Time().Unix(), r.Value()})
 	}
-	return &points, nil
+	return points, nil
 }
 
 func getBaseQuery(opts QueryOptions, rawBucket *domain.Bucket) (query string, err error) {

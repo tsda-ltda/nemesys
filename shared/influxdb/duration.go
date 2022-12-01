@@ -6,6 +6,10 @@ import (
 )
 
 func ParseDuration(influxDuration string) (duration time.Duration, err error) {
+	if len(influxDuration) < 2 {
+		return 0, ErrInvalidDuration
+	}
+
 	var magnitude string
 
 	lastIndex := len(influxDuration) - 1
