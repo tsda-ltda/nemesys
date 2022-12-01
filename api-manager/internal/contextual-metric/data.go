@@ -2,8 +2,6 @@ package ctxmetric
 
 import (
 	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -76,118 +74,28 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		now := time.Now().Unix()
-
 		var opts influxdb.QueryOptions
 		opts.MetricId = r.MetricId
 		opts.MetricType = r.MetricType
 		opts.DataPolicyId = r.DataPolicyId
 
-		start, err := strconv.ParseInt(c.Query("start"), 0, 64)
+		opts.Start = c.Query("start")
+		opts.Stop = c.Query("stop")
+		cq, err := tools.GetCustomQueryFlux(api, c)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
-			return
-		}
-		opts.Start = influxdb.DurationFromSeconds(start - now)
-
-		rawStop := c.Param("stop")
-		if len(rawStop) > 0 {
-			stop, err := strconv.ParseInt(rawStop, 0, 64)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			if ctx.Err() != nil {
 				return
 			}
-			opts.Stop = influxdb.DurationFromSeconds(stop - now)
-		} else {
-			opts.Stop = "now()"
-		}
-
-		rawCustomQuery := c.Query("custom_query")
-		if len(rawCustomQuery) != 0 {
-			id, err := strconv.ParseInt(rawCustomQuery, 0, 32)
-			if err != nil {
-				cacheRes, err := api.Cache.GetCustomQueryByIdent(ctx, rawCustomQuery)
-				if err != nil {
-					if ctx.Err() != nil {
-						return
-					}
-					c.Status(http.StatusInternalServerError)
-					api.Log.Error("Fail to get custom query on cache", logger.ErrField(err))
-					return
-				}
-
-				if !cacheRes.Exists {
-					dbRes, err := api.PG.GetCustomQueryByIdent(ctx, rawCustomQuery)
-					if err != nil {
-						if ctx.Err() != nil {
-							return
-						}
-						c.Status(http.StatusInternalServerError)
-						api.Log.Error("Fail to get custom query on cache", logger.ErrField(err))
-						return
-					}
-
-					if !dbRes.Exists {
-						c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgCustomQueryNotFound))
-						return
-					}
-					opts.CustomQueryFlux = dbRes.CustomQuery.Flux
-
-					err = api.Cache.SetCustomQueryByIdent(ctx, dbRes.CustomQuery.Flux, rawCustomQuery)
-					if err != nil {
-						if ctx.Err() != nil {
-							return
-						}
-						c.Status(http.StatusInternalServerError)
-						api.Log.Error("Fail to save custom query flux on cache", logger.ErrField(err))
-						return
-					}
-				} else {
-					opts.CustomQueryFlux = cacheRes.Flux
-				}
-			} else {
-				cacheRes, err := api.Cache.GetCustomQuery(ctx, int32(id))
-				if err != nil {
-					if ctx.Err() != nil {
-						return
-					}
-					c.Status(http.StatusInternalServerError)
-					api.Log.Error("Fail to get custom query on cache", logger.ErrField(err))
-					return
-				}
-
-				if !cacheRes.Exists {
-					dbRes, err := api.PG.GetCustomQuery(ctx, int32(id))
-					if err != nil {
-						if ctx.Err() != nil {
-							return
-						}
-						c.Status(http.StatusInternalServerError)
-						api.Log.Error("Fail to get custom query on cache", logger.ErrField(err))
-						return
-					}
-
-					if !dbRes.Exists {
-						c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgCustomQueryNotFound))
-						return
-					}
-					opts.CustomQueryFlux = dbRes.CustomQuery.Flux
-					err = api.Cache.SetCustomQuery(ctx, dbRes.CustomQuery.Flux, int32(id))
-					if err != nil {
-						if ctx.Err() != nil {
-							return
-						}
-						c.Status(http.StatusInternalServerError)
-						api.Log.Error("Fail to save custom query flux on cache", logger.ErrField(err))
-						return
-					}
-				} else {
-					opts.CustomQueryFlux = cacheRes.Flux
-				}
+			if err == tools.ErrCustomQueryNotFound {
+				c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgCustomQueryNotFound))
+				return
 			}
+			c.Status(http.StatusInternalServerError)
+			api.Log.Error("Fail to get custom query", logger.ErrField(err))
+			return
 		}
-
-		d, err := api.Influx.Query(ctx, opts)
+		opts.CustomQueryFlux = cq
+		points, err := api.Influx.Query(ctx, opts)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -200,6 +108,6 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to query metric data", logger.ErrField(err))
 			return
 		}
-		c.JSON(http.StatusOK, d)
+		c.JSON(http.StatusOK, points)
 	}
 }
