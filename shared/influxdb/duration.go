@@ -2,24 +2,22 @@ package influxdb
 
 import (
 	"strconv"
-	"strings"
 	"time"
 )
 
 func ParseDuration(influxDuration string) (duration time.Duration, err error) {
-	// get magnitude
 	var magnitude string
-	_, err = strconv.Atoi(string(influxDuration[len(influxDuration)-2]))
-	if err == nil {
-		magnitude = string(influxDuration[len(influxDuration)-1])
-	} else {
-		magnitude = string(influxDuration[len(influxDuration)-2]) + string(influxDuration[len(influxDuration)-1])
-	}
 
-	timeValueString, _, _ := strings.Cut(influxDuration, magnitude)
-	timeValue, err := strconv.Atoi(timeValueString)
+	lastIndex := len(influxDuration) - 1
+	timeValue, err := strconv.ParseInt(influxDuration[:lastIndex], 0, 64)
 	if err != nil {
-		return duration, ErrInvalidDuration
+		timeValue, err = strconv.ParseInt(influxDuration[:lastIndex-1], 0, 64)
+		if err != nil {
+			return 0, ErrInvalidDuration
+		}
+		magnitude = influxDuration[lastIndex-1:]
+	} else {
+		magnitude = influxDuration[lastIndex:]
 	}
 
 	switch magnitude {
