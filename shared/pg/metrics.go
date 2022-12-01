@@ -106,6 +106,7 @@ const (
 	sqlMetricsGetMetricsRequestsAndIntervals = `SELECT id, type, container_id, container_type, data_policy_id, dhs_interval FROM metrics WHERE dhs_enabled = true AND container_type != $1 LIMIT $2 OFFSET $3;`
 	sqlMetricsGetRequest                     = `SELECT type, container_id, container_type, data_policy_id, enabled FROM metrics WHERE id = $1;`
 	sqlMetricsDHSEnabled                     = `SELECT dhs_enabled FROM metrics WHERE id = $1;`
+	sqlMetricsCountNonFlex                   = `SELECT COUNT(*) FROM metrics WHERE dhs_enabled = true AND container_type != $1;`
 )
 
 func (pg *PG) GetBasicMetric(ctx context.Context, id int64) (r MetricsGetBasicResponse, err error) {
@@ -413,4 +414,8 @@ func (pg *PG) GetMetricsRequestsAndIntervals(ctx context.Context, limit int, off
 	}
 	r = results
 	return r, nil
+}
+
+func (pg *PG) CountNonFlexMetrics(ctx context.Context) (n int64, err error) {
+	return n, pg.db.QueryRowContext(ctx, sqlMetricsCountNonFlex, types.CTFlexLegacy).Scan(&n)
 }

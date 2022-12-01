@@ -55,6 +55,7 @@ const (
 		EXISTS (SELECT 1 FROM flex_legacy_containers WHERE target = $2 AND port = $3 AND container_id != $1),
 		EXISTS (SELECT 1 FROM flex_legacy_containers WHERE serial_number = $4 AND container_id != $1);`
 	sqlFlexLegacyContainersGetTarget = `SELECT target FROM flex_legacy_containers WHERE container_id = $1;`
+	sqlFlexLegacyContainersCount     = `SELECT COUNT(*) FROM flex_legacy_containers;`
 )
 
 func (pg *PG) CreateFlexLegacyContainer(ctx context.Context, container models.Container[models.FlexLegacyContainer]) (id int32, err error) {
@@ -217,4 +218,8 @@ func (pg *PG) GetFlexLegacyContainerTarget(ctx context.Context, id int32) (exist
 		return false, target, err
 	}
 	return true, target, nil
+}
+
+func (pg *PG) CountFlexLegacyContainers(ctx context.Context) (n int64, err error) {
+	return n, pg.db.QueryRowContext(ctx, sqlFlexLegacyContainersCount).Scan(&n)
 }
