@@ -79,6 +79,7 @@ var sqlCommands []string = []string{
 		name VARCHAR (50) NOT NULL,
 		descr VARCHAR (255) NOT NULL,
 		enabled BOOLEAN NOT NULL,
+		check_alarm BOOLEAN NOT NULL,
 		data_policy_id INT4 NOT NULL,
 		rts_pulling_times INT2 NOT NULL,
 		rts_data_cache_duration INT4 NOT NULL,
