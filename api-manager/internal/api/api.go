@@ -42,6 +42,9 @@ type API struct {
 	UserPWBcryptCost int
 	// Logger is the internal logger.
 	Log *logger.Logger
+	// servicesStatus are the current status of all registered
+	// services by the service manager.
+	servicesStatus []service.ServiceStatus
 }
 
 func New(serviceNumber int) service.Service {
@@ -115,6 +118,7 @@ func New(serviceNumber int) service.Service {
 		Cache:            cache.New(),
 		Amqph:            amqph.New(amqpConn, log, tools.ServiceIdent),
 		UserPWBcryptCost: bcryptCost,
+		servicesStatus:   []service.ServiceStatus{},
 	}
 	if !initialized {
 		return api
@@ -129,6 +133,8 @@ func New(serviceNumber int) service.Service {
 }
 
 func (api *API) Run() {
+	go api.servicesStatusListener()
+
 	url := fmt.Sprintf("%s:%s", env.APIManagerHost, env.APIManagerPort)
 	api.Log.Info("Server listening to: " + url)
 
