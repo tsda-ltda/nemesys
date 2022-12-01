@@ -34,7 +34,7 @@ type SNMP struct {
 	stopDataPublisher chan any
 }
 
-func New(serviceNumber service.NumberType) service.Service {
+func New(serviceNumber int) service.Service {
 	tools := service.NewTools(service.RTS, serviceNumber)
 	amqpConn, err := amqp.Dial()
 	if err != nil {

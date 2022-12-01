@@ -12,23 +12,21 @@ type Service interface {
 	Done() <-chan error
 	DispatchDone(error)
 	GetServiceType() Type
-	GetServiceNumber() NumberType
+	GetServiceNumber() int
 	GetServiceIdent() string
 	Close() error
 }
 
 type Type uint8
 
-type NumberType uint8
-
 type NumberHandler struct {
-	garbage []NumberType
-	n       NumberType
+	garbage []int
+	n       int
 }
 
 type Tools struct {
 	doneChs       []chan error
-	ServiceNumber NumberType
+	ServiceNumber int
 	ServiceIdent  string
 	ServiceType   Type
 }
@@ -45,21 +43,21 @@ const (
 )
 
 var DefaultServiceNumber = NumberHandler{
-	garbage: []NumberType{},
+	garbage: []int{},
 	n:       1,
 }
 
-func (s *NumberHandler) Release(n NumberType) {
+func (s *NumberHandler) Release(n int) {
 	if n > s.n {
 		panic("number was not created by ServiceNumber")
 	}
 	s.garbage = append(s.garbage, n)
 }
 
-func (s *NumberHandler) Get() (n NumberType) {
+func (s *NumberHandler) Get() (n int) {
 	if len(s.garbage) > 0 {
 		n = s.garbage[0]
-		newGarbage := make([]NumberType, len(s.garbage)-1)
+		newGarbage := make([]int, len(s.garbage)-1)
 		for i, v := range s.garbage {
 			if i == 0 {
 				continue
@@ -95,7 +93,7 @@ func GetServiceName(t Type) string {
 	}
 }
 
-func GetServiceIdent(t Type, n NumberType) (ident string) {
+func GetServiceIdent(t Type, n int) (ident string) {
 	switch t {
 	case APIManager:
 		ident = "api-manager-"
@@ -117,7 +115,7 @@ func GetServiceIdent(t Type, n NumberType) (ident string) {
 	return ident + strconv.FormatInt(int64(n), 10)
 }
 
-func NewTools(t Type, n NumberType) Tools {
+func NewTools(t Type, n int) Tools {
 	return Tools{
 		doneChs:       make([]chan error, 0),
 		ServiceNumber: n,
@@ -126,7 +124,7 @@ func NewTools(t Type, n NumberType) Tools {
 	}
 }
 
-func (t *Tools) GetServiceNumber() NumberType {
+func (t *Tools) GetServiceNumber() int {
 	return t.ServiceNumber
 }
 
@@ -150,7 +148,7 @@ func (st *Tools) Done() <-chan error {
 	return c
 }
 
-func Start(t Type, instantiator func(serviceNumber NumberType) Service, setups ...func(Service)) {
+func Start(t Type, instantiator func(serviceNumber int) Service, setups ...func(Service)) {
 	err := env.LoadEnvFile()
 	if err != nil {
 		stdlog.Printf("Fail to load enviroment file, err:%s", err)

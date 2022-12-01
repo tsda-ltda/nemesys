@@ -11,7 +11,7 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-func registerService(t Type) (n NumberType, err error) {
+func registerService(t Type) (n int, err error) {
 	b, err := amqp.Encode(t)
 	if err != nil {
 		return n, err

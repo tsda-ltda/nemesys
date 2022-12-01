@@ -44,7 +44,7 @@ type API struct {
 	Log *logger.Logger
 }
 
-func New(serviceNumber service.NumberType) service.Service {
+func New(serviceNumber int) service.Service {
 	tools := service.NewTools(service.APIManager, serviceNumber)
 
 	amqpConn, err := amqp.Dial()

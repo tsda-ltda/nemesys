@@ -100,4 +100,5 @@ func Init() {
 
 	set("DHS_FLEX_LEGACY_DATALOG_WORKERS", &DHSFlexLegacyDatalogWorkers)
 	set("DHS_FLEX_LEGACY_DATALOG_REQUEST_INTERVAL", &DHSFlexLegacyDatlogRequestInterval)
+	set("INICIAL_DHS_SERVICES", &InicialDHSServices)
 }

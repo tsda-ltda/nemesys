@@ -124,4 +124,7 @@ var (
 
 	// DHSFlexLegacyDatlogRequestInterval is the interval in hours between each datalog request of a flex. Default is "6".
 	DHSFlexLegacyDatlogRequestInterval = "6"
+
+	// InicialDHSServices is the the number of inicial DHS services.
+	InicialDHSServices = "1"
 )
