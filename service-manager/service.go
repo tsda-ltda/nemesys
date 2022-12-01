@@ -25,7 +25,7 @@ type Service struct {
 	// Ident is the service ident.
 	Ident string
 	// Number is the service number.
-	Number service.NumberType
+	Number int
 	// Online is the online status;
 	Online bool
 	// LastPing is the time of the last ping
@@ -48,7 +48,7 @@ func (s *ServiceManager) newService(t service.Type) Service {
 	return service
 }
 
-func (s *ServiceManager) getServiceNumber(t service.Type) (n service.NumberType) {
+func (s *ServiceManager) getServiceNumber(t service.Type) (n int) {
 	muServiceNumber.Lock()
 	defer muServiceNumber.Unlock()
 	switch t {
