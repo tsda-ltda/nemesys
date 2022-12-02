@@ -4,6 +4,7 @@ import (
 	"time"
 
 	alarmexp "github.com/fernandotsda/nemesys/api-manager/internal/alarm-expression"
+	profile "github.com/fernandotsda/nemesys/api-manager/internal/alarm-profile"
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/container"
 	ctxmetric "github.com/fernandotsda/nemesys/api-manager/internal/contextual-metric"
@@ -163,7 +164,6 @@ func Set(s service.Service) {
 			metrics.PATCH("/:metricId", metric.UpdateFlexLegacyHandler(api))
 			metrics.DELETE("/:metricId", metric.DeleteHandler(api))
 		}
-		setupAlarmExpressionRoutes(api, metrics)
 	}
 
 	customQuery := r.Group("/custom-queries")
@@ -175,6 +175,16 @@ func Set(s service.Service) {
 		customQuery.DELETE("/:cqId", middleware.Protect(api, roles.TeamsManager), customquery.DeleteHandler(api))
 	}
 
+	alarmProfile := r.Group("/alarm-profiles", middleware.Protect(api, roles.TeamsManager))
+	{
+		alarmProfile.GET("/", profile.MGetHandler(api))
+		alarmProfile.GET("/:alarmProfileId", profile.GetHandler(api))
+		alarmProfile.POST("/", profile.CreateHandler(api))
+		alarmProfile.PATCH("/:alarmProfileId", profile.UpdateHandler(api))
+		alarmProfile.DELETE("/:alarmProfileId", profile.DeleteHandler(api))
+	}
+
+	// metric data
 	{
 		r.GET("/teams/:teamId/ctx/:ctxId/metrics/:metricId/data",
 			middleware.Limiter(api, time.Millisecond*300),

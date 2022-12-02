@@ -13,6 +13,18 @@ type AlarmExpression struct {
 	MajorExpression string `json:"major-expression" validate:"max=255"`
 	// CriticalExpression is the critical expression.
 	CriticalExpression string `json:"critical-expression" validate:"max=255"`
+	// MinorDescr is the description of the minor alarm state. This description
+	// is sent in the alarm notification to help the user to undestand the
+	// alarm context.
+	MinorDescr string `json:"minor-descr" validate:"max=255"`
+	// MajorDescr is the description of the major alarm state. This description
+	// is sent in the alarm notification to help the user to undestand the
+	// alarm context.
+	MajorDescr string `json:"major-descr" validate:"max=255"`
+	// CriticalDescr is the description of the critical alarm state. This description
+	// is sent in the alarm notification to help the user to undestand the
+	// alarm context.
+	CriticalDescr string `json:"critical-descr" validate:"max=255"`
 }
 
 type AlarmProfile struct {
@@ -26,14 +38,6 @@ type AlarmProfile struct {
 	Major bool `json:"major" validate:"-"`
 	// Critical is if the alarm profile wants to receive critical alarms.
 	Critical bool `json:"critical" validate:"-"`
-	// Emails are the emails to be notified.
-	Emails []string `json:"emails" validate:"required,max=10"`
-	// Emails are the wpp numbers to be notified.
-	WPP []string `json:"wpp" validate:"required,max=10"`
-	// SMS are the sms numbers to be notified.
-	SMS []string `json:"sms" validate:"required,max=10"`
-	// Telegrams are the telegrams numbers to be notified.
-	Telegrams []string `json:"telegrams" validate:"required,max=10"`
 }
 
 type AlarmState struct {

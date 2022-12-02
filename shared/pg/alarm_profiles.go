@@ -8,12 +8,12 @@ import (
 )
 
 const (
-	sqlAlarmProfilesCreate = `INSERT INTO alarm_profiles (name, minor, major, critical, emails, wpp, sms, telegrams) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id;`
-	sqlAlarmProfilesUpdate = `UPDATE alarm_profiles SET (name, minor, major, critical, emails, wpp, sms, telegrams) = 
-		($1, $2, $3, $4, $5, $6, $7, $8) WHERE id = $1;`
-	sqlAlarmProfilesGet    = `SELECT name, minor, major, critical, emails, wpp, sms, telegrams FROM alarm_profiles WHERE id = $1;`
-	sqlAlarmProfilesMGet   = `SELECT id, name, minor, major, critical, emails, wpp, sms, telegrams FROM alarm_profiles LIMIT $1 OFFSET $2;`
+	sqlAlarmProfilesCreate = `INSERT INTO alarm_profiles (name, minor, major, critical) 
+		VALUES ($1, $2, $3, $4) RETURNING id;`
+	sqlAlarmProfilesUpdate = `UPDATE alarm_profiles SET (name, minor, major, critical) = 
+		($1, $2, $3, $4) WHERE id = $5;`
+	sqlAlarmProfilesGet    = `SELECT name, minor, major, critical FROM alarm_profiles WHERE id = $1;`
+	sqlAlarmProfilesMGet   = `SELECT id, name, minor, major, critical FROM alarm_profiles LIMIT $1 OFFSET $2;`
 	sqlAlarmProfilesDelete = `DELETE FROM alarm_profiles WHERE id = $1;`
 )
 
@@ -23,10 +23,6 @@ func (pg *PG) CreateAlarmProfile(ctx context.Context, profile models.AlarmProfil
 		profile.Minor,
 		profile.Major,
 		profile.Critical,
-		profile.Emails,
-		profile.WPP,
-		profile.SMS,
-		profile.Telegrams,
 	).Scan(&id)
 }
 
@@ -36,10 +32,6 @@ func (pg *PG) UpdateAlarmProfile(ctx context.Context, profile models.AlarmProfil
 		profile.Minor,
 		profile.Major,
 		profile.Critical,
-		profile.Emails,
-		profile.WPP,
-		profile.SMS,
-		profile.Telegrams,
 		profile.Id,
 	)
 	if err != nil {
@@ -55,10 +47,6 @@ func (pg *PG) GetAlarmProfile(ctx context.Context, id int32) (exists bool, profi
 		&profile.Minor,
 		&profile.Major,
 		&profile.Critical,
-		&profile.Emails,
-		&profile.WPP,
-		&profile.SMS,
-		&profile.Telegrams,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -66,6 +54,7 @@ func (pg *PG) GetAlarmProfile(ctx context.Context, id int32) (exists bool, profi
 		}
 		return false, profile, err
 	}
+	profile.Id = id
 	return true, profile, nil
 }
 
@@ -84,10 +73,6 @@ func (pg *PG) GetAlarmProfiles(ctx context.Context, limit int, offset int) (prof
 			&profile.Minor,
 			&profile.Major,
 			&profile.Critical,
-			&profile.Emails,
-			&profile.WPP,
-			&profile.SMS,
-			&profile.Telegrams,
 		)
 		if err != nil {
 			return nil, err

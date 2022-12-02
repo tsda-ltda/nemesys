@@ -243,6 +243,9 @@ var sqlCommands []string = []string{
 		minor_expression VARCHAR (255) NOT NULL,
 		major_expression VARCHAR (255) NOT NULL,
 		critical_expression VARCHAR (255) NOT NULL,
+		minor_descr VARCHAR (255) NOT NULL,
+		major_descr VARCHAR (255) NOT NULL,
+		critical_descr VARCHAR (255) NOT NULL,
 		CONSTRAINT alarm_expressions_fk_metric_id
 			FOREIGN KEY(metric_id)
 				REFERENCES metrics(id)
@@ -255,11 +258,7 @@ var sqlCommands []string = []string{
 		name VARCHAR (50) NOT NULL,
 		minor BOOLEAN NOT NULL,
 		major BOOLEAN NOT NULL,
-		critical BOOLEAN NOT NULL,
-		emails VARCHAR(255) ARRAY NOT NULL,
-		wpp VARCHAR(255) ARRAY NOT NULL,
-		sms VARCHAR(255) ARRAY NOT NULL,
-		telegrams VARCHAR(255) ARRAY NOT NULL
+		critical BOOLEAN NOT NULL
 	);`,
 
 	// Create alarm profile relation table

@@ -13,6 +13,7 @@ const (
 	MsgRefkeyNotFound           = "Metric reference not exists."
 	MsgAPIKeyNotFound           = "API Key does not exists."
 	MsgAlarmExpressionNotFound  = "Alarm expression does not exists."
+	MsgAlarmProfileNotFound     = "Alarm profile does not exists."
 
 	MsgParamsNotSameType     = "Params must have same type. Use only numbers or only text."
 	MsgIdentIsNumber         = "Identification must not be number as text."
