@@ -81,11 +81,11 @@ type MetricDHSEnabledResult struct {
 
 const (
 	sqlMetricsCreate = `INSERT INTO metrics 
-		(container_id, container_type, name, descr, enabled, data_policy_id, rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression, check_alarm)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id;`
+		(container_id, container_type, name, descr, enabled, data_policy_id, rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id;`
 	sqlMetricsUpdate = `UPDATE metrics SET 
-		(name, descr, enabled, data_policy_id, rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression, check_alarm) 
-		= ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) WHERE id = $12;`
+		(name, descr, enabled, data_policy_id, rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression) 
+		= ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10) WHERE id = $11;`
 	sqlMetricsGetRTSConfig = `SELECT rts_pulling_times, rts_data_cache_duration
 		FROM metrics WHERE id = $1;`
 	sqlMetricsExistsContainerAndDataPolicy = `SELECT 
@@ -94,7 +94,7 @@ const (
 		EXISTS (SELECT 1 FROM data_policies WHERE id = $3);`
 	sqlMetricsGet = `SELECT 
 		container_id, container_type, name, descr, enabled, data_policy_id, 
-		rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression, check_alarm FROM metrics WHERE id = $1;`
+		rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression FROM metrics WHERE id = $1;`
 	sqlMetricsDelete                  = `DELETE FROM metrics WHERE id = $1;`
 	sqlMetricsMGetSimplified          = `SELECT id, container_id, name, descr, enabled FROM metrics WHERE container_id = $1 AND container_type = $2 LIMIT $3 OFFSET $4;`
 	sqlMetricsGetEvaluableExpression  = `SELECT ev_expression FROM metrics WHERE id = $1;`
@@ -103,8 +103,8 @@ const (
 		m AS (SELECT enabled, container_id FROM metrics WHERE id = $1),
 		c AS (SELECT enabled FROM containers WHERE id = (SELECT container_id FROM m))
 		SELECT (SELECT enabled FROM m), (SELECT enabled FROM c);`
-	sqlMetricsGetMetricsRequestsAndIntervals = `SELECT id, type, container_id, container_type, data_policy_id, check_alarm, dhs_interval FROM metrics WHERE dhs_enabled = true AND container_type != $1 LIMIT $2 OFFSET $3;`
-	sqlMetricsGetRequest                     = `SELECT type, container_id, container_type, data_policy_id, check_alarm, enabled FROM metrics WHERE id = $1;`
+	sqlMetricsGetMetricsRequestsAndIntervals = `SELECT id, type, container_id, container_type, data_policy_id, dhs_interval FROM metrics WHERE dhs_enabled = true AND container_type != $1 LIMIT $2 OFFSET $3;`
+	sqlMetricsGetRequest                     = `SELECT type, container_id, container_type, data_policy_id, enabled FROM metrics WHERE id = $1;`
 	sqlMetricsDHSEnabled                     = `SELECT dhs_enabled FROM metrics WHERE id = $1;`
 	sqlMetricsCountNonFlex                   = `SELECT COUNT(*) FROM metrics WHERE dhs_enabled = true AND container_type != $1;`
 )
@@ -129,7 +129,6 @@ func (pg *PG) GetBasicMetric(ctx context.Context, id int64) (r MetricsGetBasicRe
 			&r.Metric.Base.DHSInterval,
 			&r.Metric.Base.Type,
 			&r.Metric.Base.EvaluableExpression,
-			&r.Metric.Base.CheckAlarm,
 		)
 		if err != nil {
 			return r, err
@@ -160,7 +159,6 @@ func (pg *PG) GetMetric(ctx context.Context, id int64) (r MetricsGetResponse, er
 			&r.Metric.DHSInterval,
 			&r.Metric.Type,
 			&r.Metric.EvaluableExpression,
-			&r.Metric.CheckAlarm,
 		)
 		if err != nil {
 			return r, err
@@ -202,7 +200,6 @@ func (pg *PG) GetMetricRequest(ctx context.Context, id int64) (r GetMetricReques
 		&r.MetricRequest.ContainerId,
 		&r.MetricRequest.ContainerType,
 		&r.MetricRequest.DataPolicyId,
-		&r.MetricRequest.CheckAlarm,
 		&r.Enabled,
 	)
 	if err != nil {
@@ -242,7 +239,6 @@ func (pg *PG) createMetric(ctx context.Context, tx *sql.Tx, metric models.BaseMe
 		metric.DHSInterval,
 		metric.Type,
 		metric.EvaluableExpression,
-		metric.CheckAlarm,
 	).Scan(&id)
 	return id, err
 }
@@ -261,7 +257,6 @@ func (pg *PG) CreateBasicMetric(ctx context.Context, metric models.Metric[struct
 		metric.Base.DHSInterval,
 		metric.Base.Type,
 		metric.Base.EvaluableExpression,
-		metric.Base.CheckAlarm,
 	).Scan(&id)
 	return id, err
 }
@@ -278,7 +273,6 @@ func (pg *PG) UpdateBasicMetric(ctx context.Context, metric models.Metric[struct
 		metric.Base.DHSInterval,
 		metric.Base.Type,
 		metric.Base.EvaluableExpression,
-		metric.Base.CheckAlarm,
 		metric.Base.Id,
 	)
 	if err != nil {
@@ -300,7 +294,6 @@ func (pg *PG) updateMetric(ctx context.Context, tx *sql.Tx, metric models.BaseMe
 		metric.DHSInterval,
 		metric.Type,
 		metric.EvaluableExpression,
-		metric.CheckAlarm,
 		metric.Id,
 	)
 	if err != nil {
@@ -421,7 +414,6 @@ func (pg *PG) GetMetricsRequestsAndIntervals(ctx context.Context, limit int, off
 			&result.MetricRequest.ContainerId,
 			&result.MetricRequest.ContainerType,
 			&result.MetricRequest.DataPolicyId,
-			&result.MetricRequest.CheckAlarm,
 			&result.Interval,
 		)
 		if err != nil {

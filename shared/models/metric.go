@@ -81,8 +81,6 @@ type BaseMetric struct {
 	Descr string `json:"descr" validate:"required,max=255"`
 	// Enabled is the metric enable state.
 	Enabled bool `json:"enabled" validade:"-"`
-	// CheckAlarm is the metric check alarm state.
-	CheckAlarm bool `json:"check-alarm" validate:"-"`
 	// DataPolicyId is the metric data policy identifier.
 	DataPolicyId int16 `json:"data-policy-id" validate:"required"`
 	// RTSPullingTimes is how many times will pull the data.
@@ -108,8 +106,6 @@ type MetricRequest struct {
 	MetricType types.MetricType
 	// DataPolicyId is the data policy id.
 	DataPolicyId int16
-	// CheckAlarm is the check alarm state.
-	CheckAlarm bool
 }
 
 type MetricsRequest struct {
@@ -128,8 +124,6 @@ type MetricBasicRequestInfo struct {
 	Type types.MetricType
 	// DataPolicyId is the data policy id.
 	DataPolicyId int16
-	// CheckAlarm is the check alarm state.
-	CheckAlarm bool
 }
 
 type MetricDataResponse struct {
