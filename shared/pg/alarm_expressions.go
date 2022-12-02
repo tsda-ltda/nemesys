@@ -8,12 +8,13 @@ import (
 )
 
 const (
-	sqlAlarmExpressionsCreate = `INSERT INTO alarm_expressions (metric_id, minor_expression, major_expression, critical_expression)
-		VALUES ($1, $2, $3, $4);`
-	sqlAlarmExpressionsUpdate = `UPDATE alarm_expressions SET (minor_expression, major_expression, critical_expression) 
-		= ($1, $2, $3) WHERE metric_id = $4;`
+	sqlAlarmExpressionsCreate = `INSERT INTO alarm_expressions (metric_id, minor_expression, major_expression, critical_expression,
+		minor_descr, major_descr, critical_descr) VALUES ($1, $2, $3, $4, $5, $6, $7);`
+	sqlAlarmExpressionsUpdate = `UPDATE alarm_expressions SET (minor_expression, major_expression, critical_expression, minor_descr, major_descr, critical_descr) 
+		= ($1, $2, $3,  $4, $5, $6) WHERE metric_id = $7;`
 	sqlAlarmExpressionsDelete = `DELETE FROM alarm_expressions WHERE metric_id = $1;`
-	sqlAlarmExpressionsGet    = `SELECT minor_expression, major_expression, critical_expression FROM alarm_expressions WHERE metric_id = $1;`
+	sqlAlarmExpressionsGet    = `SELECT minor_expression, major_expression, critical_expression, minor_descr, major_descr, critical_descr
+		FROM alarm_expressions WHERE metric_id = $1;`
 	sqlAlarmExpressionsExists = `SELECT 
 	EXISTS (SELECT 1 FROM alarm_expressions WHERE metric_id = $1),
 	EXISTS (SELECT 1 FROM metrics WHERE id = $1);`
@@ -25,6 +26,9 @@ func (pg *PG) CreateAlarmExpression(ctx context.Context, alarmExp models.AlarmEx
 		alarmExp.MinorExpression,
 		alarmExp.MajorExpression,
 		alarmExp.CriticalExpression,
+		alarmExp.MinorDescr,
+		alarmExp.MajorDescr,
+		alarmExp.CriticalDescr,
 	)
 	return err
 }
@@ -34,6 +38,9 @@ func (pg *PG) UpdateAlarmExpression(ctx context.Context, alarmExp models.AlarmEx
 		alarmExp.MinorExpression,
 		alarmExp.MajorExpression,
 		alarmExp.CriticalExpression,
+		alarmExp.MinorDescr,
+		alarmExp.MajorDescr,
+		alarmExp.CriticalDescr,
 		alarmExp.MetricId,
 	)
 	if err != nil {
@@ -57,6 +64,9 @@ func (pg *PG) GetAlarmExpression(ctx context.Context, metricId int64) (exists bo
 		&alarmExp.MinorExpression,
 		&alarmExp.MajorExpression,
 		&alarmExp.CriticalExpression,
+		&alarmExp.MinorDescr,
+		&alarmExp.MajorDescr,
+		&alarmExp.CriticalDescr,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
