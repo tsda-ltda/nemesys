@@ -157,15 +157,21 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		api.Amqph.PublisherCh <- models.DetailedPublishing{
-			Exchange:   amqp.ExchangeMetricDataResponse,
+			Exchange:   amqp.ExchangeMetricDataRes,
 			RoutingKey: "rts",
 			Publishing: amqp091.Publishing{
-				Expiration: amqp.DefaultExp,
-				Body:       b,
-				Type:       amqp.FromMessageType(amqp.OK),
+				Body: b,
+				Type: amqp.FromMessageType(amqp.OK),
 			},
 		}
-		api.Log.Debug("Metric data point sent to RTS, metric id: " + metricIdString)
 
+		api.Amqph.PublisherCh <- models.DetailedPublishing{
+			Exchange: amqp.ExchangeCheckAlarm,
+			Publishing: amqp091.Publishing{
+				Body: b,
+				Type: amqp.FromMessageType(amqp.OK),
+			},
+		}
+		api.Log.Debug("Metric data point sent to RTS and to Alarm service, metric id: " + metricIdString)
 	}
 }
