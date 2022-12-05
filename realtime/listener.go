@@ -59,7 +59,11 @@ func (s *RTS) notificationListener() {
 }
 
 func (s *RTS) metricDataRequestListener() {
-	msgs, err := s.amqph.Listen(amqp.QueueRTSMetricDataRequest, amqp.ExchangeRTSMetricDataRequest)
+	msgs, err := s.amqph.Listen(amqp.QueueRTSMetricDataReq, amqp.ExchangeMetricDataReq, models.ListenerOptions{
+		Bind: models.QueueBindOptions{
+			RoutingKey: "rts",
+		},
+	})
 	if err != nil {
 		s.log.Panic("Fail to listen amqp messages", logger.ErrField(err))
 		return
@@ -78,6 +82,12 @@ func (s *RTS) metricDataRequestListener() {
 			err = amqp.Decode(d.Body, &r)
 			if err != nil {
 				s.log.Error("Fail to decode message body", logger.ErrField(err))
+				continue
+			}
+
+			responseRk, err := amqp.GetRoutingKeyFromHeader(d.Headers)
+			if err != nil {
+				s.log.Error("Fail to get response routing key from header", logger.ErrField(err))
 				continue
 			}
 
@@ -116,7 +126,7 @@ func (s *RTS) metricDataRequestListener() {
 						Body:          b,
 						Type:          amqp.FromMessageType(amqp.OK),
 						CorrelationId: d.CorrelationId,
-					})
+					}, responseRk)
 					continue
 				}
 
@@ -130,11 +140,11 @@ func (s *RTS) metricDataRequestListener() {
 				go func(correlationId string, r models.MetricRequest) {
 					// send metric data request to translators
 					s.amqph.PublisherCh <- models.DetailedPublishing{
-						Exchange:   amqp.ExchangeMetricDataRequest,
+						Exchange:   amqp.ExchangeMetricDataReq,
 						RoutingKey: routingKey,
 						Publishing: amqp091.Publishing{
 							Expiration:    amqp.DefaultExp,
-							Headers:       amqp.RouteHeader("rts"),
+							Headers:       amqp.RouteHeader(s.GetServiceIdent()),
 							CorrelationId: correlationId,
 							Body:          d.Body,
 						},
@@ -154,7 +164,7 @@ func (s *RTS) metricDataRequestListener() {
 						Type:          res.Type,
 						Body:          res.Body,
 						CorrelationId: correlationId,
-					})
+					}, responseRk)
 				}(d.CorrelationId, r)
 				continue
 			}
@@ -165,7 +175,7 @@ func (s *RTS) metricDataRequestListener() {
 				Body:          bytes,
 				Type:          amqp.FromMessageType(amqp.OK),
 				CorrelationId: d.CorrelationId,
-			})
+			}, responseRk)
 			s.log.Debug("Metric data fetched on cache, metric id: " + metricIdString)
 		case <-s.Done():
 			return
@@ -173,11 +183,13 @@ func (s *RTS) metricDataRequestListener() {
 	}
 }
 
+// metricDataListen listen to metric data response, using a unique routing key,
+// to resolve rts data requests. Also saves the metric data on cache.
 func (s *RTS) metricDataListener() {
-	msgs, err := s.amqph.Listen(amqp.QueueRTSMetricDataResponse, amqp.ExchangeMetricDataResponse,
+	msgs, err := s.amqph.Listen("", amqp.ExchangeMetricDataRes,
 		models.ListenerOptions{
 			Bind: models.QueueBindOptions{
-				RoutingKey: "rts",
+				RoutingKey: s.GetServiceIdent(),
 			},
 		},
 	)
@@ -225,8 +237,9 @@ func (s *RTS) metricDataListener() {
 	}
 }
 
+// metricsDataListener listen to metrics data response and save it on cache.
 func (s *RTS) metricsDataListener() {
-	msgs, err := s.amqph.Listen(amqp.QueueRTSMetricsDataResponse, amqp.ExchangeMetricsDataResponse,
+	msgs, err := s.amqph.Listen(amqp.QueueRTSMetricsDataRes, amqp.ExchangeMetricsDataRes,
 		models.ListenerOptions{
 			Bind: models.QueueBindOptions{
 				RoutingKey: "rts",

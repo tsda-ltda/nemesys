@@ -13,8 +13,8 @@ import (
 var rtsMetricDataListenerInitialized = false
 
 // GetRTSData fetchs a metric data on real time service.
-func (a *Amqph) GetRTSData(r models.MetricRequest) (d amqp091.Delivery, err error) {
-	a.listenRTSMetricData()
+func (a *Amqph) GetRTSData(r models.MetricRequest, serviceIdent string) (d amqp091.Delivery, err error) {
+	a.listenRTSMetricData(serviceIdent)
 
 	// encode request
 	b, err := amqp.Encode(r)
@@ -32,9 +32,10 @@ func (a *Amqph) GetRTSData(r models.MetricRequest) (d amqp091.Delivery, err erro
 
 	// send request
 	a.PublisherCh <- models.DetailedPublishing{
-		Exchange: amqp.ExchangeRTSMetricDataRequest,
+		Exchange:   amqp.ExchangeMetricDataReq,
+		RoutingKey: "rts",
 		Publishing: amqp091.Publishing{
-			Expiration:    "30000",
+			Headers:       amqp.RouteHeader(serviceIdent),
 			Body:          b,
 			CorrelationId: uuid,
 		},
@@ -49,13 +50,17 @@ func (a *Amqph) GetRTSData(r models.MetricRequest) (d amqp091.Delivery, err erro
 }
 
 // ListenRTSMetricData listen to rts metric data.
-func (a *Amqph) listenRTSMetricData() {
+func (a *Amqph) listenRTSMetricData(serviceIdent string) {
 	if rtsMetricDataListenerInitialized {
 		return
 	}
 
 	go func() {
-		msgs, err := a.Listen("", amqp.ExchangeRTSMetricDataResponse)
+		msgs, err := a.Listen("", amqp.ExchangeMetricDataRes, models.ListenerOptions{
+			Bind: models.QueueBindOptions{
+				RoutingKey: serviceIdent,
+			},
+		})
 		if err != nil {
 			a.log.Panic("Fail to listen amqp messages", logger.ErrField(err))
 			return

@@ -36,13 +36,13 @@ func registerService(t Type) (n int, err error) {
 	}
 
 	err = ch.ExchangeDeclare(
-		amqp.ExchangeServiceRegisterRequest, // name
-		"fanout",                            // type
-		true,                                // durable
-		false,                               // autoDelete
-		false,                               // internal
-		false,                               // noWait
-		nil,                                 // args
+		amqp.ExchangeServiceRegisterReq, // name
+		"fanout",                        // type
+		true,                            // durable
+		false,                           // autoDelete
+		false,                           // internal
+		false,                           // noWait
+		nil,                             // args
 	)
 	if err != nil {
 		log.Fatalf("Fail to declare exchange, err: %s", err)
@@ -57,10 +57,10 @@ func registerService(t Type) (n int, err error) {
 			return n, err
 		}
 		err = ch.PublishWithContext(context.Background(),
-			amqp.ExchangeServiceRegisterRequest, // exchange
-			"",                                  // routing key
-			false,                               // mandatory
-			false,                               // immediate
+			amqp.ExchangeServiceRegisterReq, // exchange
+			"",                              // routing key
+			false,                           // mandatory
+			false,                           // immediate
 			amqp091.Publishing{
 				CorrelationId: id,
 				Body:          b,
@@ -93,13 +93,13 @@ func listenToRegisterReponse(conn *amqp091.Connection, p *models.AMQPPlumber, do
 	}
 
 	err = ch.ExchangeDeclare(
-		amqp.ExchangeServiceRegisterResponse, // name
-		"fanout",                             // type
-		true,                                 // durable
-		false,                                // autoDelete
-		false,                                // internal
-		false,                                // noWait
-		nil,                                  // args
+		amqp.ExchangeServiceRegisterRes, // name
+		"fanout",                        // type
+		true,                            // durable
+		false,                           // autoDelete
+		false,                           // internal
+		false,                           // noWait
+		nil,                             // args
 	)
 	if err != nil {
 		log.Fatalf("Fail to declare exchange, err: %s", err)
@@ -120,11 +120,11 @@ func listenToRegisterReponse(conn *amqp091.Connection, p *models.AMQPPlumber, do
 	}
 
 	err = ch.QueueBind(
-		q.Name,                               // name
-		"",                                   // key
-		amqp.ExchangeServiceRegisterResponse, // exchange
-		false,                                // noWait
-		nil,                                  // args
+		q.Name,                          // name
+		"",                              // key
+		amqp.ExchangeServiceRegisterRes, // exchange
+		false,                           // noWait
+		nil,                             // args
 	)
 	if err != nil {
 		log.Fatalf("Fail to bind queue")

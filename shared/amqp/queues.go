@@ -1,34 +1,36 @@
 package amqp
 
 const (
-	QueueSNMPMetricDataRequest  = "services.snmp.metric.data_request"
-	QueueSNMPMetricsDataRequest = "services.snmp.metrics.data_request"
-	QueueRTSMetricDataRequest   = "services.rts.metric.data_request"
-	QueueRTSMetricDataResponse  = "services.rts.metric.data_response"
-	QueueRTSMetricsDataResponse = "services.rts.metrics.data_response"
-	QueueDHSMetricsDataResponse = "services.dhs.metrics.data_response"
-	QueueDHSMetricCreated       = "services.dhs.notification.metric.create"
-	QueueDHSContainerCreated    = "services.dhs.notification.container.create"
+	QueueSNMPMetricDataReq   = "snmp_metric_data_req"
+	QueueSNMPMetricsDataReq  = "snmp_metrics_data_req"
+	QueueRTSMetricDataReq    = "rts_metric_data_req"
+	QueueRTSMetricDataRes    = "rts_metric_data_res"
+	QueueRTSMetricsDataRes   = "rts_metrics_data_res"
+	QueueDHSMetricsDataRes   = "dhs_metrics_data_res"
+	QueueDHSMetricCreated    = "dhs_metric_created"
+	QueueDHSContainerCreated = "dhs_container_created"
+	QueueCheckAlarm          = "check_alarm"
+	QueueCheckAlarms         = "check_alarms"
 
-	ExchangeMetricAlarmed           = "services.alarm.metric_alarmed"
-	ExchangeContainerCreated        = "notfication.container.create"
-	ExchangeContainerUpdated        = "notfication.container.update"
-	ExchangeContainerDeleted        = "notfication.container.delete"
-	ExchangeMetricCreated           = "notfication.metric.create"
-	ExchangeMetricUpdated           = "notfication.metric.update"
-	ExchangeMetricDeleted           = "notfication.metric.delete"
-	ExchangeDataPolicyDeleted       = "notfication.data-policy.delete"
-	ExchangeMetricDataRequest       = "global.metric.data_request"
-	ExchangeMetricDataResponse      = "global.metric.data_response"
-	ExchangeMetricsDataRequest      = "global.metrics.data_request"
-	ExchangeMetricsDataResponse     = "global.metrics.data_response"
-	ExchangeRTSMetricDataRequest    = "services.rts.metric.data_request"
-	ExchangeRTSMetricDataResponse   = "services.rts.metric.data_response"
-	ExchangeServicesStatus          = "services.status"
-	ExchangeServiceRegisterRequest  = "services.register_request"
-	ExchangeServiceRegisterResponse = "services.register_response"
-	ExchangeServiceUnregister       = "services.unregister"
-	ExchangeServicePing             = "services.ping"
-	ExchangeServicePong             = "services.pong"
-	ExchangeServiceLogs             = "services.logs"
+	ExchangeContainerCreated   = "container_created"    // fanout
+	ExchangeContainerUpdated   = "container_updated"    // fanout
+	ExchangeContainerDeleted   = "container_deleted"    // fanout
+	ExchangeMetricCreated      = "metric_created"       // fanout
+	ExchangeMetricUpdated      = "metric_updated"       // fanout
+	ExchangeMetricDeleted      = "metric_deleted"       // fanout
+	ExchangeDataPolicyDeleted  = "datapolicy_deleted"   // fanout
+	ExchangeServiceLogs        = "logs"                 // fanout
+	ExchangeServicesStatus     = "services_status"      // fanout
+	ExchangeServiceRegisterReq = "register_service_req" // fanout
+	ExchangeServiceRegisterRes = "register_service_res" // fanout
+	ExchangeServiceUnregister  = "unregister_service"   // fanout
+	ExchangeCheckAlarm         = "check_alarm"          // fanout
+	ExchangeCheckAlarms        = "check_alarms"         // fanout
+
+	ExchangeServicePing    = "ping"             // direct
+	ExchangeServicePong    = "pong"             // direct
+	ExchangeMetricDataReq  = "metric_data_req"  // direct
+	ExchangeMetricsDataReq = "metrics_data_req" // direct
+	ExchangeMetricDataRes  = "metric_data_res"  // direct
+	ExchangeMetricsDataRes = "metrics_data_res" // direct
 )

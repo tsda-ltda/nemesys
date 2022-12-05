@@ -6,7 +6,7 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-// RequestMetricData sends a metric data request to translators. The data can be received on the OnMetricData handler.
+// RequestMetricData sends a metric data request to translators.
 func (a *Amqph) RequestMetricData(req models.MetricRequest, serviceName string) error {
 	b, err := amqp.Encode(req)
 	if err != nil {
@@ -17,7 +17,7 @@ func (a *Amqph) RequestMetricData(req models.MetricRequest, serviceName string) 
 		return nil
 	}
 	a.PublisherCh <- models.DetailedPublishing{
-		Exchange:   amqp.ExchangeMetricDataRequest,
+		Exchange:   amqp.ExchangeMetricDataReq,
 		RoutingKey: routingKey,
 		Publishing: amqp091.Publishing{
 			Headers:    amqp.RouteHeader(serviceName),

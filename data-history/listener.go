@@ -12,7 +12,7 @@ import (
 )
 
 func (d *DHS) metricsDataListener() {
-	msgs, err := d.amqph.Listen(amqp.QueueDHSMetricsDataResponse, amqp.ExchangeMetricsDataResponse,
+	msgs, err := d.amqph.Listen(amqp.QueueDHSMetricsDataRes, amqp.ExchangeMetricsDataRes,
 		models.ListenerOptions{
 			Bind: models.QueueBindOptions{
 				RoutingKey: "dhs",

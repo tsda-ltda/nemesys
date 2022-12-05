@@ -157,7 +157,7 @@ func (c *ContainerPulling) Run() {
 
 			// send metric data request to translators
 			c.RTS.amqph.PublisherCh <- models.DetailedPublishing{
-				Exchange:   amqp.ExchangeMetricsDataRequest,
+				Exchange:   amqp.ExchangeMetricsDataReq,
 				RoutingKey: routingKey,
 				Publishing: amqp091.Publishing{
 					Expiration: amqp.DefaultExp,

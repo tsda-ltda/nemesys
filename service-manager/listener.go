@@ -34,7 +34,7 @@ func (s *ServiceManager) logListener() {
 }
 
 func (s *ServiceManager) registryListener() {
-	register, err := s.amqph.Listen("", amqp.ExchangeServiceRegisterRequest)
+	register, err := s.amqph.Listen("", amqp.ExchangeServiceRegisterReq)
 	if err != nil {
 		s.log.Fatal("Fail to listen service register requests", logger.ErrField(err))
 		return
@@ -61,7 +61,7 @@ func (s *ServiceManager) registryListener() {
 				continue
 			}
 			s.amqph.PublisherCh <- models.DetailedPublishing{
-				Exchange: amqp.ExchangeServiceRegisterResponse,
+				Exchange: amqp.ExchangeServiceRegisterRes,
 				Publishing: amqp091.Publishing{
 					CorrelationId: d.CorrelationId,
 					Body:          b,

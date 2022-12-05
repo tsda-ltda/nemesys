@@ -49,7 +49,7 @@ func (c *containerPulling) Run() {
 				continue
 			}
 			if c.nMetrics == 0 {
-				c.dhs.log.Debug("skipping pulling, encoded request is empty, container id: " + c.containerIdString)
+				c.dhs.log.Debug("Skipping pulling, encoded request is empty, container id: " + c.containerIdString)
 				continue
 			}
 
@@ -60,7 +60,7 @@ func (c *containerPulling) Run() {
 
 			// publish request
 			c.dhs.amqph.PublisherCh <- models.DetailedPublishing{
-				Exchange:   amqp.ExchangeMetricsDataRequest,
+				Exchange:   amqp.ExchangeMetricsDataReq,
 				RoutingKey: routingKey,
 				Publishing: amqp091.Publishing{
 					Headers:    amqp.RouteHeader("dhs"),
@@ -68,7 +68,7 @@ func (c *containerPulling) Run() {
 					Body:       c.encodedRequest,
 				},
 			}
-			c.dhs.log.Debug("metrics data request sent, container id: " + c.containerIdString)
+			c.dhs.log.Debug("Metrics data request sent, container id: " + c.containerIdString)
 		case <-c.close:
 			return
 		}

@@ -30,32 +30,25 @@ func (a *Amqph) declareExchages() {
 		}
 	}
 
-	declare(amqp.ExchangeDataPolicyDeleted, "fanout", true, false, false, false, nil)
-
 	declare(amqp.ExchangeContainerCreated, "fanout", true, false, false, false, nil)
 	declare(amqp.ExchangeContainerUpdated, "fanout", true, false, false, false, nil)
 	declare(amqp.ExchangeContainerDeleted, "fanout", true, false, false, false, nil)
-
 	declare(amqp.ExchangeMetricCreated, "fanout", true, false, false, false, nil)
 	declare(amqp.ExchangeMetricUpdated, "fanout", true, false, false, false, nil)
 	declare(amqp.ExchangeMetricDeleted, "fanout", true, false, false, false, nil)
-
-	declare(amqp.ExchangeMetricDataRequest, "direct", true, false, false, false, nil)
-	declare(amqp.ExchangeMetricDataResponse, "direct", true, false, false, false, nil)
-	declare(amqp.ExchangeMetricsDataRequest, "direct", true, false, false, false, nil)
-	declare(amqp.ExchangeMetricsDataResponse, "direct", true, false, false, false, nil)
-
-	declare(amqp.ExchangeRTSMetricDataRequest, "direct", true, false, false, false, nil)
-	declare(amqp.ExchangeRTSMetricDataResponse, "direct", true, false, false, false, nil)
-
-	declare(amqp.ExchangeServicesStatus, "fanout", true, false, false, false, nil)
+	declare(amqp.ExchangeDataPolicyDeleted, "fanout", true, false, false, false, nil)
 	declare(amqp.ExchangeServiceLogs, "fanout", true, false, false, false, nil)
-
+	declare(amqp.ExchangeServicesStatus, "fanout", true, false, false, false, nil)
+	declare(amqp.ExchangeServiceRegisterReq, "fanout", true, false, false, false, nil)
+	declare(amqp.ExchangeServiceRegisterRes, "fanout", true, false, false, false, nil)
 	declare(amqp.ExchangeServiceUnregister, "fanout", true, false, false, false, nil)
-	declare(amqp.ExchangeServiceRegisterRequest, "fanout", true, false, false, false, nil)
-	declare(amqp.ExchangeServiceRegisterResponse, "fanout", true, false, false, false, nil)
+	declare(amqp.ExchangeCheckAlarm, "fanout", true, false, false, false, nil)
+	declare(amqp.ExchangeCheckAlarms, "fanout", true, false, false, false, nil)
 
 	declare(amqp.ExchangeServicePing, "direct", true, false, false, false, nil)
 	declare(amqp.ExchangeServicePong, "direct", true, false, false, false, nil)
-
+	declare(amqp.ExchangeMetricDataReq, "direct", true, false, false, false, nil)
+	declare(amqp.ExchangeMetricDataRes, "direct", true, false, false, false, nil)
+	declare(amqp.ExchangeMetricsDataReq, "direct", true, false, false, false, nil)
+	declare(amqp.ExchangeMetricsDataRes, "direct", true, false, false, false, nil)
 }

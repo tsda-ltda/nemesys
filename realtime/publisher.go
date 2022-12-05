@@ -6,10 +6,11 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-func (s *RTS) publishRTSMetricData(p amqp091.Publishing) {
+func (s *RTS) publishRTSMetricData(p amqp091.Publishing, rk string) {
 	s.amqph.PublisherCh <- models.DetailedPublishing{
-		Exchange:   amqp.ExchangeRTSMetricDataResponse,
+		Exchange:   amqp.ExchangeMetricDataRes,
+		RoutingKey: rk,
 		Publishing: p,
 	}
-	s.log.Debug("Metric data published, id: <encoded>")
+	s.log.Debug("Metric data published")
 }

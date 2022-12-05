@@ -71,7 +71,11 @@ func (s *ServiceManager) pingService(serviceIdent string) (online bool) {
 }
 
 func (s *ServiceManager) pongHandler() {
-	msgs, err := s.amqph.Listen("", amqp.ExchangeServicePong)
+	msgs, err := s.amqph.Listen("", amqp.ExchangeServicePong, models.ListenerOptions{
+		Bind: models.QueueBindOptions{
+			RoutingKey: "service-manager",
+		},
+	})
 	if err != nil {
 		s.log.Fatal("Fail to listen services pongs", logger.ErrField(err))
 		return

@@ -11,6 +11,17 @@ import (
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
+func calcLimit(size, workers, index int) int {
+	if workers == index {
+		return (size / workers) + (size % workers)
+	}
+	return size / workers
+}
+
+func calcOffset(size, workers, index int) int {
+	return size / workers * (index - 1)
+}
+
 func (d *DHS) readDatabase() (err error) {
 	ctx := context.Background()
 
@@ -25,9 +36,9 @@ func (d *DHS) readDatabase() (err error) {
 		d.log.Fatal("Fail to count flex legacy containers", logger.ErrField(err))
 		return
 	}
-	limit := (n/incialServices)*int64(d.ServiceNumber) + 1
-	offset := int64(d.ServiceNumber-1) * limit
 
+	limit := calcLimit(n, int(incialServices), d.ServiceNumber)
+	offset := calcOffset(n, int(incialServices), d.ServiceNumber)
 	err = d.readFlexLegacyContainers(ctx, int(limit), int(offset))
 	if err != nil {
 		return err
@@ -38,10 +49,10 @@ func (d *DHS) readDatabase() (err error) {
 		d.log.Fatal("Fail to count non flex legacy metrics", logger.ErrField(err))
 		return
 	}
-	limit = (n/incialServices)*int64(d.ServiceNumber) + 1
-	offset = int64(d.ServiceNumber-1) * limit
 
-	err = d.readMetrics(ctx, int(offset), int(offset))
+	limit = calcLimit(n, int(incialServices), d.ServiceNumber)
+	offset = calcOffset(n, int(incialServices), d.ServiceNumber)
+	err = d.readMetrics(ctx, int(limit), int(offset))
 	if err != nil {
 		return err
 	}

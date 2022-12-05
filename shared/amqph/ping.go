@@ -22,7 +22,8 @@ func (a *Amqph) pingHandler() {
 		select {
 		case d := <-msgs:
 			a.PublisherCh <- models.DetailedPublishing{
-				Exchange: amqp.ExchangeServicePong,
+				Exchange:   amqp.ExchangeServicePong,
+				RoutingKey: "service-manager",
 				Publishing: amqp091.Publishing{
 					CorrelationId: d.CorrelationId,
 				},
