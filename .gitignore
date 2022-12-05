@@ -7,3 +7,5 @@ log-aggr/*
 rts-tester/*
 service_recovery
 *.logs.txt
+brainstorm.txt
+vendor
