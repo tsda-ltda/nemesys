@@ -156,8 +156,8 @@ func (pg *PG) GetFlexLegacyContainerProtocol(ctx context.Context, id int32) (r F
 		err = rows.Scan(
 			&r.Container.Target,
 			&r.Container.Port,
-			&r.Container.Community,
 			&r.Container.Transport,
+			&r.Container.Community,
 			&r.Container.Retries,
 			&r.Container.MaxOids,
 			&r.Container.Timeout,
@@ -220,6 +220,6 @@ func (pg *PG) GetFlexLegacyContainerTarget(ctx context.Context, id int32) (exist
 	return true, target, nil
 }
 
-func (pg *PG) CountFlexLegacyContainers(ctx context.Context) (n int64, err error) {
+func (pg *PG) CountFlexLegacyContainers(ctx context.Context) (n int, err error) {
 	return n, pg.db.QueryRowContext(ctx, sqlFlexLegacyContainersCount).Scan(&n)
 }
