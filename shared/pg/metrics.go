@@ -405,7 +405,7 @@ func (pg *PG) GetMetricsRequestsAndIntervals(ctx context.Context, limit int, off
 		return r, err
 	}
 	defer rows.Close()
-	results := make([]GetMetricRequestAndIntervalResult, 0, limit)
+	r = make([]GetMetricRequestAndIntervalResult, 0, limit)
 	for rows.Next() {
 		var result GetMetricRequestAndIntervalResult
 		err = rows.Scan(
@@ -419,12 +419,11 @@ func (pg *PG) GetMetricsRequestsAndIntervals(ctx context.Context, limit int, off
 		if err != nil {
 			return r, err
 		}
-		results = append(results, result)
+		r = append(r, result)
 	}
-	r = results
 	return r, nil
 }
 
-func (pg *PG) CountNonFlexMetrics(ctx context.Context) (n int64, err error) {
+func (pg *PG) CountNonFlexMetrics(ctx context.Context) (n int, err error) {
 	return n, pg.db.QueryRowContext(ctx, sqlMetricsCountNonFlex, types.CTFlexLegacy).Scan(&n)
 }
