@@ -13,7 +13,7 @@ type GetGoSNMPConfigResponse struct {
 	// Exists is the config existence.
 	Exists bool
 	// Agent is the snmp agent.
-	Agent models.SNMPAgent
+	Agent models.SNMPv2cAgent
 }
 
 // GetSNMPMetricResponse is the response for the GetSNMPMetric handler.
@@ -24,7 +24,7 @@ type GetSNMPMetricResponse struct {
 	Metric models.SNMPMetric
 }
 
-func (c *Cache) SetSNMPAgent(ctx context.Context, containerId int32, agent models.SNMPAgent) (err error) {
+func (c *Cache) SetSNMPAgent(ctx context.Context, containerId int32, agent models.SNMPv2cAgent) (err error) {
 	b, err := c.encode(agent)
 	if err != nil {
 		return err
