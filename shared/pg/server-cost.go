@@ -33,7 +33,7 @@ const (
 		(SELECT COUNT (*) FROM alarm_profiles),
 		(SELECT COUNT (*) FROM metrics_ref),
 		(SELECT COUNT (*) FROM apikeys)`
-	sqlCostUpdateBasePlan = `UPDATE base_plan SET (users, teams, contexts, contextual_metrics, basic_containers,
+	sqlCostUpdateBasePlan = `UPDATE base_plan SET (cost, users, teams, contexts, contextual_metrics, basic_containers,
 		snmpv2c_containers, flex_legacy_containers, basic_metrics, snmpv2c_metrics, flex_legacy_metrics, custom_queries,
 		data_policies, alarm_expressions, alarm_profiles, refkeys, api_keys, influx_data_points, requests, realtime_data_requests,
 		history_data_requests) = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) WHERE id = 1`
