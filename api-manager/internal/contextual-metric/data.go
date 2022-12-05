@@ -28,7 +28,7 @@ func DataHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// fetch data
-		d, err := api.Amqph.GetRTSData(r)
+		d, err := api.Amqph.GetRTSData(r, api.GetServiceIdent())
 		if err != nil {
 			if err == amqph.ErrRequestTimeout {
 				c.JSON(http.StatusServiceUnavailable, tools.JSONMSG(tools.MsgRequestTimeout))
