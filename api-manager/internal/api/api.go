@@ -12,7 +12,6 @@ import (
 	"github.com/fernandotsda/nemesys/shared/cache"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/influxdb"
-	"github.com/fernandotsda/nemesys/shared/initdb"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/fernandotsda/nemesys/shared/rdb"
@@ -67,15 +66,6 @@ func New(serviceNumber int) service.Service {
 	}
 	log.Info("Connected to amqp server")
 
-	initialized, err := initdb.PG()
-	if err != nil {
-		log.Error("Fail to inicialize database", logger.ErrField(err))
-		return nil
-	}
-	if initialized {
-		log.Info("Database inicialized with success")
-	}
-
 	rdbAuth, err := rdb.NewAuthClient()
 	if err != nil {
 		log.Panic("Fail to create auth client", logger.ErrField(err))
@@ -119,9 +109,6 @@ func New(serviceNumber int) service.Service {
 		Amqph:            amqph.New(amqpConn, log, tools.ServiceIdent),
 		UserPWBcryptCost: bcryptCost,
 		servicesStatus:   []service.ServiceStatus{},
-	}
-	if !initialized {
-		return api
 	}
 
 	err = api.createDefaultUser(context.Background())
