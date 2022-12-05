@@ -67,3 +67,7 @@ func CacheMetricAddDataFormKey(refkey string) string {
 func CacheRTSMetricConfig(metricId int64) string {
 	return "cache:metric:" + strconv.FormatInt(metricId, 10) + ":rts-config"
 }
+
+func CacheServerCostResultKey() string {
+	return "server-cost"
+}

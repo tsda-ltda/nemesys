@@ -8,6 +8,7 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/container"
 	ctxmetric "github.com/fernandotsda/nemesys/api-manager/internal/contextual-metric"
+	"github.com/fernandotsda/nemesys/api-manager/internal/cost"
 	customquery "github.com/fernandotsda/nemesys/api-manager/internal/custom-query"
 	datapolicy "github.com/fernandotsda/nemesys/api-manager/internal/data-policy"
 	"github.com/fernandotsda/nemesys/api-manager/internal/metric"
@@ -32,15 +33,29 @@ func Set(s service.Service) {
 
 	r := api.Router.Group(env.APIManagerRoutesPrefix)
 
-	r.GET("/services/status", middleware.Protect(api, roles.Admin), status.GetHandler(api))
-	r.GET("/session", middleware.Protect(api, roles.Viewer), user.SessionInfoHandler(api))
 	r.POST("/login", middleware.Limiter(api, time.Second/2), uauth.LoginHandler(api))
-	r.POST("/logout", middleware.Protect(api, roles.Viewer), uauth.Logout(api))
 
-	global := r.Group("/global", middleware.Protect(api, roles.Admin))
+	viewer := r.Group("/", middleware.Protect(api, roles.Viewer))
 	{
-		global.GET("/refkeys/:refkey", refkey.GetHandler(api))
-		global.POST("/metrics/data", metricdata.AddHandler(api))
+		viewer.GET("/session", middleware.Protect(api, roles.Viewer), user.SessionInfoHandler(api))
+		viewer.POST("/logout", middleware.Protect(api, roles.Viewer), uauth.Logout(api))
+	}
+
+	adm := r.Group("/", middleware.Protect(api, roles.Admin))
+	{
+		adm.GET("/services/status", status.GetHandler(api))
+		adm.GET("/refkeys/:refkey", refkey.GetHandler(api))
+		adm.GET("/cost", cost.GetCostHandler(api))
+		adm.GET("/price-table", cost.GetPriceTableHandler(api))
+		adm.GET("/base-plan", cost.GetBasePlanHandler(api))
+
+		adm.POST("/metrics/data", metricdata.AddHandler(api))
+	}
+
+	master := r.Group("/", middleware.Protect(api, roles.Master))
+	{
+		master.PATCH("/base-plan", cost.UpdateBasePlanHandler(api))
+		master.PATCH("/price-table", cost.UpdatePriceTableHandler(api))
 	}
 
 	users := r.Group("/users")

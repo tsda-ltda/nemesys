@@ -31,6 +31,8 @@ type Cache struct {
 	metricAddDataFormExp time.Duration
 	// rtsMetricConfigExp is the time to expire rts metric configuration.
 	rtsMetricConfigExp time.Duration
+	// serverCostExp is the time to expire the server cost.
+	serverCostExp time.Duration
 }
 
 // New returns a prepared Cache struct.
@@ -52,6 +54,7 @@ func New() *Cache {
 		customQueryExp:          time.Minute,
 		metricAddDataFormExp:    time.Minute * 3,
 		rtsMetricConfigExp:      time.Minute * 2,
+		serverCostExp:           time.Second * 30,
 	}
 }
 

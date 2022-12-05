@@ -11,4 +11,5 @@ var (
 	ErrInvalidRetentionRulesLength = errors.New("invalid retention rules length")
 	ErrLogIsNil                    = errors.New("log is nil")
 	ErrInvalidLog                  = errors.New("invalid log format")
+	ErrInvalidCountReturn          = errors.New("fail to transform datapolicy points count into number")
 )

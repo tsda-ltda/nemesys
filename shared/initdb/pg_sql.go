@@ -286,4 +286,72 @@ var sqlCommands []string = []string{
 		always_alarmed_on_new_alarm BOOLEAN NOT NULL,
 		recognization_max_lifetime INT8 NOT NULL	
 	);`,
+
+	// Create request registry table
+	`CREATE TABLE request_registry (
+		requests INT8,
+		realtime_data_requests INT8,
+		history_data_requests INT8
+	);`,
+	`INSERT INTO request_registry (requests, realtime_data_requests, history_data_requests) VALUES (0,0,0);`,
+
+	// Create server cost price table
+	`CREATE TABLE price_table (
+		id INT4 PRIMARY KEY,
+		coin_type VARCHAR (5) NOT NULL, 
+		_user FLOAT8 NOT NULL,
+		team FLOAT8 NOT NULL,
+		context FLOAT8 NOT NULL,
+		contextual_metric FLOAT8 NOT NULL,
+		basic_container FLOAT8 NOT NULL,
+		snmpv2c_container FLOAT8 NOT NULL,
+		flex_legacy_container FLOAT8 NOT NULL,
+		basic_metric FLOAT8 NOT NULL,
+		snmpv2c_metric FLOAT8 NOT NULL,
+		flex_legacy_metric FLOAT8 NOT NULL,
+		custom_query FLOAT8 NOT NULL,
+		data_policy FLOAT8 NOT NULL,
+		alarm_expression FLOAT8 NOT NULL,
+		alarm_profile FLOAT8 NOT NULL,
+		refkey FLOAT8 NOT NULL,
+		api_key FLOAT8 NOT NULL,
+		influx_data_point FLOAT8 NOT NULL,
+		request FLOAT8 NOT NULL,
+		realtime_data_request FLOAT8 NOT NULL,
+		history_data_request FLOAT8 NOT NULL
+	);`,
+	`INSERT INTO price_table (id, coin_type, _user, team, context, contextual_metric, basic_container,
+		snmpv2c_container, flex_legacy_container, basic_metric, snmpv2c_metric, flex_legacy_metric, custom_query,
+		data_policy, alarm_expression, alarm_profile, refkey, api_key, influx_data_point, request, realtime_data_request,
+		history_data_request) VALUES (1, 'R$', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)`,
+
+	// Create base plan table
+	`CREATE TABLE base_plan (
+		id INT4 PRIMARY KEY,
+		cost FLOAT8 NOT NULL,
+		users INT4 NOT NULL,
+		teams INT4 NOT NULL,
+		contexts INT4 NOT NULL,
+		contextual_metrics INT4 NOT NULL,
+		basic_containers INT4 NOT NULL,
+		snmpv2c_containers INT4 NOT NULL,
+		flex_legacy_containers INT4 NOT NULL,
+		basic_metrics INT8 NOT NULL,
+		snmpv2c_metrics INT8 NOT NULL,
+		flex_legacy_metrics INT8 NOT NULL,
+		custom_queries INT4 NOT NULL,
+		data_policies INT4 NOT NULL,
+		alarm_expressions INT4 NOT NULL,
+		alarm_profiles INT4 NOT NULL,
+		refkeys INT8 NOT NULL,
+		api_keys INT4 NOT NULL,
+		influx_data_points INT8 NOT NULL,
+		requests INT8 NOT NULL,
+		realtime_data_requests INT8 NOT NULL,
+		history_data_requests INT8 NOT NULL
+	);`,
+	`INSERT INTO base_plan (id, cost, users, teams, contexts, contextual_metrics, basic_containers,
+		snmpv2c_containers, flex_legacy_containers, basic_metrics, snmpv2c_metrics, flex_legacy_metrics, custom_queries,
+		data_policies, alarm_expressions, alarm_profiles, refkeys, api_keys, influx_data_points, requests, realtime_data_requests,
+		history_data_requests) VALUES (1,0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)`,
 }
