@@ -1,7 +1,6 @@
 package snmp
 
 import (
-	"context"
 	"fmt"
 	"math"
 
@@ -13,7 +12,7 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-func (s *SNMP) getMetric(agent models.SNMPAgent, request models.MetricRequest, correlationId string, routingKey string) {
+func (s *SNMP) getSNMPv2cMetric(agent models.SNMPv2cAgent, request models.MetricRequest, correlationId string, routingKey string) {
 	p := amqp091.Publishing{
 		Headers:       amqp.RouteHeader(routingKey),
 		CorrelationId: correlationId,
@@ -22,27 +21,28 @@ func (s *SNMP) getMetric(agent models.SNMPAgent, request models.MetricRequest, c
 	// publish data
 	defer func() {
 		s.amqph.PublisherCh <- models.DetailedPublishing{
-			Exchange:   amqp.ExchangeMetricDataResponse,
+			Exchange:   amqp.ExchangeMetricDataRes,
 			RoutingKey: routingKey,
 			Publishing: p,
+		}
+
+		if types.IsNonFlex(request.ContainerType) && p.Type == amqp.GetMessage(amqp.OK) {
+			s.amqph.PublisherCh <- models.DetailedPublishing{
+				Exchange:   amqp.ExchangeCheckAlarm,
+				Publishing: p,
+			}
 		}
 	}()
 
 	gosnmp := &gosnmp.GoSNMP{
-		Context:            context.Background(),
-		Target:             agent.Target,
-		Port:               agent.Port,
-		Transport:          agent.Transport,
-		Community:          agent.Community,
-		Version:            agent.Version,
-		Timeout:            agent.Timeout,
-		Retries:            agent.Retries,
-		MaxOids:            agent.MaxOids,
-		MsgFlags:           agent.MsgFlags,
-		SecurityModel:      agent.SecurityModel,
-		SecurityParameters: agent.SecurityParameters,
-		ContextEngineID:    agent.ContextEngineID,
-		ContextName:        agent.ContextName,
+		Target:    agent.Target,
+		Port:      agent.Port,
+		Transport: agent.Transport,
+		Community: agent.Community,
+		Version:   agent.Version,
+		Timeout:   agent.Timeout,
+		Retries:   agent.Retries,
+		MaxOids:   agent.MaxOids,
 	}
 
 	// open connection
@@ -136,7 +136,7 @@ func (s *SNMP) getMetric(agent models.SNMPAgent, request models.MetricRequest, c
 	s.log.Debug("Data published for metric: " + fmt.Sprint(request.MetricId))
 }
 
-func (s *SNMP) getMetrics(agent models.SNMPAgent, request models.MetricsRequest, correlationId string, routingKey string) {
+func (s *SNMP) getMetrics(agent models.SNMPv2cAgent, request models.MetricsRequest, correlationId string, routingKey string) {
 	p := amqp091.Publishing{
 		Headers:       amqp.RouteHeader(routingKey),
 		CorrelationId: correlationId,
@@ -145,27 +145,28 @@ func (s *SNMP) getMetrics(agent models.SNMPAgent, request models.MetricsRequest,
 	// publish data
 	defer func() {
 		s.amqph.PublisherCh <- models.DetailedPublishing{
-			Exchange:   amqp.ExchangeMetricsDataResponse,
+			Exchange:   amqp.ExchangeMetricsDataRes,
 			RoutingKey: routingKey,
 			Publishing: p,
+		}
+
+		if types.IsNonFlex(request.ContainerType) && p.Type == amqp.GetMessage(amqp.OK) {
+			s.amqph.PublisherCh <- models.DetailedPublishing{
+				Exchange:   amqp.ExchangeCheckAlarms,
+				Publishing: p,
+			}
 		}
 	}()
 
 	gosnmp := &gosnmp.GoSNMP{
-		Context:            context.Background(),
-		Target:             agent.Target,
-		Port:               agent.Port,
-		Transport:          agent.Transport,
-		Community:          agent.Community,
-		Version:            agent.Version,
-		Timeout:            agent.Timeout,
-		Retries:            agent.Retries,
-		MaxOids:            agent.MaxOids,
-		MsgFlags:           agent.MsgFlags,
-		SecurityModel:      agent.SecurityModel,
-		SecurityParameters: agent.SecurityParameters,
-		ContextEngineID:    agent.ContextEngineID,
-		ContextName:        agent.ContextName,
+		Target:    agent.Target,
+		Port:      agent.Port,
+		Transport: agent.Transport,
+		Community: agent.Community,
+		Version:   agent.Version,
+		Timeout:   agent.Timeout,
+		Retries:   agent.Retries,
+		MaxOids:   agent.MaxOids,
 	}
 
 	// connect

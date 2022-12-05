@@ -9,7 +9,7 @@ import (
 )
 
 func (s *SNMP) getMetricListener() {
-	msgs, err := s.amqph.Listen(amqp.QueueSNMPMetricDataRequest, amqp.ExchangeMetricDataRequest,
+	msgs, err := s.amqph.Listen(amqp.QueueSNMPMetricDataReq, amqp.ExchangeMetricDataReq,
 		models.ListenerOptions{Bind: models.QueueBindOptions{RoutingKey: "snmp"}},
 	)
 	if err != nil {
@@ -39,7 +39,7 @@ func (s *SNMP) getMetricListener() {
 				continue
 			}
 
-			go s.getMetric(agent, r, d.CorrelationId, rk)
+			go s.getSNMPv2cMetric(agent, r, d.CorrelationId, rk)
 		case <-s.Done():
 			return
 		}
@@ -47,7 +47,7 @@ func (s *SNMP) getMetricListener() {
 }
 
 func (s *SNMP) getMetricsListener() {
-	msgs, err := s.amqph.Listen(amqp.QueueSNMPMetricsDataRequest, amqp.ExchangeMetricsDataRequest,
+	msgs, err := s.amqph.Listen(amqp.QueueSNMPMetricsDataReq, amqp.ExchangeMetricsDataReq,
 		models.ListenerOptions{Bind: models.QueueBindOptions{RoutingKey: "snmp"}},
 	)
 	if err != nil {

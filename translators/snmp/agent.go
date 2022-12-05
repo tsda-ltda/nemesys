@@ -13,7 +13,7 @@ import (
 
 var ErrContainerNotExists = errors.New("container does not exists")
 
-func (s *SNMP) getContainerAgent(containerId int32, t types.ContainerType) (agent models.SNMPAgent, err error) {
+func (s *SNMP) getContainerAgent(containerId int32, t types.ContainerType) (agent models.SNMPv2cAgent, err error) {
 	ctx := context.Background()
 
 	r, err := s.cache.GetSNMPAgent(ctx, containerId)
@@ -34,7 +34,7 @@ func (s *SNMP) getContainerAgent(containerId int32, t types.ContainerType) (agen
 			return agent, ErrContainerNotExists
 		}
 
-		agent = models.SNMPAgent{
+		agent = models.SNMPv2cAgent{
 			Target:    r.Container.Target,
 			Port:      uint16(r.Container.Port),
 			Community: r.Container.Community,
@@ -54,7 +54,7 @@ func (s *SNMP) getContainerAgent(containerId int32, t types.ContainerType) (agen
 			return agent, ErrContainerNotExists
 		}
 
-		agent = models.SNMPAgent{
+		agent = models.SNMPv2cAgent{
 			Target:    r.Container.Target,
 			Port:      uint16(r.Container.Port),
 			Community: r.Container.Community,
