@@ -8,3 +8,7 @@ const (
 	CTSNMPv2c
 	CTFlexLegacy
 )
+
+func IsNonFlex(ct ContainerType) bool {
+	return ct == CTFlexLegacy
+}
