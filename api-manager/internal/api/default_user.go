@@ -14,7 +14,7 @@ func (api *API) createDefaultUser(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if usersLen == 1 {
+	if usersLen > 0 {
 		return nil
 	}
 
