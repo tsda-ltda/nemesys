@@ -9,6 +9,7 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/container"
 	ctxmetric "github.com/fernandotsda/nemesys/api-manager/internal/contextual-metric"
 	"github.com/fernandotsda/nemesys/api-manager/internal/cost"
+	whitelist "github.com/fernandotsda/nemesys/api-manager/internal/counter-whitelist"
 	customquery "github.com/fernandotsda/nemesys/api-manager/internal/custom-query"
 	datapolicy "github.com/fernandotsda/nemesys/api-manager/internal/data-policy"
 	"github.com/fernandotsda/nemesys/api-manager/internal/metric"
@@ -35,13 +36,13 @@ func Set(s service.Service) {
 
 	r.POST("/login", middleware.Limiter(api, time.Second/2), uauth.LoginHandler(api))
 
-	viewer := r.Group("/", middleware.Protect(api, roles.Viewer))
+	viewer := r.Group("/", middleware.Protect(api, roles.Viewer), middleware.RequestsCounter(api))
 	{
 		viewer.GET("/session", middleware.Protect(api, roles.Viewer), user.SessionInfoHandler(api))
 		viewer.POST("/logout", middleware.Protect(api, roles.Viewer), uauth.Logout(api))
 	}
 
-	adm := r.Group("/", middleware.Protect(api, roles.Admin))
+	adm := r.Group("/", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))
 	{
 		adm.GET("/services/status", status.GetHandler(api))
 		adm.GET("/refkeys/:refkey", refkey.GetHandler(api))
@@ -60,16 +61,16 @@ func Set(s service.Service) {
 
 	users := r.Group("/users")
 	{
-		users.POST("/:userId/logout", middleware.Protect(api, roles.Admin), uauth.ForceLogout(api))
+		users.POST("/:userId/logout", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api), uauth.ForceLogout(api))
 
-		users.GET("/", middleware.Protect(api, roles.TeamsManager), user.MGetHandler(api))
-		users.GET("/:userId", middleware.ProtectUser(api, roles.Admin), user.GetHandler(api))
-		users.GET("/:userId/teams", middleware.ProtectUser(api, roles.Admin), user.TeamsHandler(api))
-		users.POST("/", middleware.Protect(api, roles.Admin), user.CreateHandler(api))
-		users.PATCH("/:userId", middleware.Protect(api, roles.Admin), user.UpdateHandler(api))
-		users.DELETE("/:userId", middleware.Protect(api, roles.Admin), user.DeleteHandler(api))
+		users.GET("/", middleware.Protect(api, roles.TeamsManager), middleware.RequestsCounter(api), user.MGetHandler(api))
+		users.GET("/:userId", middleware.ProtectUser(api, roles.Admin), middleware.RequestsCounter(api), user.GetHandler(api))
+		users.GET("/:userId/teams", middleware.ProtectUser(api, roles.Admin), middleware.RequestsCounter(api), user.TeamsHandler(api))
+		users.POST("/", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api), user.CreateHandler(api))
+		users.PATCH("/:userId", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api), user.UpdateHandler(api))
+		users.DELETE("/:userId", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api), user.DeleteHandler(api))
 
-		apikeys := users.Group("/:userId/api-keys", middleware.ProtectUser(api, roles.Admin))
+		apikeys := users.Group("/:userId/api-keys", middleware.ProtectUser(api, roles.Admin), middleware.RequestsCounter(api))
 		{
 			apikeys.GET("/", user.MGetAPIKeyHandler(api))
 			apikeys.POST("/", user.CreateAPIKeyHandler(api))
@@ -77,7 +78,7 @@ func Set(s service.Service) {
 		}
 	}
 
-	teams := r.Group("/teams", middleware.Protect(api, roles.TeamsManager))
+	teams := r.Group("/teams", middleware.Protect(api, roles.TeamsManager), middleware.RequestsCounter(api))
 	{
 		teams.GET("/", team.MGetHandler(api))
 		teams.GET("/:teamId", team.GetHandler(api))
@@ -108,7 +109,7 @@ func Set(s service.Service) {
 		}
 	}
 
-	dp := r.Group("/data-policies", middleware.Protect(api, roles.Master))
+	dp := r.Group("/data-policies", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))
 	{
 		dp.GET("/", datapolicy.MGetHandler(api))
 		dp.GET("/:dpId", datapolicy.GetHandler(api))
@@ -117,7 +118,7 @@ func Set(s service.Service) {
 		dp.DELETE("/:dpId", datapolicy.DeleteHandler(api))
 	}
 
-	basic := r.Group("/containers/basics", middleware.Protect(api, roles.Admin))
+	basic := r.Group("/containers/basics", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))
 	{
 		basic.GET("/", container.MGet(api, types.CTBasic))
 		basic.GET("/:containerId", container.GetBasicHandler(api))
@@ -144,7 +145,7 @@ func Set(s service.Service) {
 		setupAlarmExpressionRoutes(api, metrics)
 	}
 
-	SNMPv2c := r.Group("/containers/snmpv2c", middleware.Protect(api, roles.Admin))
+	SNMPv2c := r.Group("/containers/snmpv2c", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))
 	{
 		SNMPv2c.GET("/", container.MGet(api, types.CTSNMPv2c))
 		SNMPv2c.GET("/:containerId", container.GetSNMPv2cHandler(api))
@@ -163,7 +164,7 @@ func Set(s service.Service) {
 		setupAlarmExpressionRoutes(api, metrics)
 	}
 
-	flexLegacy := r.Group("/containers/flex-legacy", middleware.Protect(api, roles.Admin))
+	flexLegacy := r.Group("/containers/flex-legacy", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))
 	{
 		flexLegacy.GET("/", container.MGet(api, types.CTFlexLegacy))
 		flexLegacy.GET("/:containerId", container.GetFlexLegacyHandler(api))
@@ -183,14 +184,14 @@ func Set(s service.Service) {
 
 	customQuery := r.Group("/custom-queries")
 	{
-		customQuery.GET("/", middleware.Protect(api, roles.Viewer), customquery.MGetHandler(api))
-		customQuery.GET("/:cqId", middleware.Protect(api, roles.Viewer), customquery.GetHandler(api))
-		customQuery.POST("/", middleware.Protect(api, roles.TeamsManager), customquery.CreateHandler(api))
-		customQuery.PATCH("/:cqId", middleware.Protect(api, roles.TeamsManager), customquery.UpdateHandler(api))
-		customQuery.DELETE("/:cqId", middleware.Protect(api, roles.TeamsManager), customquery.DeleteHandler(api))
+		customQuery.GET("/", middleware.Protect(api, roles.Viewer), middleware.RequestsCounter(api), customquery.MGetHandler(api))
+		customQuery.GET("/:cqId", middleware.Protect(api, roles.Viewer), middleware.RequestsCounter(api), customquery.GetHandler(api))
+		customQuery.POST("/", middleware.Protect(api, roles.TeamsManager), middleware.RequestsCounter(api), customquery.CreateHandler(api))
+		customQuery.PATCH("/:cqId", middleware.Protect(api, roles.TeamsManager), middleware.RequestsCounter(api), customquery.UpdateHandler(api))
+		customQuery.DELETE("/:cqId", middleware.Protect(api, roles.TeamsManager), middleware.RequestsCounter(api), customquery.DeleteHandler(api))
 	}
 
-	alarmProfile := r.Group("/alarm-profiles", middleware.Protect(api, roles.TeamsManager))
+	alarmProfile := r.Group("/alarm-profiles", middleware.Protect(api, roles.TeamsManager), middleware.RequestsCounter(api))
 	{
 		alarmProfile.GET("/", profile.MGetHandler(api))
 		alarmProfile.GET("/:alarmProfileId", profile.GetHandler(api))
@@ -199,11 +200,19 @@ func Set(s service.Service) {
 		alarmProfile.DELETE("/:alarmProfileId", profile.DeleteHandler(api))
 	}
 
+	requestWhitelist := r.Group("request-count/whitelist/members", middleware.Protect(api, roles.Master))
+	{
+		requestWhitelist.GET("/", whitelist.GetHandler(api))
+		requestWhitelist.POST("/", whitelist.CreateHandler(api))
+		requestWhitelist.DELETE("/:userId", whitelist.DeleteHandler(api))
+	}
+
 	// metric data
 	{
 		r.GET("/teams/:teamId/ctx/:ctxId/metrics/:metricId/data",
 			middleware.Limiter(api, time.Millisecond*300),
 			middleware.Protect(api, roles.Viewer),
+			middleware.RealtimeDataRequestsCounter(api),
 			middleware.ParseContextualMetricParams(api),
 			middleware.MetricRequest(api),
 			ctxmetric.DataHandler(api),
@@ -211,6 +220,7 @@ func Set(s service.Service) {
 		r.GET("/teams/:teamId/ctx/:ctxId/metrics/:metricId/data/history",
 			middleware.Limiter(api, time.Millisecond*650),
 			middleware.Protect(api, roles.Viewer),
+			middleware.DataHistoryRequestsCounter(api),
 			middleware.ParseContextualMetricParams(api),
 			middleware.MetricRequest(api),
 			ctxmetric.QueryDataHandler(api),

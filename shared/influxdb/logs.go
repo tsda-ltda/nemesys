@@ -66,7 +66,7 @@ func (c *Client) WriteLog(ctx context.Context, log map[string]any) error {
 		return ErrLogIsNil
 	}
 
-	bucket, err := c.getBucketLocal("logs")
+	bucket, err := c.getBucket("logs")
 	if err != nil {
 		return err
 	}

@@ -75,6 +75,15 @@ func Start() {
 		log.Info("Logs bucket created with success")
 	}
 
+	created, err = influxClient.CreateRequestsCountBucket()
+	if err != nil {
+		log.Fatal("Fail to create requets count bucket", logger.ErrField(err))
+		return
+	}
+	if created {
+		log.Info("Requests count bucket created with success")
+	}
+
 	amqph := amqph.New(amqpConn, log, service.GetServiceIdent(service.ServiceManager, 1))
 
 	s := ServiceManager{

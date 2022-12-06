@@ -65,7 +65,7 @@ func (pg *PG) UpdatePriceTable(ctx context.Context, table models.ServerPriceTabl
 		table.InfluxDataPoint,
 		table.Request,
 		table.RealtimeDataRequest,
-		table.HistoryDataRequest,
+		table.DataHistoryRequests,
 	)
 	return err
 }
@@ -92,7 +92,7 @@ func (pg *PG) GetPriceTable(ctx context.Context) (table models.ServerPriceTable,
 		&table.InfluxDataPoint,
 		&table.Request,
 		&table.RealtimeDataRequest,
-		&table.HistoryDataRequest,
+		&table.DataHistoryRequests,
 	)
 }
 
@@ -139,7 +139,7 @@ func (pg *PG) UpdateBasePlan(ctx context.Context, plan models.ServerBasePlan) (e
 		plan.InfluxDataPoints,
 		plan.Requests,
 		plan.RealtimeDataRequests,
-		plan.HistoryDataRequests,
+		plan.DataHistoryRequests,
 	)
 	return err
 }
@@ -166,6 +166,6 @@ func (pg *PG) GetBasePlan(ctx context.Context) (plan models.ServerBasePlan, err 
 		&plan.InfluxDataPoints,
 		&plan.Requests,
 		&plan.RealtimeDataRequests,
-		&plan.HistoryDataRequests,
+		&plan.DataHistoryRequests,
 	)
 }

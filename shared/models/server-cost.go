@@ -20,7 +20,7 @@ type ServerElements struct {
 	InfluxDataPoints     int `json:"influx-data-points"`
 	Requests             int `json:"requests"`
 	RealtimeDataRequests int `json:"realtime-data-requests"`
-	HistoryDataRequests  int `json:"history-data-requests"`
+	DataHistoryRequests  int `json:"data-history-requests"`
 }
 
 type ServerBasePlan struct {
@@ -44,7 +44,7 @@ type ServerBasePlan struct {
 	InfluxDataPoints     int     `json:"influx-data-points"`
 	Requests             int     `json:"requests"`
 	RealtimeDataRequests int     `json:"realtime-data-requests"`
-	HistoryDataRequests  int     `json:"history-data-requests"`
+	DataHistoryRequests  int     `json:"data-history-requests"`
 }
 
 type ServerPriceTable struct {
@@ -68,7 +68,7 @@ type ServerPriceTable struct {
 	InfluxDataPoint     float64 `json:"influx-data-point" validate:"min=0"`
 	Request             float64 `json:"request" validate:"min=0"`
 	RealtimeDataRequest float64 `json:"realtime-data-request" validate:"min=0"`
-	HistoryDataRequest  float64 `json:"history-data-request" validate:"min=0"`
+	DataHistoryRequests float64 `json:"data-history-requests" validate:"min=0"`
 }
 
 type ServerCostResult struct {

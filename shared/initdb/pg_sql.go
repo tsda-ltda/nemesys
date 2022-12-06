@@ -354,4 +354,13 @@ var sqlCommands []string = []string{
 		snmpv2c_containers, flex_legacy_containers, basic_metrics, snmpv2c_metrics, flex_legacy_metrics, custom_queries,
 		data_policies, alarm_expressions, alarm_profiles, refkeys, api_keys, influx_data_points, requests, realtime_data_requests,
 		history_data_requests) VALUES (1,0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)`,
+
+	// Create requests users whitelist
+	`CREATE TABLE counter_whitelist (
+		user_id INT4 NOT NULL,
+		CONSTRAINT requests_counter_whitelist_fk_user_id
+			FOREIGN KEY(user_id)
+				REFERENCES users(id)
+				ON DELETE CASCADE
+	);`,
 }

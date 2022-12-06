@@ -14,7 +14,7 @@ func (c *Client) deleteBucketLocal(name string) {
 	delete(c.buckets, name)
 }
 
-func (c *Client) getBucketLocal(name string) (*domain.Bucket, error) {
+func (c *Client) getBucket(name string) (*domain.Bucket, error) {
 	bucket, ok := c.buckets[name]
 	if !ok {
 		var err error

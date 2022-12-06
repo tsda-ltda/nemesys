@@ -5,8 +5,10 @@ import (
 	"fmt"
 	stdlog "log"
 	"strconv"
+	"time"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
+	"github.com/fernandotsda/nemesys/api-manager/internal/counter"
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/cache"
@@ -41,6 +43,8 @@ type API struct {
 	UserPWBcryptCost int
 	// Logger is the internal logger.
 	Log *logger.Logger
+	// Counter is the request counter.
+	Counter *counter.Counter
 	// servicesStatus are the current status of all registered
 	// services by the service manager.
 	servicesStatus []service.ServiceStatus
@@ -97,9 +101,10 @@ func New(serviceNumber int) service.Service {
 	r := gin.New()
 
 	validate := validator.New()
+	pg := pg.New()
 	api := &API{
 		Tools:            tools,
-		PG:               pg.New(),
+		PG:               pg,
 		Influx:           &influxClient,
 		Router:           r,
 		Auth:             auth,
@@ -108,6 +113,7 @@ func New(serviceNumber int) service.Service {
 		Cache:            cache.New(),
 		Amqph:            amqph.New(amqpConn, log, tools.ServiceIdent),
 		UserPWBcryptCost: bcryptCost,
+		Counter:          counter.New(&influxClient, pg, log, time.Second*10),
 		servicesStatus:   []service.ServiceStatus{},
 	}
 

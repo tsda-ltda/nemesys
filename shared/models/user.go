@@ -36,3 +36,8 @@ type UserWithoutPW struct {
 	// Email is the user's email.
 	Email string `json:"email" validate:"required,email"`
 }
+
+type UserId struct {
+	// UserId is the user unique identifier.
+	UserId int32 `json:"user-id" validate:"required"`
+}

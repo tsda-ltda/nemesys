@@ -51,6 +51,25 @@ func calculate(ctx context.Context, api *api.API) (result models.ServerCostResul
 	}
 	elements.InfluxDataPoints = points
 
+	requests, err := api.Influx.GetTotalRequests()
+	if err != nil {
+		return result, err
+	}
+
+	realtimeRequest, err := api.Influx.GetTotalRealtimeDataRequests()
+	if err != nil {
+		return result, err
+	}
+
+	dataHistoryRequests, err := api.Influx.GetTotalDataHistoryRequests()
+	if err != nil {
+		return result, err
+	}
+
+	elements.Requests = int(requests)
+	elements.DataHistoryRequests = int(dataHistoryRequests)
+	elements.RealtimeDataRequests = int(realtimeRequest)
+
 	result.GeneratedAt = time.Now().Unix()
 	result.Elements = elements
 	result.PriceTable = priceTable
@@ -145,7 +164,12 @@ func calculate(ctx context.Context, api *api.API) (result models.ServerCostResul
 		{
 			N:         elements.RealtimeDataRequests,
 			BasePlanN: basePlan.RealtimeDataRequests,
-			Price:     priceTable.HistoryDataRequest,
+			Price:     priceTable.RealtimeDataRequest,
+		},
+		{
+			N:         elements.DataHistoryRequests,
+			BasePlanN: basePlan.DataHistoryRequests,
+			Price:     priceTable.DataHistoryRequests,
 		},
 	})
 	result.TotalCost += result.AdditionalCost

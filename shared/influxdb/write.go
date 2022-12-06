@@ -33,7 +33,7 @@ func (c *Client) WritePoint(ctx context.Context, data models.MetricDataResponse,
 
 	// find bucket
 	bucketName := GetBucketName(data.DataPolicyId, false)
-	bucket, err := c.getBucketLocal(bucketName)
+	bucket, err := c.getBucket(bucketName)
 	if err != nil {
 		return err
 	}

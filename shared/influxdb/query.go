@@ -29,7 +29,7 @@ type QueryOptions struct {
 func (c *Client) Query(ctx context.Context, opts QueryOptions) (points [][]any, err error) {
 	queryApi := c.QueryAPI(*c.DefaultOrg.Id)
 
-	rawBucket, err := c.getBucketLocal(GetBucketName(opts.DataPolicyId, false))
+	rawBucket, err := c.getBucket(GetBucketName(opts.DataPolicyId, false))
 	if err != nil {
 		return nil, err
 	}
