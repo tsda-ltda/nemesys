@@ -45,6 +45,8 @@ var sqlCommands []string = []string{
 				REFERENCES teams(id)
 				ON DELETE CASCADE
 	);`,
+	`CREATE INDEX user_id_users_teams_index ON users_teams (user_id);`,
+	`CREATE INDEX team_id_users_teams_index ON users_teams (team_id);`,
 
 	// Data policy table
 	`CREATE TABLE data_policies (
@@ -237,56 +239,6 @@ var sqlCommands []string = []string{
 		flux VARCHAR (1000) NOT NULL
 	);`,
 
-	// Create alarm expression table
-	`CREATE TABLE alarm_expressions (
-		metric_id INT8 UNIQUE NOT NULL,
-		minor_expression VARCHAR (255) NOT NULL,
-		major_expression VARCHAR (255) NOT NULL,
-		critical_expression VARCHAR (255) NOT NULL,
-		minor_descr VARCHAR (255) NOT NULL,
-		major_descr VARCHAR (255) NOT NULL,
-		critical_descr VARCHAR (255) NOT NULL,
-		CONSTRAINT alarm_expressions_fk_metric_id
-			FOREIGN KEY(metric_id)
-				REFERENCES metrics(id)
-				ON DELETE CASCADE
-	);`,
-
-	// Create alarm profile table
-	`CREATE TABLE alarm_profiles (
-		id SERIAL4 PRIMARY KEY,
-		name VARCHAR (50) NOT NULL,
-		minor BOOLEAN NOT NULL,
-		major BOOLEAN NOT NULL,
-		critical BOOLEAN NOT NULL
-	);`,
-
-	// Create alarm profile relation table
-	`CREATE TABLE alarm_profiles_rel (
-		alarm_profile_id INT4 NOT NULL,
-		metric_id INT8 NOT NULL,
-		CONSTRAINT alarm_profiles_rel_fk_metric_id
-			FOREIGN KEY(metric_id)
-				REFERENCES metrics(id)
-				ON DELETE CASCADE,
-		CONSTRAINT alarm_profiles_rel_fk_alarm_profile_id
-			FOREIGN KEY(alarm_profile_id)
-				REFERENCES alarm_profiles(id)
-				ON DELETE CASCADE
-	);`,
-
-	// Create metric alarm state table
-	`CREATE TABLE alarm_states (
-		metric_id INT8 UNIQUE NOT NULL,
-		state INT2 NOT NULL,
-		last_minor_time INT8 NOT NULL,
-		last_major_time INT8 NOT NULL,
-		last_critical_time INT8 NOT NULL,
-		last_recognization_time INT8 NOT NULL,
-		always_alarmed_on_new_alarm BOOLEAN NOT NULL,
-		recognization_max_lifetime INT8 NOT NULL	
-	);`,
-
 	// Create request registry table
 	`CREATE TABLE request_registry (
 		requests INT8,
@@ -294,6 +246,64 @@ var sqlCommands []string = []string{
 		history_data_requests INT8
 	);`,
 	`INSERT INTO request_registry (requests, realtime_data_requests, history_data_requests) VALUES (0,0,0);`,
+
+	// Create alarm profile table
+	`CREATE TABLE alarm_profiles (
+		id SERIAL4 PRIMARY KEY,
+		name VARCHAR (50) NOT NULL,
+		descr VARCHAR (255) NOT NULL
+	);`,
+
+	// Create alarm categories table
+	`CREATE TABLE alarm_categories (
+		id SERIAL4 PRIMARY KEY,
+		name VARCHAR (50) NOT NULL,
+		descr VARCHAR (255) NOT NULL,
+		level INT4 UNIQUE NOT NULL
+	);`,
+
+	// Create alarm profile category relation table
+	`CREATE TABLE alarm_profiles_categories_rel (
+		category_id INT4 NOT NULL,
+		profile_id INT4 NOT NULL,
+		CONSTRAINT alarm_profiles_categories_rel_fk_profile_id
+			FOREIGN KEY(profile_id)
+				REFERENCES alarm_profiles(id)
+				ON DELETE CASCADE,
+		CONSTRAINT alarm_profiles_categories_rel_fk_category_id
+			FOREIGN KEY(category_id)
+				REFERENCES alarm_categories(id)
+				ON DELETE CASCADE
+	);`,
+	`CREATE INDEX category_id_alarm_profiles_categories_rel_index ON alarm_profiles_categories_rel (category_id);`,
+	`CREATE INDEX profile_id_alarm_profiles_categories_rel_index ON alarm_profiles_categories_rel (profile_id);`,
+
+	// Create alarm expressions table
+	`CREATE TABLE alarm_expressions (
+		id SERIAL4 PRIMARY KEY,
+		name VARCHAR (50) NOT NULL,
+		expression VARCHAR (255) NOT NULL,
+		category_id INT4 NOT NULL,
+		CONSTRAINT alarm_expressions_fk_category_id
+			FOREIGN KEY(category_id)
+				REFERENCES alarm_categories(id)
+				ON DELETE CASCADE
+	);`,
+
+	// Create metrics and expressions relation table
+	`CREATE TABLE metrics_alarm_expressions_rel (
+		metric_id INT8 NOT NULL,
+		expression_id INT4 NOT NULL,
+		CONSTRAINT metrics_alarm_expressions_rel_fk_metric_id
+			FOREIGN KEY(metric_id)
+				REFERENCES metrics(id)
+				ON DELETE CASCADE,
+		CONSTRAINT metrics_alarm_expressions_rel_fk_expression_id
+			FOREIGN KEY(expression_id)
+				REFERENCES alarm_expressions(id)
+				ON DELETE CASCADE
+	);`,
+	`CREATE INDEX metric_id_metrics_alarm_expressions_rel_index ON metrics_alarm_expressions_rel (metric_id);`,
 
 	// Create server cost price table
 	`CREATE TABLE price_table (

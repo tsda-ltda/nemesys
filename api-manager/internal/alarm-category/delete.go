@@ -1,4 +1,4 @@
-package profile
+package category
 
 import (
 	"net/http"
@@ -10,36 +10,34 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Deletes a alarm profile.
+// Delete an alarm category.
 // Responses:
-//   - 400 If invalid params.
 //   - 404 If not found.
 //   - 204 If succeeded.
 func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		rawId := c.Param("profileId")
-		id, err := strconv.ParseInt(rawId, 0, 32)
+		id, err := strconv.ParseInt(c.Param("categoryId"), 0, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		exists, err := api.PG.DeleteAlarmProfile(ctx, int32(id))
+		exists, err := api.PG.DeleteAlarmCategory(ctx, int32(id))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
 			}
+			api.Log.Error("Fail to delete alarm category", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("Fail to delete alarm profile", logger.ErrField(err))
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmProfileNotFound))
+			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmCategoryNotFound))
 			return
 		}
-		api.Log.Debug("Alarm profile deleted, id: " + rawId)
+		api.Log.Debug("Alarm category delete with success, id: " + strconv.FormatInt(id, 10))
 
 		c.Status(http.StatusNoContent)
 	}

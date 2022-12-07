@@ -1,8 +1,7 @@
-package alarmexp
+package category
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -11,52 +10,52 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Crates a alarm expression.
+// Create an alarm category.
 // Responses:
-//   - 400 If invalid params.
-//   - 400 If alarm expression already exists.
+//   - 400 If invalid body.
+//   - 400 If category level already exists.
 //   - 200 If succeeded.
 func CreateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		var exp models.AlarmExpression
-		err := c.ShouldBind(&exp)
+		var category models.AlarmCategory
+		err := c.ShouldBind(&category)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
 			return
 		}
 
-		err = api.Validate.Struct(exp)
+		err = api.Validate.Struct(category)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
-		exists, err := api.PG.AlarmCategoryExists(ctx, exp.AlarmCategoryId)
+		exists, err := api.PG.CategoryLevelExists(ctx, category.Level, -1)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("Fail to check is category exists", logger.ErrField(err))
+			api.Log.Error("Fail check if category level exists", logger.ErrField(err))
 			return
 		}
-		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmCategoryNotFound))
+		if exists {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgAlarmCategoryLevelExists))
 			return
 		}
 
-		id, err := api.PG.CreateAlarmExpression(ctx, exp)
+		_, err = api.PG.CreateAlarmCategory(ctx, category)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
 			}
+			api.Log.Error("Fail to create alarm category", logger.ErrField(err))
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("Fail to create alarm expression", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("Alarm expression created, id: " + strconv.FormatInt(int64(id), 10))
+		api.Log.Debug("Alarm category created with success, name: " + category.Name)
 
 		c.Status(http.StatusOK)
 	}

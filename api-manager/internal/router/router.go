@@ -3,6 +3,7 @@ package router
 import (
 	"time"
 
+	category "github.com/fernandotsda/nemesys/api-manager/internal/alarm-category"
 	alarmexp "github.com/fernandotsda/nemesys/api-manager/internal/alarm-expression"
 	profile "github.com/fernandotsda/nemesys/api-manager/internal/alarm-profile"
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
@@ -21,7 +22,6 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/team"
 	"github.com/fernandotsda/nemesys/api-manager/internal/uauth"
 	"github.com/fernandotsda/nemesys/api-manager/internal/user"
-	"github.com/gin-gonic/gin"
 
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/service"
@@ -142,7 +142,6 @@ func Set(s service.Service) {
 				refkeys.DELETE("/:refkeyId", refkey.DeleteHandler(api))
 			}
 		}
-		setupAlarmExpressionRoutes(api, metrics)
 	}
 
 	SNMPv2c := r.Group("/containers/snmpv2c", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))
@@ -161,7 +160,6 @@ func Set(s service.Service) {
 			metrics.PATCH("/:metricId", metric.UpdateSNMPv2cHandler(api))
 			metrics.DELETE("/:metricId", metric.DeleteHandler(api))
 		}
-		setupAlarmExpressionRoutes(api, metrics)
 	}
 
 	flexLegacy := r.Group("/containers/flex-legacy", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))
@@ -191,13 +189,39 @@ func Set(s service.Service) {
 		customQuery.DELETE("/:cqId", middleware.Protect(api, roles.TeamsManager), middleware.RequestsCounter(api), customquery.DeleteHandler(api))
 	}
 
-	alarmProfile := r.Group("/alarm-profiles", middleware.Protect(api, roles.TeamsManager), middleware.RequestsCounter(api))
+	alarmProfile := r.Group("/alarm/profiles", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))
 	{
 		alarmProfile.GET("/", profile.MGetHandler(api))
-		alarmProfile.GET("/:alarmProfileId", profile.GetHandler(api))
+		alarmProfile.GET("/:profileId", profile.GetHandler(api))
 		alarmProfile.POST("/", profile.CreateHandler(api))
-		alarmProfile.PATCH("/:alarmProfileId", profile.UpdateHandler(api))
-		alarmProfile.DELETE("/:alarmProfileId", profile.DeleteHandler(api))
+		alarmProfile.PATCH("/:profileId", profile.UpdateHandler(api))
+		alarmProfile.DELETE("/:profileId", profile.DeleteHandler(api))
+
+		category := alarmProfile.Group("/:profileId/categories")
+		{
+			category.GET("/", profile.GetCategoriesHandler(api))
+			category.POST("/", profile.AddCategoryHandler(api))
+			category.DELETE("/:categoryId", profile.RemoveCategoryHandler(api))
+		}
+	}
+
+	alarmCategory := r.Group("/alarm/categories", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))
+	{
+		alarmCategory.GET("/", category.MGetHandler(api))
+		alarmCategory.GET("/:categoryId", category.GetHandler(api))
+		alarmCategory.POST("/", category.CreateHandler(api))
+		alarmCategory.PATCH("/:categoryId", category.UpdateHandler(api))
+		alarmCategory.DELETE("/:categoryId", category.DeleteHandler(api))
+	}
+
+	alarmExpression := r.Group("/alarm/expressions", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))
+	{
+		alarmExpression.GET("/", alarmexp.MGetHandler(api))
+		alarmExpression.POST("/", alarmexp.CreateHandler(api))
+		alarmExpression.PATCH("/:expressionId", alarmexp.UpdateHandler(api))
+		alarmExpression.DELETE("/:expressionId", alarmexp.DeleteHandler(api))
+		alarmExpression.POST("/:expressionId/metrics", alarmexp.CreateMetricRelationHandler(api))
+		alarmExpression.DELETE("/:expressionId/metrics/:metricId", alarmexp.DeleteMetricRelationHandler(api))
 	}
 
 	requestWhitelist := r.Group("request-count/whitelist/members", middleware.Protect(api, roles.Master))
@@ -225,15 +249,5 @@ func Set(s service.Service) {
 			middleware.MetricRequest(api),
 			ctxmetric.QueryDataHandler(api),
 		)
-	}
-}
-
-func setupAlarmExpressionRoutes(api *api.API, r *gin.RouterGroup) {
-	a := r.Group("/:metricId/alarm-expression")
-	{
-		a.GET("/", alarmexp.GetHandler(api))
-		a.POST("/", alarmexp.CreateHandler(api))
-		a.PATCH("/", alarmexp.UpdateHandler(api))
-		a.DELETE("/", alarmexp.DeleteHandler(api))
 	}
 }

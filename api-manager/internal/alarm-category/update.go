@@ -1,4 +1,4 @@
-package alarmexp
+package category
 
 import (
 	"net/http"
@@ -11,64 +11,65 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Updates a alarm expression.
+// Update an alarm category.
 // Responses:
-//   - 400 If invalid params.
+//   - 400 If invalid param.
+//   - 400 If invalid body.
 //   - 404 If not found.
+//   - 400 If category level already exists.
 //   - 200 If succeeded.
 func UpdateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		rawId := c.Param("expressionId")
-		id, err := strconv.ParseInt(rawId, 0, 32)
+		id, err := strconv.ParseInt(c.Param("categoryId"), 0, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		var exp models.AlarmExpression
-		err = c.ShouldBind(&exp)
+		var category models.AlarmCategory
+		err = c.ShouldBind(&category)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
 			return
 		}
 
-		err = api.Validate.Struct(exp)
+		err = api.Validate.Struct(category)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
-		exp.Id = int32(id)
+		category.Id = int32(id)
 
-		exists, err := api.PG.AlarmCategoryExists(ctx, exp.AlarmCategoryId)
+		exists, err := api.PG.CategoryLevelExists(ctx, category.Level, category.Id)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("Fail to check is category exists", logger.ErrField(err))
+			api.Log.Error("Fail check if category level exists", logger.ErrField(err))
+			return
+		}
+		if exists {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgAlarmCategoryLevelExists))
+			return
+		}
+
+		exists, err = api.PG.UpdateAlarmCategory(ctx, category)
+		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
+			api.Log.Error("Fail to update alarm category", logger.ErrField(err))
+			c.Status(http.StatusInternalServerError)
 			return
 		}
 		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmCategoryNotFound))
 			return
 		}
-
-		exists, err = api.PG.UpdateAlarmExpression(ctx, exp)
-		if err != nil {
-			if ctx.Err() != nil {
-				return
-			}
-			c.Status(http.StatusInternalServerError)
-			api.Log.Error("Fail to update alarm expression", logger.ErrField(err))
-			return
-		}
-		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmExpressionNotFound))
-			return
-		}
-		api.Log.Debug("Alarm expression updated, id: " + rawId)
+		api.Log.Debug("Alarm category updated with success, name: " + category.Name)
 
 		c.Status(http.StatusOK)
 	}

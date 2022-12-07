@@ -2,82 +2,87 @@ package pg
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
+type AlarmExpressionExistsMetricAndRelationResponse struct {
+	// Exists is the alarm expression existence.
+	Exists bool
+	// MetricExists is the metric existence.
+	MetricExists bool
+	// RelationExists is the relation existence.
+	RelationExists bool
+}
+
 const (
-	sqlAlarmExpressionsCreate = `INSERT INTO alarm_expressions (metric_id, minor_expression, major_expression, critical_expression,
-		minor_descr, major_descr, critical_descr) VALUES ($1, $2, $3, $4, $5, $6, $7);`
-	sqlAlarmExpressionsUpdate = `UPDATE alarm_expressions SET (minor_expression, major_expression, critical_expression, minor_descr, major_descr, critical_descr) 
-		= ($1, $2, $3,  $4, $5, $6) WHERE metric_id = $7;`
-	sqlAlarmExpressionsDelete = `DELETE FROM alarm_expressions WHERE metric_id = $1;`
-	sqlAlarmExpressionsGet    = `SELECT minor_expression, major_expression, critical_expression, minor_descr, major_descr, critical_descr
-		FROM alarm_expressions WHERE metric_id = $1;`
-	sqlAlarmExpressionsExists = `SELECT 
-	EXISTS (SELECT 1 FROM alarm_expressions WHERE metric_id = $1),
-	EXISTS (SELECT 1 FROM metrics WHERE id = $1);`
+	sqlAlarmExpressionsCreate             = `INSERT INTO alarm_expressions (name, expression, category_id) VALUES($1, $2, $3) RETURNING id;`
+	sqlAlarmExpressionsUpdate             = `UPDATE alarm_expressions SET (name, expression, category_id) = ($1, $2, $3) WHERE id = $4;`
+	sqlAlarmExpressionsDelete             = `DELETE FROM alarm_expressions WHERE id = $1;`
+	sqlAlarmExpressionsMGet               = `SELECT id, name, expression, category_id FROM alarm_expressions LIMIT $1 OFFSET $2;`
+	sqlAlarmExpressionsAddMetric          = `INSERT INTO metrics_alarm_expressions_rel (metric_id, expression_id) VALUES ($1, $2);`
+	sqlAlarmExpressionsRemMetric          = `DELETE FROM metrics_alarm_expressions_rel WHERE metric_id = $1 AND expression_id = $2;`
+	sqlAlarmExpressionsMetricRelExists    = `SELECT EXISTS (SELECT 1 FROM metrics_alarm_expressions_rel WHERE metric_id = $1 AND expression_id = $2);`
+	sqlAlarmExpressionsMetricAndRelExists = `SELECT 
+		EXISTS (SELECT 1 FROM alarm_expressions WHERE id = $1),
+		EXISTS (SELECT 1 FROM metrics WHERE id = $2),
+		EXISTS (SELECT 1 FROM metrics_alarm_expressions_rel WHERE expression_id = $1 AND metric_id = $2);`
 )
 
-func (pg *PG) CreateAlarmExpression(ctx context.Context, alarmExp models.AlarmExpression) (err error) {
-	_, err = pg.db.ExecContext(ctx, sqlAlarmExpressionsCreate,
-		alarmExp.MetricId,
-		alarmExp.MinorExpression,
-		alarmExp.MajorExpression,
-		alarmExp.CriticalExpression,
-		alarmExp.MinorDescr,
-		alarmExp.MajorDescr,
-		alarmExp.CriticalDescr,
-	)
+func (pg *PG) CreateAlarmExpression(ctx context.Context, exp models.AlarmExpression) (id int32, err error) {
+	return id, pg.db.QueryRowContext(ctx, sqlAlarmExpressionsCreate, exp.Name, exp.Expression, exp.AlarmCategoryId).Scan(&id)
+}
+
+func (pg *PG) UpdateAlarmExpression(ctx context.Context, exp models.AlarmExpression) (exists bool, err error) {
+	t, err := pg.db.ExecContext(ctx, sqlAlarmExpressionsUpdate, exp.Name, exp.Expression, exp.AlarmCategoryId, exp.Id)
+	if err != nil {
+		return exists, err
+	}
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, nil
+}
+
+func (pg *PG) DeleteAlarmExpression(ctx context.Context, id int32) (exists bool, err error) {
+	t, err := pg.db.ExecContext(ctx, sqlAlarmExpressionsDelete, id)
+	if err != nil {
+		return exists, err
+	}
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, nil
+}
+
+func (pg *PG) GetAlarmExpressions(ctx context.Context, limit int, offset int) (expressions []models.AlarmExpression, err error) {
+	rows, err := pg.db.QueryContext(ctx, sqlAlarmExpressionsMGet, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	expressions = make([]models.AlarmExpression, 0, limit)
+	for rows.Next() {
+		var exp models.AlarmExpression
+		err = rows.Scan(&exp.Id, &exp.Name, &exp.Expression, &exp.AlarmCategoryId)
+		if err != nil {
+			return nil, err
+		}
+		expressions = append(expressions, exp)
+	}
+	return expressions, nil
+}
+
+func (pg *PG) CrateMetricAlarmExpressionRel(ctx context.Context, expressionId int32, metricId int64) (err error) {
+	_, err = pg.db.ExecContext(ctx, sqlAlarmExpressionsAddMetric, metricId, expressionId)
 	return err
 }
 
-func (pg *PG) UpdateAlarmExpression(ctx context.Context, alarmExp models.AlarmExpression) (exists bool, err error) {
-	t, err := pg.db.ExecContext(ctx, sqlAlarmExpressionsUpdate,
-		alarmExp.MinorExpression,
-		alarmExp.MajorExpression,
-		alarmExp.CriticalExpression,
-		alarmExp.MinorDescr,
-		alarmExp.MajorDescr,
-		alarmExp.CriticalDescr,
-		alarmExp.MetricId,
-	)
+func (pg *PG) RemoveMetricAlarmExpressionRel(ctx context.Context, expressionId int32, metricId int64) (exists bool, err error) {
+	t, err := pg.db.ExecContext(ctx, sqlAlarmExpressionsRemMetric, metricId, expressionId)
 	if err != nil {
-		return false, err
+		return exists, err
 	}
 	rowsAffected, _ := t.RowsAffected()
-	return rowsAffected != 0, err
+	return rowsAffected != 0, nil
 }
 
-func (pg *PG) DeleteAlarmExpression(ctx context.Context, metricId int64) (exists bool, err error) {
-	t, err := pg.db.ExecContext(ctx, sqlAlarmExpressionsDelete, metricId)
-	if err != nil {
-		return false, nil
-	}
-	rowsAffected, _ := t.RowsAffected()
-	return rowsAffected != 0, err
-}
-
-func (pg *PG) GetAlarmExpression(ctx context.Context, metricId int64) (exists bool, alarmExp models.AlarmExpression, err error) {
-	err = pg.db.QueryRowContext(ctx, sqlAlarmExpressionsGet, metricId).Scan(
-		&alarmExp.MinorExpression,
-		&alarmExp.MajorExpression,
-		&alarmExp.CriticalExpression,
-		&alarmExp.MinorDescr,
-		&alarmExp.MajorDescr,
-		&alarmExp.CriticalDescr,
-	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, alarmExp, nil
-		}
-		return false, alarmExp, err
-	}
-	alarmExp.MetricId = metricId
-	return true, alarmExp, nil
-}
-
-func (pg *PG) AlarmExpressionExists(ctx context.Context, metricId int64) (expressionExists bool, metricExists bool, err error) {
-	return expressionExists, metricExists, pg.db.QueryRowContext(ctx, sqlAlarmExpressionsExists, metricId).Scan(&expressionExists, &metricExists)
+func (pg *PG) MetricAlarmExpressionRelExists(ctx context.Context, expressionId int32, metricId int64) (r AlarmExpressionExistsMetricAndRelationResponse, err error) {
+	return r, pg.db.QueryRowContext(ctx, sqlAlarmExpressionsMetricAndRelExists, expressionId, metricId).Scan(&r.Exists, &r.MetricExists, &r.RelationExists)
 }

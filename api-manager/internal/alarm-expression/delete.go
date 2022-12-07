@@ -19,13 +19,13 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		rawMetricId := c.Param("metricId")
-		metricId, err := strconv.ParseInt(rawMetricId, 0, 64)
+		rawId := c.Param("expressionId")
+		id, err := strconv.ParseInt(rawId, 0, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
-		exists, err := api.PG.DeleteAlarmExpression(ctx, metricId)
+		exists, err := api.PG.DeleteAlarmExpression(ctx, int32(id))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -38,7 +38,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmExpressionNotFound))
 			return
 		}
-		api.Log.Debug("Alarm expression delete, metric id: " + rawMetricId)
+		api.Log.Debug("Alarm expression delete, id: " + rawId)
 
 		c.Status(http.StatusNoContent)
 	}
