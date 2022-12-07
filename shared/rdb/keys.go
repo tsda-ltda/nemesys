@@ -69,5 +69,5 @@ func CacheRTSMetricConfig(metricId int64) string {
 }
 
 func CacheServerCostResultKey() string {
-	return "server-cost"
+	return "cache:server-cost"
 }
