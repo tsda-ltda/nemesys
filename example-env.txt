@@ -1,99 +1,161 @@
 # Log levels: debug, info, warn, error, dpanic, panic, fatal
 
+# SERVICE_MANAGER_PING_INTERVAL is the interval of ping in seconds. Default is "5".
+SERVICE_MANAGER_PING_INTERVAL=5
+# LOG_CONSOLE_LEVEL_SERVICE_MANAGER is the log level for console in API Manager service. Default is debug.
+LOG_CONSOLE_LEVEL_SERVICE_MANAGER=debug
+
+# LOG_BROADCAST_LEVEL_SERVICE_MANAGER is the log level for broadcast in API Manager service. Default is info.
+LOG_BROADCAST_LEVEL_SERVICE_MANAGER=info
+
 # LOG_CONSOLE_LEVEL_API_MANAGER is the log level for console in API Manager service. Default is debug.
-LOG_CONSOLE_LEVEL_API_MANAGER=
+LOG_CONSOLE_LEVEL_API_MANAGER=debug
 
 # LOG_BROADCAST_LEVEL_API_MANAGER is the log level for broadcast in API Manager service. Default is info.
-LOG_BROADCAST_LEVEL_API_MANAGER=
+LOG_BROADCAST_LEVEL_API_MANAGER=info
 
 # LOG_CONSOLE_LEVEL_SNMPIS is the log level for console in SNMP service. Default is debug.
-LOG_CONSOLE_LEVEL_SNMP=
+LOG_CONSOLE_LEVEL_SNMP=debug
 
 # LOG_BROADCAST_LEVEL_SNMP is the log level for broadcast in SNMP service. Default is info.
-LOG_BROADCAST_LEVEL_SNMP=
+LOG_BROADCAST_LEVEL_SNMP=info
 
 # LOG_CONSOLE_LEVEL_RTS is the log level for console in Real Time service. Default is debug.
-LOG_CONSOLE_LEVEL_RTS=
+LOG_CONSOLE_LEVEL_RTS=debug
 
 # LOG_BROADCAST_LEVEL_RTS is the log level for broadcast in Real Time service. Default is info.
-LOG_BROADCAST_LEVEL_RTS=
+LOG_BROADCAST_LEVEL_RTS=info
+
+# LOG_CONSOLE_LEVEL_RTS is the log level for console in Data History service. Default is debug.
+LOG_CONSOLE_LEVEL_DHS=debug
+
+# LOG_BROADCAST_LEVEL_RTS is the log level for broadcast in Data History service. Default is info.
+LOG_BROADCAST_LEVEL_DHS=info
 
 # DEFAULT_USERNAME is the default user's username. Default is "master".
-DEFAULT_USERNAME=
+DEFAULT_USERNAME=master
 
 # DEFAULT_PASSWORD is the default user's password (is strongly recommended to not use the default value). Default is "master".
-DEFAULT_PASSWORD=
+DEFAULT_PASSWORD=master
 
 # MAX_DATA_POLICIES is the max number of data policies. Default is "8".
-MAX_DATA_POLICIES=
+MAX_DATA_POLICIES=8
 
 # AMQP_USERNAME is the amqp username. Default is "guest".
-AMQP_USERNAME=
+AMQP_USERNAME=guest
 
 # AMQP_PASSWORD is the amqp password. Default is "guest".
-AMQP_PASSWORD=
+AMQP_PASSWORD=guest
 
 # AMQP_HOST is the amqp host. Default is "localhost".
-AMQP_HOST=
+AMQP_HOST=localhost
 
 # AMQP_PORT is the amqp port. Default is "5672".
-AMQP_PORT=
+AMQP_PORT=5672
 
 # PG_HOST is the postgres host. Default is "127.0.0.1".
-PG_HOST=
+PG_HOST=127.0.0.1
 
 # PG_PORT is the postgres port. Default is "5432".
-PG_PORT=
+PG_PORT=5432
 
 # PG_USERNAME is the postgres username. Default is "postgres".
-PG_USERNAME=
+PG_USERNAME=postgres
 
 # PG_PASSWORD is the postgres password. Default is "postgres".
-PG_PASSWORD=
+PG_PASSWORD=admin
 
 # PG_DB_NAME is the database name. Default is "namesys".
-PG_DB_NAME=
+PG_DB_NAME=dev
+
+# PG_MAX_CONNS is the postgres maximum number of connections open. Default is "20".
+PG_MAX_CONNS=20
+
+# PG_MAX_IDLE_CONNS is the postgres maximum number of idle connections. Default is "20".
+PG_MAX_IDLE_CONNS=20
+
+# PG_CONN_MAX_LIFETIME is the postgres maximum connection life time in minutes. Default is "10".
+PG_CONN_MAX_LIFETIME=10
+
+# INFLUX_HOST is the influxdb host. Default is "localhost".
+INFLUX_HOST=localhost
+
+# INFLUX_PORT is the influxdb port. Default is "8086".
+INFLUX_PORT=8086
+
+# INFLUX_ORG is the organization where data will be stored. Default is "nemesys".
+INFLUX_ORG=nemesys
+
+# INFLUX_TOKEN is the influxdb token. Default is "".
+INFLUX_TOKEN=kvnkkofscxaoddvapyfbzhvqspkppstidpctelogtjcgkfqeusnmwzwsgnpjxawarycslxgswpdlfuycnmizfivhukwkdksxnmkwmaduosxqqez
+
+# INFLUX_TLS_CERT_FILE_PATH is the path for the TLS certification file. Default is "".
+INFLUX_TLS_CERT_FILE_PATH=
+
+# INFLUX_TLS_KEY_FILE_PATH is the path for the TLS key file. Default is "".
+INFLUX_TLS_KEY_FILE_PATH=
 
 # RDB_AUTH_HOST is redis for auth host. Default is "localhost".
-RDB_AUTH_HOST=
+RDB_AUTH_HOST=localhost
 
 # RDB_AUTH_PORT is the redis for auth port. Default is "6379".
-RDB_AUTH_PORT=
+RDB_AUTH_PORT=6379
 
 # RDB_AUTH_DB is the redis for auth db. Default is "0".
-RDB_AUTH_DB=
+RDB_AUTH_DB=0
 
 # RDB_AUTH_PASSWORD is the redis for auth password. Default is "".
 RDB_AUTH_PASSWORD=
 
 # RDB_CACHE_HOST is the redis for cache host. Default is "localhost".
-RDB_CACHE_HOST=
+RDB_CACHE_HOST=localhost
 
 # RDB_CACHE_PORT is the redis for cache port. Default is "6379".
-RDB_CACHE_PORT=
+RDB_CACHE_PORT=6379
 
 # RDB_CACHE_DB is the redis for cache db. Default is "1".
-RDB_CACHE_DB=
+RDB_CACHE_DB=1
 
 # RDB_CACHE_PASSWORD is the redis for cache password. Default is "".
 RDB_CACHE_PASSWORD=
 
 # API_MANAGER_HOST is the api manager host. Default is "localhost".
-API_MANAGER_HOST=
+API_MANAGER_HOST=192.168.93.85
 
 # API_MANAGER_PORT is the api manager port. Default is "9000".
-API_MANAGER_PORT=
+API_MANAGER_PORT=5000
 
 # API_MANAGER_ROUTES_PREFIX is the api manager routes prefix. Default is "api/v1".
-API_MANAGER_ROUTES_PREFIX=
+API_MANAGER_ROUTES_PREFIX=api/v1
 
 # USER_SESSION_TTL is the user session TTL (time to live) in secods. Default is "604900" (one week).
-USER_SESSION_TTL=
+USER_SESSION_TTL=604900
 
 # USER_SESSION_TOKEN_SIZE is the user session token size. Default is "64".
-USER_SESSION_TOKEN_SIZE=
+USER_SESSION_TOKEN_SIZE=64
 
-# UserPWBcryptCost is the bcrypt cost for hashing users password. May vary according
+# USER_PW_BCRYPT_COST is the bcrypt cost for hashing users password. May vary according
 # to each machine config, the recommended is to set a cost
 # that makes '/login' route takes around 200ms. Default is "11".
-USER_PW_BCRYPT_COST=
+USER_PW_BCRYPT_COST=11
+
+# DHS_FLEX_LEGACY_DATALOG_WORKERS is the number of flex-legacy datalog workers. Default is "3".
+DHS_FLEX_LEGACY_DATALOG_WORKERS=3
+
+# DHSFlexLegacyDatlogRequestInterval is the interval in hours between each datalog request of a flex. Default is "6".
+DHSFlexLegacyDatlogRequestInterval=6
+
+# InicialDHSServices is the the number of inicial DHS services.
+InicialDHSServices=1
+
+# METRIC_ALARM_EMAIL_SENDER is the email of the sender. Default is "".
+METRIC_ALARM_EMAIL_SENDER=
+
+# METRIC_ALARM_EMAIL_SENDER_HOST_PASSWORD is the password of the sender. Default is "".
+METRIC_ALARM_EMAIL_SENDER_HOST_PASSWORD=
+
+# METRIC_ALARM_EMAIL_SENDER_HOST is the host of the sender. Default is "";
+METRIC_ALARM_EMAIL_SENDER_HOST=
+
+# METRIC_ALARM_EMAIL_SENDER_HOST_PORT is the host port of the sender. Default is "";
+METRIC_ALARM_EMAIL_SENDER_HOST_PORT=

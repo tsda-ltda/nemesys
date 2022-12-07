@@ -96,9 +96,12 @@ func Init() {
 	set("USER_SESSION_TOKEN_SIZE", &UserSessionTokenSize)
 	set("USER_PW_BCRYPT_COST", &UserPWBcryptCost)
 
-	set("SERVICE_RECOVERY_LOG_FILE", &ServiceRecoveryLogFile)
-
 	set("DHS_FLEX_LEGACY_DATALOG_WORKERS", &DHSFlexLegacyDatalogWorkers)
 	set("DHS_FLEX_LEGACY_DATALOG_REQUEST_INTERVAL", &DHSFlexLegacyDatlogRequestInterval)
 	set("INICIAL_DHS_SERVICES", &InicialDHSServices)
+
+	set("METRIC_ALARM_EMAIL_SENDER", &MetricAlarmEmailSender)
+	set("METRIC_ALARM_EMAIL_SENDER_PASSWORD", &MetricAlarmEmailSenderPassword)
+	set("METRIC_ALARM_EMAIL_SENDER_HOST", &MetricAlarmEmailSenderHost)
+	set("METRIC_ALARM_EMAIL_SENDER_HOST_PORT", &MetricAlarmEmailSenderHostPort)
 }

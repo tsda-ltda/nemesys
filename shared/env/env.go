@@ -116,9 +116,6 @@ var (
 	// that makes '/login' route takes around 200ms. Default is "11".
 	UserPWBcryptCost = "11"
 
-	// ServiceRecoveryLogFile is the service recovery log file.
-	ServiceRecoveryLogFile = "service_recovery"
-
 	// DHSFlexLegacyDatalogWorkers is the number of flex-legacy datalog workers. Default is "3".
 	DHSFlexLegacyDatalogWorkers = "3"
 
@@ -127,4 +124,13 @@ var (
 
 	// InicialDHSServices is the the number of inicial DHS services.
 	InicialDHSServices = "1"
+
+	// MetricAlarmEmailSender is the email of the sender. Default is "".
+	MetricAlarmEmailSender = ""
+	// MetricAlarmEmailSenderPassword is the password of the sender. Default is "".
+	MetricAlarmEmailSenderPassword = ""
+	// MetricAlarmEmailSenderHost is the host of the sender. Default is "";
+	MetricAlarmEmailSenderHost = ""
+	// MetricAlarmEmailSenderHostPort is the host port of the sender. Default is "";
+	MetricAlarmEmailSenderHostPort = ""
 )
