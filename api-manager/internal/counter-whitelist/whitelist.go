@@ -15,20 +15,20 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		var userId models.UserId
-		err := c.ShouldBind(&userId)
+		var id32 models.Id32
+		err := c.ShouldBind(&id32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
 			return
 		}
 
-		err = api.Validate.Struct(userId)
+		err = api.Validate.Struct(id32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
 			return
 		}
 
-		exists, err := api.PG.UserExists(ctx, userId.UserId)
+		exists, err := api.PG.UserExists(ctx, id32.Id)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -42,7 +42,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		err = api.PG.AddUserToCounterWhitelist(ctx, userId.UserId)
+		err = api.PG.AddUserToCounterWhitelist(ctx, id32.Id)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -52,7 +52,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		api.Counter.LoadWhitelist()
-		api.Log.Debug("User added to counter whitelist, user id: " + strconv.FormatInt(int64(userId.UserId), 10))
+		api.Log.Debug("User added to counter whitelist, user id: " + strconv.FormatInt(int64(id32.Id), 10))
 
 		c.Status(http.StatusOK)
 	}
