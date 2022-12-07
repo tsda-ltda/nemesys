@@ -13,26 +13,17 @@ type Cache struct {
 	// redis is the redis client used to get and set data.
 	redis *redis.Client
 
-	// metricRequestByIdentExp is the time to expire the metric request by ident.
 	metricRequestByIdentExp time.Duration
-	// metricRequestExp is the time to expire the metric request.
-	metricRequestExp time.Duration
-	// metricEvExpressionExp is the time to expire the evaluate expression.
-	metricEvExpressionExp time.Duration
-	// metricEvExpressionExp is the time to expire the data policy id.
-	metricDataPolicyIdExp time.Duration
-	// snmpAgentExp is the time to expire the snmp agent.
-	snmpAgentExp time.Duration
-	// snmpMetricExp is the time to expire the snmp metric.
-	snmpMetricExp time.Duration
-	// customQueryExp is the time to expire the custom query.
-	customQueryExp time.Duration
-	// metricAddDataFormExp is the time to expire metricAddDataForm query.
-	metricAddDataFormExp time.Duration
-	// rtsMetricConfigExp is the time to expire rts metric configuration.
-	rtsMetricConfigExp time.Duration
-	// serverCostExp is the time to expire the server cost.
-	serverCostExp time.Duration
+	metricRequestExp        time.Duration
+	metricEvExpressionExp   time.Duration
+	metricDataPolicyIdExp   time.Duration
+	snmpAgentExp            time.Duration
+	snmpMetricExp           time.Duration
+	customQueryExp          time.Duration
+	metricAddDataFormExp    time.Duration
+	rtsMetricConfigExp      time.Duration
+	serverCostExp           time.Duration
+	alarmExpressionExp      time.Duration
 }
 
 // New returns a prepared Cache struct.
@@ -55,6 +46,7 @@ func New() *Cache {
 		metricAddDataFormExp:    time.Minute * 3,
 		rtsMetricConfigExp:      time.Minute * 2,
 		serverCostExp:           time.Second * 30,
+		alarmExpressionExp:      time.Minute,
 	}
 }
 
