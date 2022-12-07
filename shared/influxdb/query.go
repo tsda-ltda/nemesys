@@ -33,8 +33,9 @@ func (c *Client) Query(ctx context.Context, opts QueryOptions) (points [][]any, 
 	if err != nil {
 		return nil, err
 	}
+	_, err = c.getBucket(GetBucketName(opts.DataPolicyId, true))
 
-	query, err := getBaseQuery(opts, rawBucket)
+	query, err := getBaseQuery(opts, rawBucket, err == nil)
 	if err != nil {
 		return nil, ErrInvalidQueryOptions
 	}
@@ -58,7 +59,7 @@ func (c *Client) Query(ctx context.Context, opts QueryOptions) (points [][]any, 
 	return points, nil
 }
 
-func getBaseQuery(opts QueryOptions, rawBucket *domain.Bucket) (query string, err error) {
+func getBaseQuery(opts QueryOptions, rawBucket *domain.Bucket, useAggr bool) (query string, err error) {
 	if len(rawBucket.RetentionRules) == 0 {
 		return query, errors.New("invalid bucket")
 	}
@@ -70,7 +71,7 @@ func getBaseQuery(opts QueryOptions, rawBucket *domain.Bucket) (query string, er
 		return query, err
 	}
 
-	if retention+start >= 0 {
+	if retention+start >= 0 || !useAggr {
 		query = fmt.Sprintf(`
 			data = from(bucket: "%s")
 				|> range(start: %s, stop: %s)
