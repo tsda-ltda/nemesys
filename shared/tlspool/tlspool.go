@@ -49,10 +49,11 @@ type TLSConnPool struct {
 
 func New(config Config) *TLSConnPool {
 	p := &TLSConnPool{
-		config:    config,
-		idleConns: make(map[string]*TLSConn, config.MaxIdleConn),
-		requestCh: make(chan *connReq),
-		connsOpen: 0,
+		config:            config,
+		idleConns:         make(map[string]*TLSConn, config.MaxIdleConn),
+		requestCh:         make(chan *connReq),
+		connsOpen:         0,
+		idleRemoverTicker: time.NewTicker(config.Timeout),
 	}
 
 	go p.handleConnReq()
@@ -124,6 +125,7 @@ func (p *TLSConnPool) Get() (c *TLSConn, err error) {
 		p.mu.Lock()
 		p.connsOpen--
 		p.mu.Unlock()
+		return nil, err
 	}
 
 	return c, nil

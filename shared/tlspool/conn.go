@@ -2,6 +2,7 @@ package tlspool
 
 import (
 	"crypto/tls"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/shared/uuid"
 )
@@ -24,7 +25,7 @@ func (c *TLSConn) Conn() *tls.Conn {
 // newConn attempts to create a new tls connection, dialing with
 // the TLSConnPool configuration.
 func (p *TLSConnPool) newConn() (c *TLSConn, err error) {
-	tlsConn, err := tls.Dial(p.config.Network, p.config.Host, &p.config.TLSConfig)
+	tlsConn, err := tls.Dial(p.config.Network, p.config.Host+":"+strconv.FormatInt(int64(p.config.Port), 10), &p.config.TLSConfig)
 	if err != nil {
 		return nil, err
 	}
