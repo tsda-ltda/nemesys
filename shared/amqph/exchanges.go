@@ -42,8 +42,10 @@ func (a *Amqph) declareExchages() {
 	declare(amqp.ExchangeServiceRegisterReq, "fanout", true, false, false, false, nil)
 	declare(amqp.ExchangeServiceRegisterRes, "fanout", true, false, false, false, nil)
 	declare(amqp.ExchangeServiceUnregister, "fanout", true, false, false, false, nil)
-	declare(amqp.ExchangeCheckAlarm, "fanout", true, false, false, false, nil)
-	declare(amqp.ExchangeCheckAlarms, "fanout", true, false, false, false, nil)
+	declare(amqp.ExchangeCheckMetricsAlarm, "fanout", true, false, false, false, nil)
+	declare(amqp.ExchangeCheckMetricAlarm, "fanout", true, false, false, false, nil)
+	declare(amqp.ExchangeMetricsAlarmed, "fanout", true, false, false, false, nil)
+	declare(amqp.ExchangeMetricAlarmed, "fanout", true, false, false, false, nil)
 
 	declare(amqp.ExchangeServicePing, "direct", true, false, false, false, nil)
 	declare(amqp.ExchangeServicePong, "direct", true, false, false, false, nil)
