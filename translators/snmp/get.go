@@ -26,9 +26,9 @@ func (s *SNMP) getSNMPv2cMetric(agent models.SNMPv2cAgent, request models.Metric
 			Publishing: p,
 		}
 
-		if types.IsNonFlex(request.ContainerType) && p.Type == amqp.GetMessage(amqp.OK) {
+		if types.IsNonFlex(request.ContainerType) && p.Type == amqp.FromMessageType(amqp.OK) {
 			s.amqph.PublisherCh <- models.DetailedPublishing{
-				Exchange:   amqp.ExchangeCheckAlarm,
+				Exchange:   amqp.ExchangeCheckMetricAlarm,
 				Publishing: p,
 			}
 		}
@@ -150,9 +150,9 @@ func (s *SNMP) getMetrics(agent models.SNMPv2cAgent, request models.MetricsReque
 			Publishing: p,
 		}
 
-		if types.IsNonFlex(request.ContainerType) && p.Type == amqp.GetMessage(amqp.OK) {
+		if types.IsNonFlex(request.ContainerType) && p.Type == amqp.FromMessageType(amqp.OK) {
 			s.amqph.PublisherCh <- models.DetailedPublishing{
-				Exchange:   amqp.ExchangeCheckAlarms,
+				Exchange:   amqp.ExchangeCheckMetricsAlarm,
 				Publishing: p,
 			}
 		}
@@ -208,49 +208,37 @@ func (s *SNMP) getMetrics(agent models.SNMPv2cAgent, request models.MetricsReque
 	}
 
 	for i, pdu := range pdus {
-		for _, r := range request.Metrics {
-			for _, _m := range metrics {
-				if _m.Id == r.Id && pdu.Name == _m.OID {
-					res.Metrics[i] = models.MetricBasicDataReponse{
-						Id:           r.Id,
-						Type:         r.Type,
-						Value:        nil,
-						DataPolicyId: r.DataPolicyId,
-						Failed:       false,
-					}
-
-					// parse SNMP response
-					v, err := ParsePDU(pdu)
-					if err != nil {
-						s.log.Debug("Fail to parse PDU, name "+pdu.Name, logger.ErrField(err))
-						res.Metrics[i].Failed = true
-						continue
-					}
-
-					// parse value to metric type
-					v, err = types.ParseValue(v, r.Type)
-					if err != nil {
-						s.log.Warn("Fail to parse SNMP value to metric value", logger.ErrField(err))
-						res.Metrics[i].Failed = true
-						continue
-					}
-
-					// evaluate value
-					v, err = s.evaluator.Evaluate(v, r.Id, r.Type)
-					if err != nil {
-						s.log.Warn("Fail to evaluate value")
-						res.Metrics[i].Failed = true
-						continue
-					}
-
-					// set value
-					res.Metrics[i].Value = v
-					break
-				}
-				break
-			}
-			break
+		r := request.Metrics[i]
+		res.Metrics[i] = models.MetricBasicDataReponse{
+			Id:           r.Id,
+			Type:         r.Type,
+			Value:        nil,
+			DataPolicyId: r.DataPolicyId,
+			Failed:       false,
 		}
+
+		v, err := ParsePDU(pdu)
+		if err != nil {
+			s.log.Debug("Fail to parse PDU, name "+pdu.Name, logger.ErrField(err))
+			res.Metrics[i].Failed = true
+			continue
+		}
+
+		v, err = types.ParseValue(v, r.Type)
+		if err != nil {
+			s.log.Warn("Fail to parse SNMP value to metric value", logger.ErrField(err))
+			res.Metrics[i].Failed = true
+			continue
+		}
+
+		v, err = s.evaluator.Evaluate(v, r.Id, r.Type)
+		if err != nil {
+			s.log.Warn("Fail to evaluate value")
+			res.Metrics[i].Failed = true
+			continue
+		}
+
+		res.Metrics[i].Value = v
 	}
 
 	// encode response

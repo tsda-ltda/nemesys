@@ -166,7 +166,7 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		api.Amqph.PublisherCh <- models.DetailedPublishing{
-			Exchange: amqp.ExchangeCheckAlarm,
+			Exchange: amqp.ExchangeCheckMetricAlarm,
 			Publishing: amqp091.Publishing{
 				Body: b,
 				Type: amqp.FromMessageType(amqp.OK),

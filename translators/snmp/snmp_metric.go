@@ -50,5 +50,14 @@ func (s *SNMP) getSNMPMetrics(request models.MetricsRequest) (metrics []models.S
 		}
 	}
 
-	return metrics, nil
+	ordenatedMetrics := make([]models.SNMPMetric, len(metrics))
+	for _, m := range metrics {
+		for i, id := range metricIds {
+			if m.Id == id {
+				ordenatedMetrics[i] = m
+				break
+			}
+		}
+	}
+	return ordenatedMetrics, nil
 }
