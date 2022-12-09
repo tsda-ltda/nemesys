@@ -18,7 +18,7 @@ var sqlCommands []string = []string{
 		descr VARCHAR(255) NOT NULL, 
 		ttl INT2 NOT NULL,
 		created_at INT8 NOT NULL,
-		CONSTRAINT apikeys_fk_user_id
+		CONSTRAINT a_fk_user_id
 		FOREIGN KEY(user_id)
 				REFERENCES users(id)
 				ON DELETE CASCADE
@@ -36,17 +36,17 @@ var sqlCommands []string = []string{
 	`CREATE TABLE users_teams (
 		user_id INT4,
 		team_id INT4,
-		CONSTRAINT users_teams_fk_user_id
+		CONSTRAINT ut_fk_user_id
 		FOREIGN KEY(user_id)
 				REFERENCES users(id)
 				ON DELETE CASCADE,
-		CONSTRAINT users_teams_fk_team_id
+		CONSTRAINT ut_fk_team_id
 			FOREIGN KEY(team_id)
 				REFERENCES teams(id)
 				ON DELETE CASCADE
 	);`,
-	`CREATE INDEX user_id_users_teams_index ON users_teams (user_id);`,
-	`CREATE INDEX team_id_users_teams_index ON users_teams (team_id);`,
+	`CREATE INDEX ut_user_id_index ON users_teams (user_id);`,
+	`CREATE INDEX ut_team_id_index ON users_teams (team_id);`,
 
 	// Data policy table
 	`CREATE TABLE data_policies (
@@ -70,7 +70,7 @@ var sqlCommands []string = []string{
 	);`,
 
 	// Create container index
-	`CREATE INDEX container_type_index ON containers (type);`,
+	`CREATE INDEX c_container_type_index ON containers (type);`,
 
 	// Metrics table
 	`CREATE TABLE metrics (
@@ -87,29 +87,29 @@ var sqlCommands []string = []string{
 		dhs_enabled BOOLEAN NOT NULL,
 		dhs_interval INT4 NOT NULL,
 		ev_expression VARCHAR (255) NOT NULL,
-		CONSTRAINT metrics_fk_container_id
+		CONSTRAINT m_fk_container_id
 			FOREIGN KEY(container_id)
 				REFERENCES containers(id)
 				ON DELETE CASCADE
 	);`,
 
 	// Create metric index
-	`CREATE INDEX metrics_container_id_index ON metrics (container_id);`,
-	`CREATE INDEX metrics_container_type_index ON metrics (container_type);`,
+	`CREATE INDEX m_container_id_index ON metrics (container_id);`,
+	`CREATE INDEX m_container_type_index ON metrics (container_type);`,
 
 	// Create metrics ref table
 	`CREATE TABLE metrics_ref (
 		id SERIAL8 PRIMARY KEY,
 		refkey VARCHAR (200) UNIQUE NOT NULL,
 		metric_id INT8 NOT NULL,
-		CONSTRAINT metrics_ref_fk_metric_id
+		CONSTRAINT mr_fk_metric_id
 			FOREIGN KEY(metric_id)
 				REFERENCES metrics(id)
 				ON DELETE CASCADE
 	);`,
 
 	// Create metrics ref index
-	`CREATE INDEX metrics_ref_metric_id ON metrics_ref (metric_id);`,
+	`CREATE INDEX mr_metric_id_index ON metrics_ref (metric_id);`,
 
 	// SNMP Container table
 	`CREATE TABLE snmpv2c_containers (
@@ -121,7 +121,7 @@ var sqlCommands []string = []string{
 		retries INT2 NOT NULL,
 		max_oids INT2 NOT NULL,
 		timeout INT4 NOT NULL,
-		CONSTRAINT snmpv2c_containers_fk_container_id
+		CONSTRAINT sc_fk_container_id
 			FOREIGN KEY(container_id)
 				REFERENCES containers(id)
 				ON DELETE CASCADE
@@ -129,7 +129,7 @@ var sqlCommands []string = []string{
 	);`,
 
 	// Create index on target and port
-	`CREATE UNIQUE INDEX snmpv2c_containers_target_port_index ON snmpv2c_containers (target, port);`,
+	`CREATE UNIQUE INDEX sc_target_port_index ON snmpv2c_containers (target, port);`,
 
 	// Create Flex Legacy container
 	`CREATE TABLE flex_legacy_containers (
@@ -146,7 +146,7 @@ var sqlCommands []string = []string{
 		city VARCHAR (50) NOT NULL,
 		region VARCHAR (50) NOT NULL,
 		country VARCHAR (50) NOT NULL,
-		CONSTRAINT flex_legacy_containers_fk_container_id
+		CONSTRAINT flc_fk_container_id
 			FOREIGN KEY(container_id)
 				REFERENCES containers(id)
 				ON DELETE CASCADE
@@ -154,7 +154,7 @@ var sqlCommands []string = []string{
 	);`,
 
 	// Create index on target and port
-	`CREATE UNIQUE INDEX flex_legacy_target_port_index ON flex_legacy_containers (target, port);`,
+	`CREATE UNIQUE INDEX flc_target_port_index ON flex_legacy_containers (target, port);`,
 
 	// Create flex legacy datalog download registry
 	`CREATE TABLE flex_legacy_datalog_download_registry (
@@ -163,7 +163,7 @@ var sqlCommands []string = []string{
 		status INT8 NOT NULL,
 		command INT8 NOT NULL,
 		virtual INT8 NOT NULL,
-		CONSTRAINT flex_legacy_datalog_download_registry_fk_container_id
+		CONSTRAINT flddr_fk_container_id
 			FOREIGN KEY(container_id)
 				REFERENCES containers(id)
 				ON DELETE CASCADE
@@ -173,7 +173,7 @@ var sqlCommands []string = []string{
 	`CREATE TABLE snmpv2c_metrics (
 		metric_id INT8 UNIQUE NOT NULL,
 		oid VARCHAR (128) NOT NULL,
-		CONSTRAINT snmpv2c_metrics_fk_metric_id
+		CONSTRAINT sc_fk_metric_id
 			FOREIGN KEY(metric_id)
 				REFERENCES metrics(id)
 				ON DELETE CASCADE
@@ -186,7 +186,7 @@ var sqlCommands []string = []string{
 		oid VARCHAR (128) NOT NULL,
 		port INT2 NOT NULL,
 		port_type INT2 NOT NULL,
-		CONSTRAINT flex_legacy_metrics_fk_metric_id
+		CONSTRAINT flc_fk_metric_id
 			FOREIGN KEY(metric_id)
 				REFERENCES metrics(id)
 				ON DELETE CASCADE
@@ -200,14 +200,14 @@ var sqlCommands []string = []string{
 		ident VARCHAR (50) NOT NULL,
 		name VARCHAR (50) NOT NULL,
 		descr VARCHAR (255) NOT NULL,
-		CONSTRAINT fk_team_id
+		CONSTRAINT c_fk_team_id
 			FOREIGN KEY(team_id)
 				REFERENCES teams(id)
 				ON DELETE CASCADE
 	);`,
 
 	// Create context index
-	`CREATE INDEX context_team_ident_index ON contexts (ident, team_id);`,
+	`CREATE INDEX ctx_ident_index ON contexts (ident, team_id);`,
 
 	// Create contextual metrics
 	`CREATE TABLE contextual_metrics (
@@ -217,19 +217,19 @@ var sqlCommands []string = []string{
 		ident VARCHAR (50) NOT NULL,
 		name VARCHAR (50) NOT NULL,
 		descr VARCHAR (255) NOT NULL,
-		CONSTRAINT contextual_metrics_fk_ctx_id
+		CONSTRAINT ctxm_fk_ctx_id
 			FOREIGN KEY(ctx_id)
 				REFERENCES contexts(id)
 				ON DELETE CASCADE,
-		CONSTRAINT contextual_metrics_fk_metric_id
+		CONSTRAINT ctxm_fk_metric_id
 			FOREIGN KEY(metric_id)
 				REFERENCES metrics(id)
 				ON DELETE CASCADE
 	);`,
 
 	// Create contextual metrics
-	`CREATE INDEX contextual_metric_ctx_id ON contextual_metrics (ctx_id);`,
-	`CREATE INDEX contextual_metric_ident_id ON contextual_metrics (ident);`,
+	`CREATE INDEX ctxm_ctx_id_index ON contextual_metrics (ctx_id);`,
+	`CREATE INDEX ctxm_ident_index ON contextual_metrics (ident);`,
 
 	// Create custom queries table
 	`CREATE TABLE custom_queries (
@@ -254,6 +254,18 @@ var sqlCommands []string = []string{
 		descr VARCHAR (255) NOT NULL
 	);`,
 
+	// Crate alarm profiles emails table
+	`CREATE TABLE alarm_profiles_emails (
+		id SERIAL4 PRIMARY KEY,
+		email VARCHAR (255) NOT NULL,
+		alarm_profile_id INT4 NOT NULL,
+		CONSTRAINT ape_fk_alarm_profile_id
+			FOREIGN KEY(alarm_profile_id)
+				REFERENCES alarm_profiles(id)
+				ON DELETE CASCADE
+	);`,
+	`CREATE INDEX ape_alarm_profile_id_index ON alarm_profiles_emails (alarm_profile_id);`,
+
 	// Create alarm categories table
 	`CREATE TABLE alarm_categories (
 		id SERIAL4 PRIMARY KEY,
@@ -266,17 +278,17 @@ var sqlCommands []string = []string{
 	`CREATE TABLE alarm_profiles_categories_rel (
 		category_id INT4 NOT NULL,
 		profile_id INT4 NOT NULL,
-		CONSTRAINT alarm_profiles_categories_rel_fk_profile_id
+		CONSTRAINT apcr_fk_profile_id
 			FOREIGN KEY(profile_id)
 				REFERENCES alarm_profiles(id)
 				ON DELETE CASCADE,
-		CONSTRAINT alarm_profiles_categories_rel_fk_category_id
+		CONSTRAINT apcr_fk_category_id
 			FOREIGN KEY(category_id)
 				REFERENCES alarm_categories(id)
 				ON DELETE CASCADE
 	);`,
-	`CREATE INDEX category_id_alarm_profiles_categories_rel_index ON alarm_profiles_categories_rel (category_id);`,
-	`CREATE INDEX profile_id_alarm_profiles_categories_rel_index ON alarm_profiles_categories_rel (profile_id);`,
+	`CREATE INDEX apcr_category_id_index ON alarm_profiles_categories_rel (category_id);`,
+	`CREATE INDEX apcr_profile_id_index ON alarm_profiles_categories_rel (profile_id);`,
 
 	// Create alarm expressions table
 	`CREATE TABLE alarm_expressions (
@@ -284,7 +296,7 @@ var sqlCommands []string = []string{
 		name VARCHAR (50) NOT NULL,
 		expression VARCHAR (255) NOT NULL,
 		category_id INT4 NOT NULL,
-		CONSTRAINT alarm_expressions_fk_category_id
+		CONSTRAINT ae_fk_category_id
 			FOREIGN KEY(category_id)
 				REFERENCES alarm_categories(id)
 				ON DELETE CASCADE
@@ -294,16 +306,24 @@ var sqlCommands []string = []string{
 	`CREATE TABLE metrics_alarm_expressions_rel (
 		metric_id INT8 NOT NULL,
 		expression_id INT4 NOT NULL,
-		CONSTRAINT metrics_alarm_expressions_rel_fk_metric_id
+		CONSTRAINT maer_fk_metric_id
 			FOREIGN KEY(metric_id)
 				REFERENCES metrics(id)
 				ON DELETE CASCADE,
-		CONSTRAINT metrics_alarm_expressions_rel_fk_expression_id
+		CONSTRAINT maer_fk_expression_id
 			FOREIGN KEY(expression_id)
 				REFERENCES alarm_expressions(id)
 				ON DELETE CASCADE
 	);`,
-	`CREATE INDEX metric_id_metrics_alarm_expressions_rel_index ON metrics_alarm_expressions_rel (metric_id);`,
+	`CREATE INDEX maer_metric_id_index ON metrics_alarm_expressions_rel (metric_id);`,
+
+	// Create metric alarm state table
+	`CREATE TABLE alarm_state (
+		metric_id INT8 NOT NULL UNIQUE,
+		state INT2 NOT NULL,
+		last_update INT8 NOT NULL
+	);`,
+	`CREATE INDEX as_state_index ON alarm_state (state);`,
 
 	// Create server cost price table
 	`CREATE TABLE price_table (
@@ -371,6 +391,17 @@ var sqlCommands []string = []string{
 		CONSTRAINT requests_counter_whitelist_fk_user_id
 			FOREIGN KEY(user_id)
 				REFERENCES users(id)
+				ON DELETE CASCADE
+	);`,
+
+	// Create trap id and  relation
+	`CREATE TABLE traps_categories_rel (
+		trap_id INT2 NOT NULL,
+		category_id INT4 NOT NULL,
+		user_id INT4 NOT NULL,
+		CONSTRAINT tcr_fk_category_id
+			FOREIGN KEY(category_id)
+				REFERENCES alarm_categories(id)
 				ON DELETE CASCADE
 	);`,
 }

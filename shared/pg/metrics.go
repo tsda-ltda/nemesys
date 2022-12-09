@@ -107,6 +107,10 @@ const (
 	sqlMetricsGetRequest                     = `SELECT type, container_id, container_type, data_policy_id, enabled FROM metrics WHERE id = $1;`
 	sqlMetricsDHSEnabled                     = `SELECT dhs_enabled FROM metrics WHERE id = $1;`
 	sqlMetricsCountNonFlex                   = `SELECT COUNT(*) FROM metrics WHERE dhs_enabled = true AND container_type != $1;`
+	sqlMetricsGetAlarmExpressions            = `SELECT e.id, e.expression, e.category_id FROM alarm_expressions e
+		LEFT JOIN metrics_alarm_expressions_rel r ON r.expression_id = e.id WHERE r.metric_id = $1;`
+	sqlMetricsGetAlarmsExpressions = `SELECT r.metric_id, e.id, e.expression, e.category_id FROM alarm_expressions e
+		FULL OUTER JOIN metrics_alarm_expressions_rel r ON r.expression_id = e.id WHERE r.metric_id = ANY ($1);`
 )
 
 func (pg *PG) GetBasicMetric(ctx context.Context, id int64) (r MetricsGetBasicResponse, err error) {
@@ -426,4 +430,54 @@ func (pg *PG) GetMetricsRequestsAndIntervals(ctx context.Context, limit int, off
 
 func (pg *PG) CountNonFlexMetrics(ctx context.Context) (n int, err error) {
 	return n, pg.db.QueryRowContext(ctx, sqlMetricsCountNonFlex, types.CTFlexLegacy).Scan(&n)
+}
+
+func (pg *PG) GetMetricAlarmExpressions(ctx context.Context, id int64) (expressions []models.AlarmExpressionSimplified, err error) {
+	rows, err := pg.db.QueryContext(ctx, sqlMetricsGetAlarmExpressions, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	expressions = []models.AlarmExpressionSimplified{}
+	for rows.Next() {
+		var exp models.AlarmExpressionSimplified
+		err = rows.Scan(
+			&exp.Id,
+			&exp.Expression,
+			&exp.AlarmCategoryId,
+		)
+		if err != nil {
+			return nil, err
+		}
+		expressions = append(expressions, exp)
+	}
+	return expressions, err
+}
+
+func (pg *PG) GetMetricsAlarmExpressions(ctx context.Context, ids []int64) (expressions [][]models.AlarmExpressionSimplified, err error) {
+	rows, err := pg.db.QueryContext(ctx, sqlMetricsGetAlarmsExpressions, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	expressions = make([][]models.AlarmExpressionSimplified, len(ids))
+	for rows.Next() {
+		var exp models.AlarmExpressionSimplified
+		var metricId int64
+		err = rows.Scan(
+			&metricId,
+			&exp.Id,
+			&exp.Expression,
+			&exp.AlarmCategoryId,
+		)
+		if err != nil {
+			return nil, err
+		}
+		for i, id := range ids {
+			if id == metricId {
+				expressions[i] = append(expressions[i], exp)
+			}
+		}
+	}
+	return expressions, err
 }
