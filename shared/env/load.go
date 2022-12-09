@@ -52,6 +52,9 @@ func Init() {
 	set("LOG_CONSOLE_LEVEL_DHS", &LogConsoleLevelDHS)
 	set("LOG_BROADCAST_LEVEL_DHS", &LogBroadcastLevelDHS)
 
+	set("LOG_CONSOLE_LEVEL_ALARM_SERVICE", &LogConsoleLevelAlarmService)
+	set("LOG_BROADCAST_LEVEL_ALARM_SERVICE", &LogBroadcastLevelAlarmService)
+
 	set("DEFAULT_USERNAME", &DefaultUsername)
 	set("DEFAULT_PASSWORD", &DefaultPassword)
 

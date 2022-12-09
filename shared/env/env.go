@@ -32,6 +32,11 @@ var (
 	// LogBroadcastLevelDHS is the log level for broadcast in Data History service. Default is info.
 	LogBroadcastLevelDHS = "info"
 
+	// LogConsoleLevelDHS is the log level for console in Data History service. Default is debug.
+	LogConsoleLevelAlarmService = "debug"
+	// LogBroadcastLevelDHS is the log level for broadcast in Data History service. Default is info.
+	LogBroadcastLevelAlarmService = "info"
+
 	// DefaultUsername is the default user's username. Default is "master".
 	DefaultUsername = "master"
 	// DefaultPassword is the default user's password (is strongly recommended to not use the default value). Default is "master".
