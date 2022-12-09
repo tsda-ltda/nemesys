@@ -13,17 +13,18 @@ type Cache struct {
 	// redis is the redis client used to get and set data.
 	redis *redis.Client
 
-	metricRequestByIdentExp time.Duration
-	metricRequestExp        time.Duration
-	metricEvExpressionExp   time.Duration
-	metricDataPolicyIdExp   time.Duration
-	snmpAgentExp            time.Duration
-	snmpMetricExp           time.Duration
-	customQueryExp          time.Duration
-	metricAddDataFormExp    time.Duration
-	rtsMetricConfigExp      time.Duration
-	serverCostExp           time.Duration
-	alarmExpressionExp      time.Duration
+	metricRequestByIdentExp   time.Duration
+	metricRequestExp          time.Duration
+	metricEvExpressionExp     time.Duration
+	metricDataPolicyIdExp     time.Duration
+	snmpAgentExp              time.Duration
+	snmpMetricExp             time.Duration
+	customQueryExp            time.Duration
+	metricAddDataFormExp      time.Duration
+	rtsMetricConfigExp        time.Duration
+	serverCostExp             time.Duration
+	metricAlarmExpressionsExp time.Duration
+	metricAlarmCategoryExp    time.Duration
 }
 
 // New returns a prepared Cache struct.
@@ -35,18 +36,19 @@ func New() *Cache {
 	}
 
 	return &Cache{
-		redis:                   c,
-		metricRequestByIdentExp: time.Minute,
-		metricRequestExp:        time.Minute,
-		metricEvExpressionExp:   time.Minute,
-		metricDataPolicyIdExp:   time.Minute,
-		snmpAgentExp:            time.Minute * 5,
-		snmpMetricExp:           time.Minute * 2,
-		customQueryExp:          time.Minute,
-		metricAddDataFormExp:    time.Minute * 3,
-		rtsMetricConfigExp:      time.Minute * 2,
-		serverCostExp:           time.Second * 30,
-		alarmExpressionExp:      time.Minute,
+		redis:                     c,
+		metricRequestByIdentExp:   time.Minute,
+		metricRequestExp:          time.Minute,
+		metricEvExpressionExp:     time.Minute,
+		metricDataPolicyIdExp:     time.Minute,
+		snmpAgentExp:              time.Minute * 5,
+		snmpMetricExp:             time.Minute * 2,
+		customQueryExp:            time.Minute,
+		metricAddDataFormExp:      time.Minute * 3,
+		rtsMetricConfigExp:        time.Minute * 2,
+		serverCostExp:             time.Second * 30,
+		metricAlarmExpressionsExp: time.Minute,
+		metricAlarmCategoryExp:    time.Minute * 2,
 	}
 }
 

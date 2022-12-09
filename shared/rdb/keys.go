@@ -71,3 +71,11 @@ func CacheRTSMetricConfig(metricId int64) string {
 func CacheServerCostResultKey() string {
 	return "cache:server-cost"
 }
+
+func CacheMetricAlarmExpressionsKey(metricId int64) string {
+	return "cache:metrics:" + strconv.FormatInt(metricId, 10) + ":alarm-expression"
+}
+
+func CacheAlarmCategoryKey(id int32) string {
+	return "cache:alarm-categories:" + strconv.FormatInt(int64(id), 10)
+}
