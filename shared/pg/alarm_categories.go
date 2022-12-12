@@ -20,10 +20,14 @@ const (
 		LEFT JOIN alarm_profiles_categories_rel r ON r.profile_id = p.id WHERE r.category_id = $1;`
 	sqlAlarmCategoriesGetSimplifiedByIds    = `SELECT id, level FROM alarm_categories WHERE id = ANY($1) ORDER BY level DESC;`
 	sqlAlarmCategoriesCreateTrapIdRel       = `INSERT INTO traps_categories_rel (trap_id, category_id) VALUES ($1, $2);`
+	sqlAlarmCategoriesTrapIdRelExists       = `SELECT EXISTS (SELECT 1 FROM traps_categories_rel WHERE trap_id = $1);`
 	sqlAlarmCategoriesDeleteTrapIdRel       = `DELETE FROM  traps_categories_rel WHERE trap_id = $1;`
 	sqlAlarmCategoriesMGetTrapIdRel         = `SELECT trap_id, category_id FROM traps_categories_rel;`
-	sqlAlarmCategoriesGetSimplifiedByTrapId = `SELECT id, level FROM alarm_categories c
+	sqlAlarmCategoriesGetSimplified         = `SELECT level FROM alarm_categories c WHERE id = $1;`
+	sqlAlarmCategoriesGetSimplifiedByTrapId = `SELECT c.id, c.level FROM alarm_categories c
 		LEFT JOIN traps_categories_rel r ON r.category_id = c.id WHERE r.trap_id = $1;`
+	sqlAlarmCategoriesGetTrapRelByTrapIds = `SELECT trap_id, category_id FROM traps_categories_rel WHERE trap_id = ANY($1);`
+	sqlAlarmCategoriesGetTrapRels         = `SELECT trap_id, category_id FROM traps_categories_rel LIMIT $1 OFFSET $2;`
 )
 
 func (pg *PG) CreateAlarmCategory(ctx context.Context, category models.AlarmCategory) (id int32, err error) {
@@ -128,8 +132,12 @@ func (pg *PG) GetCategoryAlarmProfilesSimplified(ctx context.Context, id int32) 
 }
 
 func (pg *PG) CreateTrapCategoryRelation(ctx context.Context, rel models.TrapCategoryRelation) (err error) {
-	_, err = pg.db.ExecContext(ctx, sqlAlarmCategoriesCreateTrapIdRel, rel.TrapId, rel.CategoryId)
+	_, err = pg.db.ExecContext(ctx, sqlAlarmCategoriesCreateTrapIdRel, rel.TrapCategoryId, rel.AlarmCategoryId)
 	return err
+}
+
+func (pg *PG) TrapCategoryRelationExists(ctx context.Context, trapId int16) (exists bool, err error) {
+	return exists, pg.db.QueryRowContext(ctx, sqlAlarmCategoriesTrapIdRelExists, trapId).Scan(&exists)
 }
 
 func (pg *PG) DeleteTrapCategoryRelation(ctx context.Context, trapId int16) (exists bool, err error) {
@@ -150,13 +158,25 @@ func (pg *PG) GetTrapCategoryRelations(ctx context.Context) (rels []models.TrapC
 	rels = []models.TrapCategoryRelation{}
 	for rows.Next() {
 		var rel models.TrapCategoryRelation
-		err = rows.Scan(&rel.TrapId, &rel.CategoryId)
+		err = rows.Scan(&rel.TrapCategoryId, &rel.AlarmCategoryId)
 		if err != nil {
 			return nil, err
 		}
 		rels = append(rels, rel)
 	}
 	return rels, nil
+}
+
+func (pg *PG) GetAlarmCategorySimplified(ctx context.Context, id int32) (exists bool, category models.AlarmCategorySimplified, err error) {
+	err = pg.db.QueryRowContext(ctx, sqlAlarmCategoriesGetSimplified, id).Scan(&category.Level)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, category, nil
+		}
+		return false, category, err
+	}
+	category.Id = id
+	return true, category, nil
 }
 
 func (pg *PG) GetAlarmCategorySimplifiedByTrapId(ctx context.Context, trapId int16) (exists bool, category models.AlarmCategorySimplified, err error) {
@@ -168,4 +188,46 @@ func (pg *PG) GetAlarmCategorySimplifiedByTrapId(ctx context.Context, trapId int
 		return false, category, err
 	}
 	return true, category, nil
+}
+
+func (pg *PG) GetTrapCategoriesRelationsByIds(ctx context.Context, trapIds []int16) (rels []models.TrapCategoryRelation, err error) {
+	rows, err := pg.db.QueryContext(ctx, sqlAlarmCategoriesGetTrapRelByTrapIds, trapIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	rels = make([]models.TrapCategoryRelation, 0, len(trapIds))
+	for rows.Next() {
+		var rel models.TrapCategoryRelation
+		err = rows.Scan(
+			&rel.TrapCategoryId,
+			&rel.AlarmCategoryId,
+		)
+		if err != nil {
+			return nil, err
+		}
+		rels = append(rels, rel)
+	}
+	return rels, nil
+}
+
+func (pg *PG) GetTrapCategoriesRelations(ctx context.Context, limit int, offset int) (rels []models.TrapCategoryRelation, err error) {
+	rows, err := pg.db.QueryContext(ctx, sqlAlarmCategoriesGetTrapRels, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	rels = make([]models.TrapCategoryRelation, 0, limit)
+	for rows.Next() {
+		var rel models.TrapCategoryRelation
+		err = rows.Scan(
+			&rel.TrapCategoryId,
+			&rel.AlarmCategoryId,
+		)
+		if err != nil {
+			return nil, err
+		}
+		rels = append(rels, rel)
+	}
+	return rels, nil
 }
