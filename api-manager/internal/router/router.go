@@ -78,22 +78,19 @@ func Set(s service.Service) {
 		}
 	}
 
-	teams := r.Group("/teams", middleware.Protect(api, roles.TeamsManager), middleware.RequestsCounter(api))
+	teamsManagement := r.Group("/teams", middleware.Protect(api, roles.TeamsManager), middleware.RequestsCounter(api))
 	{
-		teams.GET("/", team.MGetHandler(api))
-		teams.GET("/:teamId", team.GetHandler(api))
-		teams.POST("/", team.CreateHandler(api))
-		teams.PATCH("/:teamId", team.UpdateHandler(api))
-		teams.DELETE("/:teamId", team.DeleteHandler(api))
+		teamsManagement.GET("/", team.MGetHandler(api))
+		teamsManagement.POST("/", team.CreateHandler(api))
+		teamsManagement.PATCH("/:teamId", team.UpdateHandler(api))
+		teamsManagement.DELETE("/:teamId", team.DeleteHandler(api))
 
-		teams.GET("/:teamId/members", team.MGetMembersHandler(api))
-		teams.POST("/:teamId/members", team.AddMemberHandler(api))
-		teams.DELETE("/:teamId/members/:userId", team.RemoveMemberHandler(api))
+		teamsManagement.GET("/:teamId/members", team.MGetMembersHandler(api))
+		teamsManagement.POST("/:teamId/members", team.AddMemberHandler(api))
+		teamsManagement.DELETE("/:teamId/members/:userId", team.RemoveMemberHandler(api))
 
-		ctx := teams.Group("/:teamId/ctx")
+		ctx := teamsManagement.Group("/:teamId/ctx")
 		{
-			ctx.GET("/", team.MGetContextHandler(api))
-			ctx.GET("/:ctxId", middleware.ParseContextParams(api), team.MGetContextHandler(api))
 			ctx.POST("/", team.CreateContextHandler(api))
 			ctx.PATCH("/:ctxId", middleware.ParseContextParams(api), team.UpdateContextHandler(api))
 			ctx.DELETE("/:ctxId", middleware.ParseContextParams(api), team.DeleteContextHandler(api))
@@ -101,11 +98,29 @@ func Set(s service.Service) {
 
 		ctxMetrics := ctx.Group("/:ctxId/metrics")
 		{
-			ctxMetrics.GET("/", middleware.ParseContextParams(api), ctxmetric.MGet(api))
-			ctxMetrics.GET("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.Get(api))
 			ctxMetrics.POST("/", middleware.ParseContextParams(api), ctxmetric.CreateHandler(api))
-			ctxMetrics.PATCH("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.UpdateHandler(api))
-			ctxMetrics.DELETE("/:metricId", middleware.ParseContextualMetricParams(api), ctxmetric.DeleteHandler(api))
+			ctxMetrics.PATCH("/:ctxMetricId", middleware.ParseContextualMetricParams(api), ctxmetric.UpdateHandler(api))
+			ctxMetrics.DELETE("/:ctxMetricId", middleware.ParseContextualMetricParams(api), ctxmetric.DeleteHandler(api))
+		}
+	}
+
+	teams := r.Group("/teams", middleware.Protect(api, roles.Viewer), middleware.RequestsCounter(api))
+	{
+		teams.GET("/:teamId", middleware.TeamGuard(api, roles.Viewer, roles.TeamsManager), team.GetHandler(api))
+
+		ctx := teams.Group("/:teamId/ctx", middleware.TeamGuard(api, roles.Viewer, roles.TeamsManager))
+		{
+			ctx.GET("/", team.MGetContextHandler(api))
+			ctx.GET("/:ctxId", middleware.ParseContextParams(api), team.MGetContextHandler(api))
+		}
+
+		ctxMetrics := ctx.Group("/:ctxId/metrics")
+		{
+			ctxMetrics.GET("/", middleware.ParseContextParams(api), ctxmetric.MGet(api))
+			ctxMetrics.GET("/:ctxMetricId", middleware.ParseContextualMetricParams(api), ctxmetric.Get(api))
+			ctxMetrics.GET("/:ctxMetricId/alarm-state", middleware.ParseContextualMetricParams(api), ctxmetric.GetAlarmStateHandler(api))
+			ctxMetrics.POST("/:ctxMetricId/alarm-state/recognize", middleware.ParseContextualMetricParams(api), ctxmetric.RecognizeAlarmStateHandler(api))
+			ctxMetrics.POST("/:ctxMetricId/alarm-state/resolve", middleware.ParseContextualMetricParams(api), ctxmetric.ResolveAlarmStateHandler(api))
 		}
 	}
 
@@ -197,6 +212,13 @@ func Set(s service.Service) {
 		alarmProfile.PATCH("/:profileId", profile.UpdateHandler(api))
 		alarmProfile.DELETE("/:profileId", profile.DeleteHandler(api))
 
+		emails := alarmProfile.Group("/:profileId/emails")
+		{
+			emails.GET("/", profile.GetEmailsHandler(api))
+			emails.POST("/", profile.CreateEmailHandler(api))
+			emails.DELETE("/:emailId", profile.DeleteEmailHandler(api))
+		}
+
 		category := alarmProfile.Group("/:profileId/categories")
 		{
 			category.GET("/", profile.GetCategoriesHandler(api))
@@ -224,6 +246,13 @@ func Set(s service.Service) {
 		alarmExpression.DELETE("/:expressionId/metrics/:metricId", alarmexp.DeleteMetricRelationHandler(api))
 	}
 
+	trapRelations := r.Group("/alarm/trap-relations/", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))
+	{
+		trapRelations.GET("/", category.GetTrapRelationsHandler(api))
+		trapRelations.POST("/", category.CreateTrapRelationHandler(api))
+		trapRelations.DELETE("/:trapId", category.DeleteTrapRelationHandler(api))
+	}
+
 	requestWhitelist := r.Group("request-count/whitelist/members", middleware.Protect(api, roles.Master))
 	{
 		requestWhitelist.GET("/", whitelist.GetHandler(api))
@@ -233,7 +262,7 @@ func Set(s service.Service) {
 
 	// metric data
 	{
-		r.GET("/teams/:teamId/ctx/:ctxId/metrics/:metricId/data",
+		r.GET("/teams/:teamId/ctx/:ctxId/metrics/:ctxMetricId/data",
 			middleware.Limiter(api, time.Millisecond*300),
 			middleware.Protect(api, roles.Viewer),
 			middleware.RealtimeDataRequestsCounter(api),
@@ -241,7 +270,7 @@ func Set(s service.Service) {
 			middleware.MetricRequest(api),
 			ctxmetric.DataHandler(api),
 		)
-		r.GET("/teams/:teamId/ctx/:ctxId/metrics/:metricId/data/history",
+		r.GET("/teams/:teamId/ctx/:ctxId/metrics/:ctxMetricId/data/history",
 			middleware.Limiter(api, time.Millisecond*650),
 			middleware.Protect(api, roles.Viewer),
 			middleware.DataHistoryRequestsCounter(api),

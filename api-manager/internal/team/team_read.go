@@ -24,7 +24,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.GetTeam(ctx, int32(id))
+		exists, team, err := api.PG.GetTeam(ctx, int32(id))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -33,12 +33,12 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		if !r.Exists {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTeamNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, r.Team)
+		c.JSON(http.StatusOK, team)
 	}
 }
 

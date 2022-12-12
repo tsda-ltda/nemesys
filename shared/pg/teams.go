@@ -6,14 +6,6 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
-// TeamsGetResponse is the response for Get handler.
-type TeamsGetResponse struct {
-	// Exists is the team existence.
-	Exists bool
-	// Team is the team.
-	Team models.Team
-}
-
 // TeamsExistsRelUserTeamResponse is the response for ExistsRelUserTeam handler.
 type TeamsExistsRelUserTeamResponse struct {
 	// RelationExist is the relation existence.
@@ -42,6 +34,7 @@ const (
 		EXISTS(SELECT 1 FROM users_teams WHERE user_id = $1 AND team_id = $2), 
 		EXISTS(SELECT 1 FROM users WHERE id=$1), 
 		EXISTS(SELECT 1 FROM teams WHERE id=$2);`
+	sqlTeamsMemberExists = `SELECT EXISTS (SELECT 1 FROM users_teams WHERE user_id = $1 AND team_id = $2);`
 )
 
 func (pg *PG) TeamIdentExists(ctx context.Context, ident string, id int32) (exists bool, err error) {
@@ -65,25 +58,25 @@ func (pg *PG) DeleteTeam(ctx context.Context, id int32) (exists bool, err error)
 	return rowsAffected != 0, err
 }
 
-func (pg *PG) GetTeam(ctx context.Context, id int32) (r TeamsGetResponse, err error) {
+func (pg *PG) GetTeam(ctx context.Context, id int32) (exists bool, team models.Team, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlTeamsGet, id)
 	if err != nil {
-		return r, err
+		return exists, team, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.Team.Ident,
-			&r.Team.Descr,
-			&r.Team.Name,
+			&team.Ident,
+			&team.Descr,
+			&team.Name,
 		)
 		if err != nil {
-			return r, err
+			return false, team, err
 		}
-		r.Team.Id = id
-		r.Exists = true
+		team.Id = id
+		exists = true
 	}
-	return r, nil
+	return exists, team, nil
 }
 
 func (pg *PG) GetTeams(ctx context.Context, limit int, offset int) (teams []models.Team, err error) {
@@ -161,4 +154,8 @@ func (pg *PG) GetTeamMembers(ctx context.Context, teamId int32, limit int, offse
 		users = append(users, u)
 	}
 	return users, nil
+}
+
+func (pg *PG) TeamMemberExists(ctx context.Context, teamId int32, userId int32) (exists bool, err error) {
+	return exists, pg.db.QueryRowContext(ctx, sqlTeamsMemberExists, userId, teamId).Scan(&exists)
 }
