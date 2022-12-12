@@ -242,7 +242,7 @@ func (s *RTS) metricsDataListener() {
 	msgs, err := s.amqph.Listen(amqp.QueueRTSMetricsDataRes, amqp.ExchangeMetricsDataRes,
 		models.ListenerOptions{
 			Bind: models.QueueBindOptions{
-				RoutingKey: "rts",
+				RoutingKey: s.GetServiceIdent(),
 			},
 		},
 	)
