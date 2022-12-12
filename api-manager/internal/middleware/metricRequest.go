@@ -16,7 +16,7 @@ func MetricRequest(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		id, err := strconv.ParseInt(c.Param("metricId"), 10, 64)
+		id, err := strconv.ParseInt(c.Param("ctxMetricId"), 10, 64)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return

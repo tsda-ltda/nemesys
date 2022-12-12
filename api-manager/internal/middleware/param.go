@@ -61,12 +61,12 @@ func ParseContextParams(api *api.API) func(c *gin.Context) {
 	}
 }
 
-// ParseContextualMetricParams parses, if they are idents, all team's params: id, ctxId, and metricId.
+// ParseContextualMetricParams parses, if they are idents, all team's params: id, ctxId, and ctxMetricId.
 func ParseContextualMetricParams(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		metricRawId := c.Param("metricId")
+		metricRawId := c.Param("ctxMetricId")
 		teamRawId := c.Param("teamId")
 		ctxRawId := c.Param("ctxId")
 
@@ -104,9 +104,9 @@ func ParseContextualMetricParams(api *api.API) func(c *gin.Context) {
 					Key:   "id",
 					Value: strconv.FormatInt(int64(r.TeamId), 10),
 				}
-			case "metricId":
+			case "ctxMetricId":
 				c.Params[i] = gin.Param{
-					Key:   "metricId",
+					Key:   "ctxMetricId",
 					Value: strconv.FormatInt(r.ContextualMetricId, 10),
 				}
 			case "ctxId":
