@@ -396,9 +396,8 @@ var sqlCommands []string = []string{
 
 	// Create trap id and  relation
 	`CREATE TABLE traps_categories_rel (
-		trap_id INT2 NOT NULL,
+		trap_id INT2 UNIQUE NOT NULL,
 		category_id INT4 NOT NULL,
-		user_id INT4 NOT NULL,
 		CONSTRAINT tcr_fk_category_id
 			FOREIGN KEY(category_id)
 				REFERENCES alarm_categories(id)
