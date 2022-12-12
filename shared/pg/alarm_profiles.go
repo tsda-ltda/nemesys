@@ -22,6 +22,7 @@ const (
 	sqlAlarmProfilesGet            = `SELECT name, descr FROM alarm_profiles WHERE id = $1;`
 	sqlAlarmProfilesMGet           = `SELECT id, name, descr FROM alarm_profiles LIMIT $1 OFFSET $2;`
 	sqlAlarmProfilesDelete         = `DELETE FROM alarm_profiles WHERE id = $1;`
+	sqlAlarmProfilesExists         = `SELECT EXISTS (SELECT 1 FROM alarm_profiles WHERE id = $1);`
 	sqlAlarmProfilesAddCategory    = `INSERT INTO alarm_profiles_categories_rel (profile_id, category_id) VALUES($1, $2);`
 	sqlAlarmProfilesRemoveCategory = `DELETE FROM alarm_profiles_categories_rel WHERE profile_id = $1 AND category_id = $2;`
 	sqlAlarmProfilesGetCategories  = `SELECT id, name, descr, level FROM alarm_categories c 
@@ -31,7 +32,8 @@ const (
 		EXISTS (SELECT 1 FROM alarm_categories WHERE id = $2),
 		EXISTS (SELECT 1 FROM alarm_profiles_categories_rel WHERE profile_id = $1 AND category_id = $2);`
 	sqlAlarmProfilesCreateEmail   = `INSERT INTO alarm_profiles_emails (alarm_profile_id, email) VALUES($1, $2);`
-	sqlAlarmProfilesGetEmails     = `SELECT id, email FROM alarm_profiles_emails WHERE alarm_profile_id = $1;`
+	sqlAlarmProfilesGetAllEmails  = `SELECT id, email FROM alarm_profiles_emails WHERE alarm_profile_id = $1;`
+	sqlAlarmProfilesGetEmails     = `SELECT id, email FROM alarm_profiles_emails WHERE alarm_profile_id = $1 LIMIT $2 OFFSET $3;`
 	sqlAlarmProfilesGetOnlyEmails = `SELECT email FROM alarm_profiles_emails WHERE alarm_profile_id = ANY($1);`
 	sqlAlarmProfilesDeleteEmail   = `DELETE FROM alarm_profiles_emails WHERE id = $1;`
 	sqlAlarmProfilesDeleteEmails  = `DELETE FROM alarm_profiles_emails WHERE alarm_profile_id = $1;`
@@ -103,6 +105,10 @@ func (pg *PG) DeleteAlarmProfile(ctx context.Context, id int32) (exists bool, er
 	return rowsAffected != 0, nil
 }
 
+func (pg *PG) AlarmProfileExists(ctx context.Context, id int32) (exists bool, err error) {
+	return exists, pg.db.QueryRowContext(ctx, sqlAlarmProfilesExists, id).Scan(&exists)
+}
+
 func (pg *PG) AddCategoryToAlarmProfile(ctx context.Context, profileId int32, categoryId int32) (err error) {
 	_, err = pg.db.ExecContext(ctx, sqlAlarmProfilesAddCategory, profileId, categoryId)
 	return err
@@ -149,8 +155,26 @@ func (pg *PG) CreateAlarmProfileEmail(ctx context.Context, id int32, email strin
 	return err
 }
 
-func (pg *PG) GetAlarmProfileEmails(ctx context.Context, id int32) (emails []models.AlarmProfileEmailWithoutProfileId, err error) {
-	rows, err := pg.db.QueryContext(ctx, sqlAlarmProfilesGetEmails, id)
+func (pg *PG) GetAllAlarmProfileEmails(ctx context.Context, id int32) (emails []models.AlarmProfileEmailWithoutProfileId, err error) {
+	rows, err := pg.db.QueryContext(ctx, sqlAlarmProfilesGetAllEmails, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	emails = []models.AlarmProfileEmailWithoutProfileId{}
+	for rows.Next() {
+		var e models.AlarmProfileEmailWithoutProfileId
+		err = rows.Scan(&e.Id, &e.Email)
+		if err != nil {
+			return nil, err
+		}
+		emails = append(emails, e)
+	}
+	return emails, nil
+}
+
+func (pg *PG) GetAlarmProfileEmails(ctx context.Context, id int32, limit int, offset int) (emails []models.AlarmProfileEmailWithoutProfileId, err error) {
+	rows, err := pg.db.QueryContext(ctx, sqlAlarmProfilesGetEmails, id, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +218,11 @@ func (pg *PG) DeleteAlarmProfileEmail(ctx context.Context, emailId int32) (exist
 	return rowsAffected != 0, nil
 }
 
-func (pg *PG) DeleteAlarmProfileEmails(ctx context.Context, id int32) (err error) {
-	_, err = pg.db.ExecContext(ctx, sqlAlarmProfilesDeleteEmails, id)
-	return err
+func (pg *PG) DeleteAlarmProfileEmails(ctx context.Context, id int32) (exists bool, err error) {
+	t, err := pg.db.ExecContext(ctx, sqlAlarmProfilesDeleteEmails, id)
+	if err != nil {
+		return false, err
+	}
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
 }

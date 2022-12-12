@@ -98,15 +98,22 @@ type DirectAlarm struct {
 	MetricId int64
 	// ContainerId is the container identifier.
 	ContainerId int32
-	// CategoryId is the category identifier.
-	Category AlarmCategorySimplified
+	// AlarmCategoryId is the alarm category id.
+	AlarmCategoryId int32
 	// Value is the alarmed value.
 	Value any
 }
 
 type TrapCategoryRelation struct {
-	// TrapId is the trap id.
-	TrapId int16 `json:"trap-id" validate:"required"`
-	// CategoryId is the category id.
-	CategoryId int16 `json:"category-id" validate:"required"`
+	// TrapCategoryId is the trap id.
+	TrapCategoryId int16 `json:"trap-category-id" validate:"-"`
+	// AlarmCategoryId is the category id.
+	AlarmCategoryId int32 `json:"alarm-category-id" validate:"-"`
+}
+
+type AlarmProfileEmail struct {
+	// Id is the alarm profile and email relation id.
+	Id int32 `json:"id" validate:"-"`
+	// Email is the email.
+	Email string `json:"email" validate:"required"`
 }
