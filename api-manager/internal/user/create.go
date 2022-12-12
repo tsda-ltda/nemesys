@@ -55,7 +55,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if r.EmailExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgUsernameExists))
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgEmailExists))
 			return
 		}
 
