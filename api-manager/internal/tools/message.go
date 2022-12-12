@@ -18,6 +18,9 @@ const (
 	MsgAlarmCategoryNotFound               = "Alarm category does not exists."
 	MsgAlarmProfileAndCategoryRelNotFound  = "Alarm profile and alarm category relation does not exists."
 	MsgAlarmExpressionAndMetricRelNotFound = "Alarm expression and metric relation does not exists."
+	MsgAlarmProfileEmailNotFound           = "Alarm profile email does not exists."
+	MsgTrapRelationNotFound                = "Trap category relation does not exists."
+	MsgAlarmStateNotFound                  = "Alarm state does not exists."
 
 	MsgParamsNotSameType     = "Params must have same type. Use only numbers or only text."
 	MsgIdentIsNumber         = "Identification must not be number as text."
@@ -27,6 +30,8 @@ const (
 	MsgSessionAlreadyRemoved = "Session already removed."
 	MsgMetricDisabled        = "Metric is not enabled."
 	MsgContainerDisabled     = "Container is not enabled."
+	MsgMetricIsNotAlarmed    = "Metric alarm state is not alarmed."
+	MsgMetricIsNotRecognized = "Metric alarm state is not recognized."
 
 	MsgInvalidParams     = "Invalid route params."
 	MsgInvalidBody       = "Invalid body."
@@ -47,6 +52,7 @@ const (
 	MsgAlarmCategoryLevelExists          = "Alarm category level already exists."
 	MsgAlarmProfileAndCategoryRelExists  = "Alarm profile and alarm category relation already exists."
 	MsgAlarmExpressionAndMetricRelExists = "Alarm expression and metric relation already exists."
+	MsgTrapRelationExists                = "Trap category already have a relation."
 )
 
 type Message struct {
