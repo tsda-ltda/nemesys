@@ -85,7 +85,7 @@ const (
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id;`
 	sqlMetricsUpdate = `UPDATE metrics SET 
 		(name, descr, enabled, data_policy_id, rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression) 
-		= ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10) WHERE id = $11;`
+		= ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) WHERE id = $11;`
 	sqlMetricsGetRTSConfig = `SELECT rts_pulling_times, rts_data_cache_duration
 		FROM metrics WHERE id = $1;`
 	sqlMetricsExistsContainerAndDataPolicy = `SELECT 

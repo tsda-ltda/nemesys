@@ -37,7 +37,7 @@ const (
 		SELECT id, (SELECT * FROM tid) FROM contexts WHERE ident = $2 and team_id = (SELECT * FROM tid);`
 	sqlCtxExistsTeamAndIdent = `SELECT 
 		EXISTS (SELECT 1 FROM teams WHERE id = $1), 
-		EXISTS (SELECT 1 FROM contexts WHERE ident = $2 AND id != $3);`
+		EXISTS (SELECT 1 FROM contexts WHERE ident = $2 AND team_id = $1 AND id != $3);`
 	sqlCtxCreate = `INSERT INTO contexts (ident, descr, name, team_id) VALUES($1, $2, $3, $4) RETURNING id;`
 	sqlCtxUpdate = `UPDATE contexts SET (ident, descr, name) = ($1, $2, $3) WHERE id = $4;`
 	sqlCtxDelete = `DELETE FROM contexts WHERE id = $1;`
