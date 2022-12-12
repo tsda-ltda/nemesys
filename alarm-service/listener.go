@@ -1,6 +1,9 @@
 package alarm
 
 import (
+	"context"
+	"strconv"
+
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
@@ -20,7 +23,7 @@ func (a *Alarm) listenCheckMetricAlarm() {
 			err := amqp.Decode(d.Body, &dataResponse)
 			if err != nil {
 				a.log.Error("Fail to decode amqp body", logger.ErrField(err))
-				return
+				continue
 			}
 			if dataResponse.Failed {
 				continue
@@ -46,7 +49,7 @@ func (a *Alarm) listenCheckMetricsAlarm() {
 			err := amqp.Decode(d.Body, &dataResponse)
 			if err != nil {
 				a.log.Error("Fail to decode amqp body", logger.ErrField(err))
-				return
+				continue
 			}
 
 			// remove failed responses to avoid false alarms
@@ -78,12 +81,23 @@ func (a *Alarm) listenMetricAlarmed() {
 			err := amqp.Decode(d.Body, &alarm)
 			if err != nil {
 				a.log.Error("Fail to decode amqp body", logger.ErrField(err))
-				return
+				continue
 			}
+
+			exists, category, err := a.pg.GetAlarmCategorySimplified(context.Background(), alarm.AlarmCategoryId)
+			if err != nil {
+				a.log.Error("Fail to get alarm category", logger.ErrField(err))
+				continue
+			}
+			if !exists {
+				a.log.Warn("Received metric alarm, but alarm category does not exists, id: " + strconv.Itoa(int(alarm.AlarmCategoryId)))
+				continue
+			}
+
 			go a.processAlarm(MetricAlarmed{
 				MetricId:    alarm.MetricId,
 				ContainerId: alarm.ContainerId,
-				Category:    alarm.Category,
+				Category:    category,
 				Value:       alarm.Value,
 			}, types.ATDirect)
 		case <-a.Done():
@@ -105,15 +119,33 @@ func (a *Alarm) listenMetricsAlarmed() {
 			err := amqp.Decode(d.Body, &alarms)
 			if err != nil {
 				a.log.Error("Fail to decode amqp body", logger.ErrField(err))
-				return
+				continue
 			}
+
+			categoriesIds := make([]int32, len(alarms))
+			for i, a := range alarms {
+				categoriesIds[i] = int32(a.AlarmCategoryId)
+			}
+
+			categories, err := a.pg.GetAlarmCategoriesSimplifiedByIds(context.Background(), categoriesIds)
+			if err != nil {
+				a.log.Error("Fail to get categories ids", logger.ErrField(err))
+				continue
+			}
+
 			for _, alarm := range alarms {
-				go a.processAlarm(MetricAlarmed{
-					MetricId:    alarm.MetricId,
-					ContainerId: alarm.ContainerId,
-					Category:    alarm.Category,
-					Value:       alarm.Value,
-				}, types.ATDirect)
+				for _, c := range categories {
+					if c.Id != int32(alarm.AlarmCategoryId) {
+						continue
+					}
+
+					go a.processAlarm(MetricAlarmed{
+						MetricId:    alarm.MetricId,
+						ContainerId: alarm.ContainerId,
+						Category:    c,
+						Value:       alarm.Value,
+					}, types.ATDirect)
+				}
 			}
 		case <-a.Done():
 			return
