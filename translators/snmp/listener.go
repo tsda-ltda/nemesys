@@ -39,7 +39,7 @@ func (s *SNMP) getMetricListener() {
 				continue
 			}
 
-			go s.getSNMPv2cMetric(agent, r, d.CorrelationId, rk)
+			go s.fetchMetricData(agent, r, d.CorrelationId, rk)
 		case <-s.Done():
 			return
 		}
@@ -76,7 +76,7 @@ func (s *SNMP) getMetricsListener() {
 				s.log.Error("Fail to get routing key from header", logger.ErrField(err))
 				continue
 			}
-			go s.getMetrics(agent, r, d.CorrelationId, rk)
+			go s.fetchMetricsData(agent, r, d.CorrelationId, rk)
 		case <-s.Done():
 			return
 		}

@@ -6,7 +6,7 @@ import (
 	"github.com/gosnmp/gosnmp"
 )
 
-func ParsePDU(pdu gosnmp.SnmpPDU) (any, error) {
+func parsePDU(pdu gosnmp.SnmpPDU) (any, error) {
 	switch pdu.Type {
 	case gosnmp.OctetString:
 		b, ok := pdu.Value.([]byte)

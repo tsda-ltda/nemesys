@@ -1,8 +1,8 @@
 package snmp
 
 import (
-	"fmt"
 	"math"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/logger"
@@ -12,49 +12,13 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-func (s *SNMP) getSNMPv2cMetric(agent models.SNMPv2cAgent, request models.MetricRequest, correlationId string, routingKey string) {
+func (s *SNMP) fetchMetricData(agent models.SNMPv2cAgent, request models.MetricRequest, correlationId string, routingKey string) {
 	p := amqp091.Publishing{
 		Headers:       amqp.RouteHeader(routingKey),
 		CorrelationId: correlationId,
 	}
 
-	// publish data
-	defer func() {
-		s.amqph.PublisherCh <- models.DetailedPublishing{
-			Exchange:   amqp.ExchangeMetricDataRes,
-			RoutingKey: routingKey,
-			Publishing: p,
-		}
-
-		if types.IsNonFlex(request.ContainerType) && p.Type == amqp.FromMessageType(amqp.OK) {
-			s.amqph.PublisherCh <- models.DetailedPublishing{
-				Exchange:   amqp.ExchangeCheckMetricAlarm,
-				Publishing: p,
-			}
-		}
-	}()
-
-	gosnmp := &gosnmp.GoSNMP{
-		Target:    agent.Target,
-		Port:      agent.Port,
-		Transport: agent.Transport,
-		Community: agent.Community,
-		Version:   agent.Version,
-		Timeout:   agent.Timeout,
-		Retries:   agent.Retries,
-		MaxOids:   agent.MaxOids,
-	}
-
-	// open connection
-	err := gosnmp.Connect()
-	if err != nil {
-		s.log.Debug("Fail to connect agent", logger.ErrField(err))
-		return
-	}
-	defer gosnmp.Conn.Close()
-
-	// get metric
-	metrics, err := s.getSNMPMetrics(models.MetricsRequest{
+	metricsRes, failed, err := s.getSNMPMetricsData(agent, models.MetricsRequest{
 		ContainerId:   request.ContainerId,
 		ContainerType: request.ContainerType,
 		Metrics: []models.MetricBasicRequestInfo{{
@@ -64,100 +28,81 @@ func (s *SNMP) getSNMPv2cMetric(agent models.SNMPv2cAgent, request models.Metric
 		}},
 	})
 	if err != nil {
-		s.log.Debug("Fail to get snmp metrics", logger.ErrField(err))
-		return
-	}
-	oid := metrics[0].OID
-
-	// fetch data
-	pdus, err := s.get(gosnmp, []string{oid})
-	if err != nil {
-		s.log.Debug("Fail to fetch data", logger.ErrField(err))
-		p.Type = amqp.FromMessageType(amqp.Failed)
-		return
+		if failed {
+			p.Type = amqp.FromMessageType(amqp.Failed)
+		} else {
+			p.Type = amqp.FromMessageType(amqp.InternalError)
+		}
 	}
 
-	// get first result
-	pdu := pdus[0]
+	if len(metricsRes.Metrics) != 1 {
+		p.Type = amqp.GetMessage(amqp.InternalError)
+		s.log.Error("Expected 1 metric data response got: " + strconv.Itoa(len(metricsRes.Metrics)))
+	} else {
+		response := models.MetricDataResponse{
+			ContainerId:            metricsRes.ContainerId,
+			MetricBasicDataReponse: metricsRes.Metrics[1],
+		}
+		b, err := amqp.Encode(response)
+		if err != nil {
+			p.Type = amqp.FromMessageType(amqp.InternalError)
+			s.log.Error("Fail to encode amqp body", logger.ErrField(err))
+		}
+		p.Body = b
 
-	// get metric type
-	t := request.MetricType
-	if t == types.MTUnknown {
-		t = types.ParseAsn1BER(byte(pdu.Type))
 	}
 
-	// parse raw value
-	v, err := ParsePDU(pdu)
-	if err != nil {
-		s.log.Debug("Fail to parse pdu value", logger.ErrField(err))
-		p.Type = amqp.FromMessageType(amqp.Failed)
-		return
+	s.amqph.PublisherCh <- models.DetailedPublishing{
+		Exchange:   amqp.ExchangeMetricDataRes,
+		RoutingKey: routingKey,
+		Publishing: p,
 	}
 
-	// parse value to metric type
-	v, err = types.ParseValue(v, t)
-	if err != nil {
-		s.log.Debug("Fail to parse pdu value to metric value", logger.ErrField(err))
-		p.Type = amqp.FromMessageType(amqp.InvalidParse)
-		return
+	if types.IsNonFlex(request.ContainerType) && p.Type == amqp.FromMessageType(amqp.OK) {
+		s.amqph.PublisherCh <- models.DetailedPublishing{
+			Exchange:   amqp.ExchangeCheckMetricAlarm,
+			Publishing: p,
+		}
 	}
-
-	// evaluate value
-	v, err = s.evaluator.Evaluate(v, request.MetricId, t)
-	if err != nil {
-		s.log.Warn("Fail to evaluate metric value", logger.ErrField(err))
-		p.Type = amqp.FromMessageType(amqp.EvaluateFailed)
-		return
-	}
-
-	res := models.MetricDataResponse{
-		ContainerId: request.ContainerId,
-		MetricBasicDataReponse: models.MetricBasicDataReponse{
-			Id:           request.MetricId,
-			Type:         t,
-			Value:        v,
-			DataPolicyId: request.DataPolicyId,
-			Failed:       false,
-		},
-	}
-
-	// encode data
-	bytes, err := amqp.Encode(res)
-	if err != nil {
-		s.log.Error("Fail to marshal data response", logger.ErrField(err))
-		p.Type = amqp.FromMessageType(amqp.InternalError)
-		return
-	}
-
-	// set data
-	p.Type = amqp.FromMessageType(amqp.OK)
-	p.Body = bytes
-
-	s.log.Debug("Data published for metric: " + fmt.Sprint(request.MetricId))
 }
 
-func (s *SNMP) getMetrics(agent models.SNMPv2cAgent, request models.MetricsRequest, correlationId string, routingKey string) {
+func (s *SNMP) fetchMetricsData(agent models.SNMPv2cAgent, request models.MetricsRequest, correlationId string, routingKey string) {
 	p := amqp091.Publishing{
 		Headers:       amqp.RouteHeader(routingKey),
 		CorrelationId: correlationId,
 	}
 
-	// publish data
-	defer func() {
+	metricsRes, failed, err := s.getSNMPMetricsData(agent, request)
+	if err != nil {
+		if failed {
+			p.Type = amqp.FromMessageType(amqp.Failed)
+		} else {
+			p.Type = amqp.FromMessageType(amqp.InternalError)
+		}
+	}
+
+	b, err := amqp.Encode(metricsRes)
+	if err != nil {
+		p.Type = amqp.FromMessageType(amqp.InternalError)
+		s.log.Error("Fail to encode amqp body", logger.ErrField(err))
+	}
+	p.Body = b
+
+	s.amqph.PublisherCh <- models.DetailedPublishing{
+		Exchange:   amqp.ExchangeMetricsDataRes,
+		RoutingKey: routingKey,
+		Publishing: p,
+	}
+
+	if types.IsNonFlex(request.ContainerType) && p.Type == amqp.FromMessageType(amqp.OK) {
 		s.amqph.PublisherCh <- models.DetailedPublishing{
-			Exchange:   amqp.ExchangeMetricsDataRes,
-			RoutingKey: routingKey,
+			Exchange:   amqp.ExchangeCheckMetricsAlarm,
 			Publishing: p,
 		}
+	}
+}
 
-		if types.IsNonFlex(request.ContainerType) && p.Type == amqp.FromMessageType(amqp.OK) {
-			s.amqph.PublisherCh <- models.DetailedPublishing{
-				Exchange:   amqp.ExchangeCheckMetricsAlarm,
-				Publishing: p,
-			}
-		}
-	}()
-
+func (s *SNMP) getSNMPMetricsData(agent models.SNMPv2cAgent, request models.MetricsRequest) (response models.MetricsDataResponse, fetchFailed bool, err error) {
 	gosnmp := &gosnmp.GoSNMP{
 		Target:    agent.Target,
 		Port:      agent.Port,
@@ -169,15 +114,13 @@ func (s *SNMP) getMetrics(agent models.SNMPv2cAgent, request models.MetricsReque
 		MaxOids:   agent.MaxOids,
 	}
 
-	// connect
-	err := gosnmp.Connect()
+	err = gosnmp.Connect()
 	if err != nil {
 		s.log.Error("Fail to connect agent", logger.ErrField(err))
-		return
+		return response, false, err
 	}
 	defer gosnmp.Conn.Close()
 
-	// get metric
 	metrics, err := s.getSNMPMetrics(models.MetricsRequest{
 		ContainerId:   request.ContainerId,
 		ContainerType: request.ContainerType,
@@ -185,29 +128,45 @@ func (s *SNMP) getMetrics(agent models.SNMPv2cAgent, request models.MetricsReque
 	})
 	if err != nil {
 		s.log.Error("Fail to get snmp metrics", logger.ErrField(err))
+		return response, false, err
 	}
 
-	// get oids
-	oids := make([]string, len(metrics))
-	for i, m := range metrics {
-		oids[i] = m.OID
+	oids := make([]string, 0, len(metrics)*3)
+	for _, m := range metrics {
+		oids = append(oids, m.OID)
 	}
 
-	// fetch data
+	// flex legacy alarm and category oids
+	var extraOidsIndexs []int
+	if request.ContainerType == types.CTFlexLegacy {
+		extraOidsIndexs = make([]int, 0, len(metrics)*2)
+		for i, oid := range oids {
+			alarm, err := getFlexLegacyAlarmOID(oid)
+			if err != nil {
+				continue
+			}
+			trap, err := getFlexLegacyCategoryOID(oid)
+			if err != nil {
+				continue
+			}
+			extraOidsIndexs = append(extraOidsIndexs, i)
+			oids = append(oids, alarm, trap)
+		}
+	}
+
 	pdus, err := s.get(gosnmp, oids)
 	if err != nil {
 		s.log.Debug("Fail to fetch data", logger.ErrField(err))
-		p.Type = amqp.FromMessageType(amqp.Failed)
-		return
+		return response, true, err
 	}
 
-	// create response structure
 	res := models.MetricsDataResponse{
 		ContainerId: request.ContainerId,
 		Metrics:     make([]models.MetricBasicDataReponse, len(oids)),
 	}
 
-	for i, pdu := range pdus {
+	for i := 0; i < len(oids)-len(extraOidsIndexs)*2; i++ {
+		pdu := pdus[i]
 		r := request.Metrics[i]
 		res.Metrics[i] = models.MetricBasicDataReponse{
 			Id:           r.Id,
@@ -217,7 +176,7 @@ func (s *SNMP) getMetrics(agent models.SNMPv2cAgent, request models.MetricsReque
 			Failed:       false,
 		}
 
-		v, err := ParsePDU(pdu)
+		v, err := parsePDU(pdu)
 		if err != nil {
 			s.log.Debug("Fail to parse PDU, name "+pdu.Name, logger.ErrField(err))
 			res.Metrics[i].Failed = true
@@ -226,14 +185,14 @@ func (s *SNMP) getMetrics(agent models.SNMPv2cAgent, request models.MetricsReque
 
 		v, err = types.ParseValue(v, r.Type)
 		if err != nil {
-			s.log.Warn("Fail to parse SNMP value to metric value", logger.ErrField(err))
+			s.log.Debug("Fail to parse SNMP value to metric value", logger.ErrField(err))
 			res.Metrics[i].Failed = true
 			continue
 		}
 
 		v, err = s.evaluator.Evaluate(v, r.Id, r.Type)
 		if err != nil {
-			s.log.Warn("Fail to evaluate value")
+			s.log.Debug("Fail to evaluate value")
 			res.Metrics[i].Failed = true
 			continue
 		}
@@ -241,17 +200,69 @@ func (s *SNMP) getMetrics(agent models.SNMPv2cAgent, request models.MetricsReque
 		res.Metrics[i].Value = v
 	}
 
-	// encode response
-	bytes, err := amqp.Encode(res)
-	if err != nil {
-		s.log.Error("Fail to encode metrics data response", logger.ErrField(err))
-		p.Type = amqp.FromMessageType(amqp.InternalError)
-		return
+	if len(extraOidsIndexs) > 0 {
+		var j int
+		alarms := make([]flexLegacyAlarm, len(extraOidsIndexs))
+
+		for i := len(oids) - (len(extraOidsIndexs) * 2); i < len(oids); i += 2 {
+			v, err := parsePDU(pdus[i])
+			if err != nil {
+				s.log.Debug("Fail to parse pdu", logger.ErrField(err))
+				continue
+			}
+
+			v, err = types.ParseValue(v, types.MTBool)
+			if err != nil {
+				s.log.Error("Fail to parse alarm state to boolean", logger.ErrField(err))
+				continue
+			}
+
+			alarmed, ok := v.(bool)
+			if !ok {
+				s.log.Error("Fail to make boolean type asseption on alarm state")
+				continue
+			}
+
+			if !alarmed {
+				continue
+			}
+
+			v, err = parsePDU(pdus[i+1])
+			if err != nil {
+				s.log.Debug("Fail to parse pdu", logger.ErrField(err))
+				continue
+			}
+
+			v, err = types.ParseValue(v, types.MTInt)
+			if err != nil {
+				s.log.Error("Fail to parse trap category to integer", logger.ErrField(err))
+				continue
+			}
+
+			trapCategoryId, ok := v.(int64)
+			if !ok {
+				s.log.Error("Fail to make int type asseption on trap category id")
+				continue
+			}
+
+			res := res.Metrics[extraOidsIndexs[j]]
+			if res.Failed {
+				continue
+			}
+
+			alarms[j] = flexLegacyAlarm{
+				MetricId: res.Id,
+				Value:    res.Value,
+				TrapId:   int16(trapCategoryId),
+			}
+		}
+
+		if len(alarms) > 0 {
+			go s.notifyAlarms(request.ContainerId, alarms)
+		}
 	}
 
-	p.Type = amqp.FromMessageType(amqp.OK)
-	p.Body = bytes
-	s.log.Debug("Metrics data published for container: " + fmt.Sprint(request.ContainerId))
+	return res, false, nil
 }
 
 // Get fetch the OIDs's values. Returns an error only if an error is returned fo the SNMP Get request.
@@ -264,7 +275,7 @@ func (s *SNMP) get(agent *gosnmp.GoSNMP, oids []string) (res []gosnmp.SnmpPDU, e
 		oidsBuff = make([]string, len(oids))
 	}
 
-	res = []gosnmp.SnmpPDU{}
+	res = make([]gosnmp.SnmpPDU, 0, len(oids))
 
 	var i int
 	for k := 0; k < int(math.Ceil(float64(len(oids))/float64(agent.MaxOids))); k++ {
