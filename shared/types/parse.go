@@ -19,6 +19,16 @@ func ParseValue(v any, t MetricType) (any, error) {
 		return ParseString(v.(string), t)
 	case reflect.Bool:
 		return ParseBool(v.(bool), t)
+	case reflect.Uint8:
+		return ParseInt(int(v.(uint8)), t)
+	case reflect.Uint16:
+		return ParseInt(int(v.(uint16)), t)
+	case reflect.Uint32:
+		return ParseInt(int(v.(uint32)), t)
+	case reflect.Uint64:
+		return ParseInt(int(v.(uint64)), t)
+	case reflect.Uint:
+		return ParseInt(int(v.(uint)), t)
 	case reflect.Int:
 		return ParseInt(v.(int), t)
 	case reflect.Int8:
