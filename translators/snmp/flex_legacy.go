@@ -3,10 +3,12 @@ package snmp
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/fernandotsda/nemesys/shared/types"
 	"github.com/rabbitmq/amqp091-go"
 )
 
@@ -59,6 +61,7 @@ func (s *SNMP) notifyAlarms(containerId int32, alarms []flexLegacyAlarm) {
 	s.amqph.PublisherCh <- models.DetailedPublishing{
 		Exchange: amqp.ExchangeMetricsAlarmed,
 		Publishing: amqp091.Publishing{
+			Type: strconv.Itoa(int(types.ATDirect)),
 			Body: b,
 		},
 	}
