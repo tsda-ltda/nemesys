@@ -50,7 +50,6 @@ func UpdateFlexLegacy(api *api.API) func(c *gin.Context) {
 			int32(id),
 			container.Protocol.Target,
 			container.Protocol.Port,
-			container.Protocol.SerialNumber,
 		)
 		if err != nil {
 			if ctx.Err() != nil {
@@ -64,8 +63,8 @@ func UpdateFlexLegacy(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
-		if r.TargetPortExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTargetPortExists))
+		if r.TargetExists {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTargetExists))
 			return
 		}
 		if r.SerialNumberExists {

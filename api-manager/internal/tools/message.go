@@ -21,6 +21,7 @@ const (
 	MsgAlarmProfileEmailNotFound           = "Alarm profile email does not exists."
 	MsgTrapRelationNotFound                = "Trap category relation does not exists."
 	MsgAlarmStateNotFound                  = "Alarm state does not exists."
+	MsgTrapListenerNotFound                = "Trap listener does not exists."
 
 	MsgParamsNotSameType     = "Params must have same type. Use only numbers or only text."
 	MsgIdentIsNumber         = "Identification must not be number as text."
@@ -43,6 +44,7 @@ const (
 
 	MsgIdentExists                       = "Identification already exists."
 	MsgTargetPortExists                  = "Target and port combination already exists."
+	MsgTargetExists                      = "Target already exists."
 	MsgEmailExists                       = "Email already exists."
 	MsgUsernameExists                    = "Username already exists."
 	MsgRelationExists                    = "User is already a member."
@@ -53,6 +55,7 @@ const (
 	MsgAlarmProfileAndCategoryRelExists  = "Alarm profile and alarm category relation already exists."
 	MsgAlarmExpressionAndMetricRelExists = "Alarm expression and metric relation already exists."
 	MsgTrapRelationExists                = "Trap category already have a relation."
+	MsgTrapListerHostPortExists          = "Trap listener host port already exists."
 )
 
 type Message struct {

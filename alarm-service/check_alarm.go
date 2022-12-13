@@ -3,6 +3,7 @@ package alarm
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"github.com/Knetic/govaluate"
 	"github.com/fernandotsda/nemesys/shared/logger"
@@ -94,7 +95,7 @@ func (a *Alarm) checkMetricAlarm(data models.MetricDataResponse) {
 	}
 
 	if alarmed {
-		go a.processAlarm(metricAlarmed, types.ATChecked)
+		go a.processAlarm(metricAlarmed, types.ATChecked, time.Now())
 	}
 }
 
@@ -194,7 +195,7 @@ func (a *Alarm) checkMetricsAlarm(data models.MetricsDataResponse) {
 					Category:              c,
 					ExpressionsSimplified: e,
 					Value:                 data.Metrics[i].Value,
-				}, types.ATChecked)
+				}, types.ATChecked, time.Now())
 			}
 		}
 	}

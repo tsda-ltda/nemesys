@@ -13,13 +13,13 @@ const (
 	SELECT name, container_type,
 		(SELECT * FROM c),
 		(SELECT * FROM ca),
-		(select * from e) from metrics where id = $4`
+		(select * from e) FROM metrics WHERE id = $4`
 	sqlAlarmGetNotficationInfoWithoutExpression = `WITH 
 		c AS (SELECT name FROM containers WHERE id = $1),
 		ca AS (SELECT name FROM alarm_categories WHERE id = $2),
 	SELECT name, container_type,
 		(SELECT * FROM c),
-		(SELECT * FROM ca) from metrics where id = $3`
+		(SELECT * FROM ca) FROM metrics WHERE id = $3`
 )
 
 func (pg *PG) GetAlarmNotificationInfo(ctx context.Context, metricId int64, containerId int32, categoryId int32, expressionId int32) (info models.AlarmNotificationInfo, err error) {

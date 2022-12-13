@@ -1,7 +1,6 @@
 package alarm
 
 import (
-	"context"
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
@@ -69,6 +68,9 @@ func (a *Alarm) listenCheckMetricsAlarm() {
 }
 
 func (a *Alarm) listenMetricAlarmed() {
+	direct := strconv.Itoa(int(types.ATDirect))
+	trapFlexLegacy := strconv.Itoa(int(types.ATTrapFlexLegacy))
+
 	msgs, err := a.amqph.Listen(amqp.QueueAlarmMetricAlarmed, amqp.ExchangeMetricAlarmed)
 	if err != nil {
 		a.log.Fatal("Fail to listen to metric alarmed", logger.ErrField(err))
@@ -77,29 +79,14 @@ func (a *Alarm) listenMetricAlarmed() {
 	for {
 		select {
 		case d := <-msgs:
-			var alarm models.DirectAlarm
-			err := amqp.Decode(d.Body, &alarm)
-			if err != nil {
-				a.log.Error("Fail to decode amqp body", logger.ErrField(err))
-				continue
+			switch d.Type {
+			case direct:
+				go a.handleDirectMetricAlarm(d)
+			case trapFlexLegacy:
+				go a.handleFlexLegacyTrapAlarm(d)
+			default:
+				a.log.Warn("Unsupported amqp message type on metrics alarmed listener, type: " + d.Type)
 			}
-
-			exists, category, err := a.pg.GetAlarmCategorySimplified(context.Background(), alarm.AlarmCategoryId)
-			if err != nil {
-				a.log.Error("Fail to get alarm category", logger.ErrField(err))
-				continue
-			}
-			if !exists {
-				a.log.Warn("Received metric alarm, but alarm category does not exists, id: " + strconv.Itoa(int(alarm.AlarmCategoryId)))
-				continue
-			}
-
-			go a.processAlarm(MetricAlarmed{
-				MetricId:    alarm.MetricId,
-				ContainerId: alarm.ContainerId,
-				Category:    category,
-				Value:       alarm.Value,
-			}, types.ATDirect)
 		case <-a.Done():
 			return
 		}
@@ -107,6 +94,8 @@ func (a *Alarm) listenMetricAlarmed() {
 }
 
 func (a *Alarm) listenMetricsAlarmed() {
+	direct := strconv.Itoa(int(types.ATDirect))
+
 	msgs, err := a.amqph.Listen(amqp.QueueAlarmMetricsAlarmed, amqp.ExchangeMetricsAlarmed)
 	if err != nil {
 		a.log.Fatal("Fail to listen to metrics alarmed", logger.ErrField(err))
@@ -115,37 +104,11 @@ func (a *Alarm) listenMetricsAlarmed() {
 	for {
 		select {
 		case d := <-msgs:
-			var alarms []models.DirectAlarm
-			err := amqp.Decode(d.Body, &alarms)
-			if err != nil {
-				a.log.Error("Fail to decode amqp body", logger.ErrField(err))
-				continue
-			}
-
-			categoriesIds := make([]int32, len(alarms))
-			for i, a := range alarms {
-				categoriesIds[i] = int32(a.AlarmCategoryId)
-			}
-
-			categories, err := a.pg.GetAlarmCategoriesSimplifiedByIds(context.Background(), categoriesIds)
-			if err != nil {
-				a.log.Error("Fail to get categories ids", logger.ErrField(err))
-				continue
-			}
-
-			for _, alarm := range alarms {
-				for _, c := range categories {
-					if c.Id != int32(alarm.AlarmCategoryId) {
-						continue
-					}
-
-					go a.processAlarm(MetricAlarmed{
-						MetricId:    alarm.MetricId,
-						ContainerId: alarm.ContainerId,
-						Category:    c,
-						Value:       alarm.Value,
-					}, types.ATDirect)
-				}
+			switch d.Type {
+			case direct:
+				go a.handleDirectMetricsAlarm(d)
+			default:
+				a.log.Warn("Unsupported amqp message type on metrics alarmed listener, type: " + d.Type)
 			}
 		case <-a.Done():
 			return

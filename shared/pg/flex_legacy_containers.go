@@ -29,11 +29,11 @@ type FlexLegacyContainersGetSNMPConfigResponse struct {
 	Container models.FlexLegacyContainer
 }
 
-type FlexLegacyContainerExistsContainerTargetPortAndSerialNumberRespose struct {
+type FlexLegacyContainerExistsContainerTargetAndSerialNumberRespose struct {
 	// ContainerExists is the container existence.
 	ContainerExists bool
-	// TargetPortExists is the target port combination existence.
-	TargetPortExists bool
+	// TargetExists is the target existence.
+	TargetExists bool
 	// SerialNumberExists is the serial-number existence.
 	SerialNumberExists bool
 }
@@ -50,12 +50,13 @@ const (
 		FROM flex_legacy_containers WHERE container_id = $1;`
 	sqlFlexLegacyContainersGetSNMPConfig = `SELECT
 		target, port, transport, community, retries, max_oids, timeout FROM flex_legacy_containers WHERE container_id = $1;`
-	sqlFlexLegacyContainersExistsContainerTargetPortAndSerialNumber = `SELECT
+	sqlFlexLegacyContainersExistsContainerTargetAndSerialNumber = `SELECT
 		EXISTS (SELECT 1 FROM containers WHERE id = $1),
-		EXISTS (SELECT 1 FROM flex_legacy_containers WHERE target = $2 AND port = $3 AND container_id != $1),
-		EXISTS (SELECT 1 FROM flex_legacy_containers WHERE serial_number = $4 AND container_id != $1);`
-	sqlFlexLegacyContainersGetTarget = `SELECT target FROM flex_legacy_containers WHERE container_id = $1;`
-	sqlFlexLegacyContainersCount     = `SELECT COUNT(*) FROM flex_legacy_containers;`
+		EXISTS (SELECT 1 FROM flex_legacy_containers WHERE target = $2 AND container_id != $1),
+		EXISTS (SELECT 1 FROM flex_legacy_containers WHERE serial_number = $3 AND container_id != $1);`
+	sqlFlexLegacyContainersGetTarget     = `SELECT target FROM flex_legacy_containers WHERE container_id = $1;`
+	sqlFlexLegacyContainersCount         = `SELECT COUNT(*) FROM flex_legacy_containers;`
+	sqlFlexLegacyContainersGetIdByTarget = `SELECT container_id FROM flex_legacy_containers WHERE target = $1;`
 )
 
 func (pg *PG) CreateFlexLegacyContainer(ctx context.Context, container models.Container[models.FlexLegacyContainer]) (id int32, err error) {
@@ -201,10 +202,10 @@ func (pg *PG) GetFlexLegacyContainerSNMPConfig(ctx context.Context, id int32) (r
 	return r, nil
 }
 
-func (pg *PG) ExistsFlexLegacyContainerTargetPortAndSerialNumber(ctx context.Context, id int32, target string, port int32, serialNumber int32) (r FlexLegacyContainerExistsContainerTargetPortAndSerialNumberRespose, err error) {
-	return r, pg.db.QueryRowContext(ctx, sqlFlexLegacyContainersExistsContainerTargetPortAndSerialNumber, id, target, port, serialNumber).Scan(
+func (pg *PG) ExistsFlexLegacyContainerTargetPortAndSerialNumber(ctx context.Context, id int32, target string, serialNumber int32) (r FlexLegacyContainerExistsContainerTargetAndSerialNumberRespose, err error) {
+	return r, pg.db.QueryRowContext(ctx, sqlFlexLegacyContainersExistsContainerTargetAndSerialNumber, id, target, serialNumber).Scan(
 		&r.ContainerExists,
-		&r.TargetPortExists,
+		&r.TargetExists,
 		&r.SerialNumberExists,
 	)
 }
@@ -222,4 +223,15 @@ func (pg *PG) GetFlexLegacyContainerTarget(ctx context.Context, id int32) (exist
 
 func (pg *PG) CountFlexLegacyContainers(ctx context.Context) (n int, err error) {
 	return n, pg.db.QueryRowContext(ctx, sqlFlexLegacyContainersCount).Scan(&n)
+}
+
+func (pg *PG) GetFlexLegacyContainerIdByTargetPort(ctx context.Context, target string) (exists bool, id int32, err error) {
+	err = pg.db.QueryRowContext(ctx, sqlFlexLegacyContainersGetIdByTarget, target).Scan(&id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, id, nil
+		}
+		return false, id, err
+	}
+	return true, id, nil
 }

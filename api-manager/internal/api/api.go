@@ -5,6 +5,7 @@ import (
 	"fmt"
 	stdlog "log"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
@@ -18,13 +19,16 @@ import (
 	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/fernandotsda/nemesys/shared/rdb"
 	"github.com/fernandotsda/nemesys/shared/service"
+	"github.com/fernandotsda/nemesys/shared/trap"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/rabbitmq/amqp091-go"
 )
 
 type API struct {
 	service.Tools
-
+	// amqpConn is the amqp connection.
+	amqpConn *amqp091.Connection
 	// Amqph is the amqp handler.
 	Amqph *amqph.Amqph
 	// Postgresql handler.
@@ -48,6 +52,11 @@ type API struct {
 	// servicesStatus are the current status of all registered
 	// services by the service manager.
 	servicesStatus []service.ServiceStatus
+	// trapHandlers are the trap handlers.
+	trapsListeners []*trap.Trap
+	// trapHandlersMU is the mutex for create
+	// and remove trap listeners.
+	trapHandlersMU sync.Mutex
 }
 
 func New(serviceNumber int) service.Service {
@@ -103,6 +112,7 @@ func New(serviceNumber int) service.Service {
 	validate := validator.New()
 	pg := pg.New()
 	api := &API{
+		amqpConn:         amqpConn,
 		Tools:            tools,
 		PG:               pg,
 		Influx:           &influxClient,
@@ -115,6 +125,7 @@ func New(serviceNumber int) service.Service {
 		UserPWBcryptCost: bcryptCost,
 		Counter:          counter.New(&influxClient, pg, log, time.Second*10),
 		servicesStatus:   []service.ServiceStatus{},
+		trapsListeners:   []*trap.Trap{},
 	}
 
 	err = api.createDefaultUser(context.Background())
@@ -127,6 +138,7 @@ func New(serviceNumber int) service.Service {
 
 func (api *API) Run() {
 	go api.servicesStatusListener()
+	go api.startTrapListeners()
 
 	url := fmt.Sprintf("%s:%s", env.APIManagerHost, env.APIManagerPort)
 	api.Log.Info("Server listening to: " + url)

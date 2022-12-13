@@ -18,7 +18,7 @@ type MetricAlarmed struct {
 	Value                 any
 }
 
-func (a *Alarm) processAlarm(metricAlarmed MetricAlarmed, alarmType types.AlarmType) {
+func (a *Alarm) processAlarm(metricAlarmed MetricAlarmed, alarmType types.AlarmType, timestamp time.Time) {
 	ctx := context.Background()
 
 	exists, state, err := a.pg.GetAlarmState(ctx, metricAlarmed.MetricId)
@@ -26,7 +26,7 @@ func (a *Alarm) processAlarm(metricAlarmed MetricAlarmed, alarmType types.AlarmT
 		a.log.Error("Fail to get alarm state", logger.ErrField(err))
 		return
 	}
-	state.LastUpdate = time.Now().Unix()
+	state.LastUpdate = timestamp.Unix()
 
 	// notify as soon as possible
 	if (exists && state.State == types.ASNotAlarmed) || (!exists) {

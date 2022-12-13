@@ -134,7 +134,7 @@ var sqlCommands []string = []string{
 	// Create Flex Legacy container
 	`CREATE TABLE flex_legacy_containers (
 		container_id INT4 UNIQUE NOT NULL,
-		target VARCHAR (15) NOT NULL,
+		target VARCHAR (15) UNIQUE NOT NULL,
 		port INT4 NOT NULL,
 		transport VARCHAR (3) NOT NULL,
 		community VARCHAR (50) NOT NULL,
@@ -152,9 +152,6 @@ var sqlCommands []string = []string{
 				ON DELETE CASCADE
 				DEFERRABLE INITIALLY DEFERRED
 	);`,
-
-	// Create index on target and port
-	`CREATE UNIQUE INDEX flc_target_port_index ON flex_legacy_containers (target, port);`,
 
 	// Create flex legacy datalog download registry
 	`CREATE TABLE flex_legacy_datalog_download_registry (
@@ -399,6 +396,20 @@ var sqlCommands []string = []string{
 		trap_id INT2 UNIQUE NOT NULL,
 		category_id INT4 NOT NULL,
 		CONSTRAINT tcr_fk_category_id
+			FOREIGN KEY(category_id)
+				REFERENCES alarm_categories(id)
+				ON DELETE CASCADE
+	);`,
+
+	// Create trap listeners table
+	`CREATE TABLE trap_listeners (
+		id SERIAL4 PRIMARY KEY,
+		host VARCHAR (255) NOT NULL,
+		port INT4 NOT NULL,
+		category_id INT4 NOT NULL,
+		community VARCHAR (50) NOT NULL,
+		transport VARCHAR (3) NOT NULL,
+		CONSTRAINT tl_fk_category_id
 			FOREIGN KEY(category_id)
 				REFERENCES alarm_categories(id)
 				ON DELETE CASCADE

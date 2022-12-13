@@ -39,7 +39,6 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 		r, err := api.PG.ExistsFlexLegacyContainerTargetPortAndSerialNumber(ctx,
 			-1,
 			container.Protocol.Target,
-			container.Protocol.Port,
 			container.Protocol.SerialNumber,
 		)
 		if err != nil {
@@ -50,8 +49,8 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to check if container, target port combination and serial-number exists", logger.ErrField(err))
 			return
 		}
-		if r.TargetPortExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTargetPortExists))
+		if r.TargetExists {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTargetExists))
 			return
 		}
 		if r.SerialNumberExists {

@@ -2,6 +2,7 @@ package pg
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/fernandotsda/nemesys/shared/models"
 )
@@ -44,6 +45,8 @@ const (
 		m.id, m.type, m.data_policy_id, f.port, f.port_type 
 		FROM metrics m FULL JOIN flex_legacy_metrics f ON m.id = f.metric_id
 		WHERE m.enabled = true AND m.container_id = $1 AND m.dhs_enabled = true;`
+	sqlFlexLegacyMetricsGetIdByPortPortType = `SELECT m.id FROM metrics m LEFT JOIN flex_legacy_metrics fm ON m.id = fm.metric_id 
+		WHERE m.container_id = $1 AND fm.port = $2 AND fm.port_type = $3`
 )
 
 func (pg *PG) CreateFlexLegacyMetric(ctx context.Context, metric models.Metric[models.FlexLegacyMetric]) (id int64, err error) {
@@ -191,4 +194,15 @@ func (pg *PG) GetFlexLegacyMetricsRequests(ctx context.Context, containerId int3
 		metrics = append(metrics, m)
 	}
 	return metrics, nil
+}
+
+func (pg *PG) GetFlexLegacyMetricByPortPortType(ctx context.Context, containerId int32, port int16, portType int16) (exists bool, id int64, err error) {
+	err = pg.db.QueryRowContext(ctx, sqlFlexLegacyMetricsGetIdByPortPortType, containerId, port, portType).Scan(&id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, id, nil
+		}
+		return false, id, err
+	}
+	return true, id, nil
 }

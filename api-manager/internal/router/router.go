@@ -20,6 +20,7 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/roles"
 	"github.com/fernandotsda/nemesys/api-manager/internal/status"
 	"github.com/fernandotsda/nemesys/api-manager/internal/team"
+	"github.com/fernandotsda/nemesys/api-manager/internal/trap"
 	"github.com/fernandotsda/nemesys/api-manager/internal/uauth"
 	"github.com/fernandotsda/nemesys/api-manager/internal/user"
 
@@ -258,6 +259,14 @@ func Set(s service.Service) {
 		requestWhitelist.GET("/", whitelist.GetHandler(api))
 		requestWhitelist.POST("/", whitelist.CreateHandler(api))
 		requestWhitelist.DELETE("/:userId", whitelist.DeleteHandler(api))
+	}
+
+	trapListeners := r.Group("/trap-listeners", middleware.Protect(api, roles.Admin))
+	{
+		trapListeners.GET("/", trap.MGetHandler(api))
+		trapListeners.POST("/", trap.CreateHandler(api))
+		trapListeners.PATCH("/:listenerId", trap.UpdateHandler(api))
+		trapListeners.DELETE("/:listenerId", trap.DeleteHandler(api))
 	}
 
 	// metric data

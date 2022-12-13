@@ -1,6 +1,10 @@
 package models
 
-import "github.com/fernandotsda/nemesys/shared/types"
+import (
+	"time"
+
+	"github.com/fernandotsda/nemesys/shared/types"
+)
 
 type AlarmProfile struct {
 	// Id is the alarm profile unique identifier.
@@ -102,6 +106,23 @@ type DirectAlarm struct {
 	AlarmCategoryId int32
 	// Value is the alarmed value.
 	Value any
+}
+
+type FlexLegacyTrapAlarm struct {
+	// Timestamp is the trap timestamp.
+	Timestamp time.Time
+	// Value is the alarmed value.
+	Value any
+	// PortType is the flex port type
+	PortType int16
+	// Port is the flex port
+	Port int16
+	// Description is the alarm description.
+	Description string
+	// ClientIp is the client ip.
+	ClientIp string
+	// AlarmCategoryId is the alarm category id.
+	AlarmCategoryId int32
 }
 
 type TrapCategoryRelation struct {
