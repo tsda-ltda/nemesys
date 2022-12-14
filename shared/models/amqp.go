@@ -35,7 +35,7 @@ func (p *AMQPPlumber) Send(delivery amqp091.Delivery) {
 
 // Listen creates and listen to a response.
 func (p *AMQPPlumber) Listen(key string, timeout time.Duration) (amqp091.Delivery, error) {
-	ch := make(chan amqp091.Delivery)
+	ch := make(chan amqp091.Delivery, 1)
 	p.channels.Store(key, ch)
 	defer p.channels.Delete(key)
 	select {

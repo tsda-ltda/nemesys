@@ -7,6 +7,7 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -49,7 +50,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to delete data policy from influxdb", logger.ErrField(err))
 			return
 		}
-		api.Amqph.NotifyDataPolicyDeleted(int16(id))
+		t.NotifyDataPolicyDeleted(api.Amqph, int16(id))
 
 		api.Log.Info("Data policy deleted, id: " + fmt.Sprint(id))
 		c.Status(http.StatusNoContent)
