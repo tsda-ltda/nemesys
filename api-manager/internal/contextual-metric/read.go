@@ -25,7 +25,7 @@ func Get(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.GetContextualMetric(ctx, int64(id))
+		exists, metric, err := api.PG.GetContextualMetric(ctx, int64(id))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -35,12 +35,12 @@ func Get(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		if !r.Exists {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, r.ContextualMetric)
+		c.JSON(http.StatusOK, metric)
 	}
 }
 

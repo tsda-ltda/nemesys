@@ -7,14 +7,6 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
-// DataPolicyGetResponse is the response for Get handler.
-type DataPolicyGetResponse struct {
-	// Exists is the data policy existence.
-	Exists bool
-	// DataPolicy is the data policy.
-	DataPolicy models.DataPolicy
-}
-
 const (
 	sqlDPCreate = `INSERT INTO data_policies (descr, use_aggr, retention, aggr_retention, aggr_interval, aggr_fn) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;`
 	sqlDPUpdate = `UPDATE data_policies SET (descr, retention, use_aggr, aggr_retention, agg_interval, aggr_fn) = ($1, $2, $3, $4, $5, $6) WHERE id = $7;`
@@ -78,28 +70,28 @@ func (pg *PG) DeleteDataPolicy(ctx context.Context, id int16) (exists bool, err 
 	return rowsAffected != 0, err
 }
 
-func (pg *PG) GetDataPolicy(ctx context.Context, id int16) (r DataPolicyGetResponse, err error) {
+func (pg *PG) GetDataPolicy(ctx context.Context, id int16) (exists bool, dp models.DataPolicy, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlDPMGet)
 	if err != nil {
-		return r, err
+		return false, dp, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.DataPolicy.Id,
-			&r.DataPolicy.Descr,
-			&r.DataPolicy.Retention,
-			&r.DataPolicy.UseAggr,
-			&r.DataPolicy.AggrRetention,
-			&r.DataPolicy.AggrInterval,
-			&r.DataPolicy.AggrFn,
+			&dp.Id,
+			&dp.Descr,
+			&dp.Retention,
+			&dp.UseAggr,
+			&dp.AggrRetention,
+			&dp.AggrInterval,
+			&dp.AggrFn,
 		)
 		if err != nil {
-			return r, err
+			return false, dp, err
 		}
-		r.Exists = true
+		exists = true
 	}
-	return r, err
+	return exists, dp, err
 }
 
 func (pg *PG) GetDataPolicies(ctx context.Context) (dps []models.DataPolicy, err error) {

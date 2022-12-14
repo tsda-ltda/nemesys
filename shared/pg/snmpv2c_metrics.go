@@ -6,20 +6,6 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
-type SNMPv2cMetricGetResponse struct {
-	// Exstis is the SNMP metric existence.
-	Exists bool
-	// Metric is the metric.
-	Metric models.Metric[models.SNMPMetric]
-}
-
-type SNMPv2cMetricGetProtocolResponse struct {
-	// Exstis is the SNMP metric existence.
-	Exists bool
-	// Metric is the metric.
-	Metric models.SNMPMetric
-}
-
 const (
 	sqlSNMPMetricsGet      = `SELECT oid FROM snmpv2c_metrics WHERE metric_id = $1;`
 	sqlSNMPMetricsGetByIds = `SELECT metric_id, oid FROM snmpv2c_metrics WHERE metric_id = ANY ($1);`
@@ -69,36 +55,38 @@ func (pg *PG) UpdateSNMPv2cMetric(ctx context.Context, m models.Metric[models.SN
 	return rowsAffected != 0, c.Commit()
 }
 
-func (pg *PG) GetSNMPv2cMetric(ctx context.Context, id int64) (r SNMPv2cMetricGetResponse, err error) {
-	baseR, err := pg.GetMetric(ctx, id)
+func (pg *PG) GetSNMPv2cMetric(ctx context.Context, id int64) (exists bool, metric models.Metric[models.SNMPMetric], err error) {
+	exists, base, err := pg.GetMetric(ctx, id)
 	if err != nil {
-		return r, err
+		return false, metric, err
 	}
-	protocolR, err := pg.GetSNMPv2cMetricProtocol(ctx, id)
+	if !exists {
+		return false, metric, nil
+	}
+	exists, protocol, err := pg.GetSNMPv2cMetricProtocol(ctx, id)
 	if err != nil {
-		return r, err
+		return false, metric, err
 	}
-	r.Exists = baseR.Exists
-	r.Metric.Base = baseR.Metric
-	r.Metric.Protocol = protocolR.Metric
-	return r, err
+	metric.Base = base
+	metric.Protocol = protocol
+	return exists, metric, err
 }
 
-func (pg *PG) GetSNMPv2cMetricProtocol(ctx context.Context, id int64) (r SNMPv2cMetricGetProtocolResponse, err error) {
+func (pg *PG) GetSNMPv2cMetricProtocol(ctx context.Context, id int64) (exists bool, metric models.SNMPMetric, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlSNMPMetricsGet, id)
 	if err != nil {
-		return r, err
+		return false, metric, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err = rows.Scan(&r.Metric.OID)
+		err = rows.Scan(&metric.OID)
 		if err != nil {
-			return r, err
+			return exists, metric, err
 		}
-		r.Metric.Id = id
-		r.Exists = true
+		metric.Id = id
+		exists = true
 	}
-	return r, nil
+	return exists, metric, nil
 }
 
 func (pg *PG) GetSNMPv2cMetricsByIds(ctx context.Context, ids []int64) (metrics []models.SNMPMetric, err error) {

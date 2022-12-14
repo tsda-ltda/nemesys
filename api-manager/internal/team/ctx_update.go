@@ -55,7 +55,7 @@ func UpdateContextHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.ExistsTeamAndContextIdent(ctx, int32(teamId), context.Ident, int32(ctxId))
+		teamExists, identExists, err := api.PG.ExistsTeamAndContextIdent(ctx, int32(teamId), context.Ident, int32(ctxId))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -64,11 +64,11 @@ func UpdateContextHandler(api *api.API) func(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		if !r.TeamExists {
+		if !teamExists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTeamNotFound))
 			return
 		}
-		if r.IdentExists {
+		if identExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}

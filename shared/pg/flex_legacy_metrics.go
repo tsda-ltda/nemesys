@@ -7,34 +7,6 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
-type FlexLegacyMetricGetResponse struct {
-	// Exists is the metric existence.
-	Exists bool
-	// Metric is the metric.
-	Metric models.Metric[models.FlexLegacyMetric]
-}
-
-type FlexLegacyMetricGetProtocolResponse struct {
-	// Exists is the metric existence.
-	Exists bool
-	// Metric is the metric.
-	Metric models.FlexLegacyMetric
-}
-
-type FlexLegacyMetricsGetAsSNMPMetricResponse struct {
-	// Exists is the metric existence.
-	Exists bool
-	// Metric is the metric.
-	Metric models.SNMPMetric
-}
-
-type FlexLegacyMetricsGetByIdsAsSNMPMetricResponse struct {
-	// Exists is the metric existence.
-	Exists bool
-	// Metric is the metric.
-	Metric models.SNMPMetric
-}
-
 const (
 	sqlFlexLegacyMetricsCreate               = `INSERT INTO flex_legacy_metrics (metric_id, oid, port, port_type) VALUES($1, $2, $3, $4);`
 	sqlFlexLegacyMetricsUpdate               = `UPDATE flex_legacy_metrics SET (oid, port, port_type) = ($2, $3, $4) WHERE metric_id = $1;`
@@ -99,63 +71,65 @@ func (pg *PG) UpdateFlexLegacyMetric(ctx context.Context, metric models.Metric[m
 	return rowsAffected != 0, c.Commit()
 }
 
-func (pg *PG) GetFlexLegacyMetric(ctx context.Context, id int64) (r FlexLegacyMetricGetResponse, err error) {
-	baseR, err := pg.GetMetric(ctx, id)
+func (pg *PG) GetFlexLegacyMetric(ctx context.Context, id int64) (exists bool, metric models.Metric[models.FlexLegacyMetric], err error) {
+	exists, base, err := pg.GetMetric(ctx, id)
 	if err != nil {
-		return r, err
+		return exists, metric, err
 	}
-	protocolR, err := pg.GetFlexLegacyMetricProtocol(ctx, id)
+	if !exists {
+		return false, metric, nil
+	}
+	exists, protocol, err := pg.GetFlexLegacyMetricProtocol(ctx, id)
 	if err != nil {
-		return r, err
+		return exists, metric, err
 	}
-	r.Exists = baseR.Exists
-	r.Metric.Base = baseR.Metric
-	r.Metric.Protocol = protocolR.Metric
-	return r, nil
+	metric.Base = base
+	metric.Protocol = protocol
+	return exists, metric, nil
 }
 
-func (pg *PG) GetFlexLegacyMetricProtocol(ctx context.Context, id int64) (r FlexLegacyMetricGetProtocolResponse, err error) {
+func (pg *PG) GetFlexLegacyMetricProtocol(ctx context.Context, id int64) (exists bool, metric models.FlexLegacyMetric, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlFlexLegacyMetricsGetProtocol, id)
 	if err != nil {
-		return r, err
+		return false, metric, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.Metric.OID,
-			&r.Metric.Port,
-			&r.Metric.PortType,
+			&metric.OID,
+			&metric.Port,
+			&metric.PortType,
 		)
 		if err != nil {
-			return r, err
+			return false, metric, err
 		}
-		r.Metric.Id = id
-		r.Exists = true
+		metric.Id = id
+		exists = true
 	}
-	return r, nil
+	return exists, metric, nil
 }
 
 func (pg *PG) DeleteFlexLegacyMetric(ctx context.Context, id int64) (exists bool, err error) {
 	return pg.DeleteMetric(ctx, id)
 }
 
-func (pg *PG) GetFlexLegacyMetricAsSNMPMetric(ctx context.Context, id int64) (r FlexLegacyMetricsGetAsSNMPMetricResponse, err error) {
+func (pg *PG) GetFlexLegacyMetricAsSNMPMetric(ctx context.Context, id int64) (exists bool, metric models.SNMPMetric, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlFlexLegacyMetricsGetAsSNMPMetric, id)
 	if err != nil {
-		return r, err
+		return false, metric, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.Metric.OID,
+			&metric.OID,
 		)
 		if err != nil {
-			return r, err
+			return false, metric, err
 		}
-		r.Metric.Id = id
-		r.Exists = true
+		metric.Id = id
+		exists = true
 	}
-	return r, nil
+	return exists, metric, nil
 }
 
 func (pg *PG) FlexLegacyMetricsByIdsAsSNMPMetric(ctx context.Context, ids []int64) (metrics []models.SNMPMetric, err error) {

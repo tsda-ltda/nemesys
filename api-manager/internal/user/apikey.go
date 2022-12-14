@@ -51,7 +51,7 @@ func CreateAPIKeyHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.GetUserRole(ctx, int32(userId))
+		exists, role, err := api.PG.GetUserRole(ctx, int32(userId))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -60,11 +60,11 @@ func CreateAPIKeyHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to get user role on database", logger.ErrField(err))
 			return
 		}
-		if !r.Exists {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
 			return
 		}
-		if userId != int64(meta.UserId) && r.Role >= int16(meta.Role) {
+		if userId != int64(meta.UserId) && role >= int16(meta.Role) {
 			c.Status(http.StatusForbidden)
 			return
 		}
@@ -83,7 +83,7 @@ func CreateAPIKeyHandler(api *api.API) func(c *gin.Context) {
 
 		var apikeyMeta auth.APIKeyMeta
 		apikeyMeta.UserId = int32(userId)
-		apikeyMeta.Role = uint8(r.Role)
+		apikeyMeta.Role = uint8(role)
 		apikeyMeta.Id = id
 		apikey, err := api.Auth.NewAPIKey(ctx, apikeyMeta, time.Duration(apikeyInfo.TTL)*time.Hour)
 		if err != nil {
@@ -141,7 +141,7 @@ func DeleteAPIKeyHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.GetUserRole(ctx, int32(userId))
+		exists, role, err := api.PG.GetUserRole(ctx, int32(userId))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -150,11 +150,11 @@ func DeleteAPIKeyHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to get user role on database", logger.ErrField(err))
 			return
 		}
-		if !r.Exists {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
 			return
 		}
-		if userId != int64(meta.UserId) && r.Role >= int16(meta.Role) {
+		if userId != int64(meta.UserId) && role >= int16(meta.Role) {
 			c.Status(http.StatusForbidden)
 			return
 		}
@@ -219,7 +219,7 @@ func MGetAPIKeyHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.GetUserRole(ctx, int32(userId))
+		exists, role, err := api.PG.GetUserRole(ctx, int32(userId))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -228,12 +228,12 @@ func MGetAPIKeyHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to get user role on database", logger.ErrField(err))
 			return
 		}
-		if !r.Exists {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
 			return
 		}
 
-		if userId != int64(meta.UserId) && r.Role >= int16(meta.Role) {
+		if userId != int64(meta.UserId) && role >= int16(meta.Role) {
 			c.Status(http.StatusForbidden)
 			return
 		}

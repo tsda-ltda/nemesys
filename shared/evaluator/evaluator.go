@@ -32,16 +32,16 @@ func (e *Evaluator) Evaluate(v any, metricId int64, mt types.MetricType) (any, e
 	}
 
 	if !cacheRes.Exists {
-		r, err := e.pgConn.GetMetricEvaluableExpression(ctx, metricId)
+		exists, exp, err := e.pgConn.GetMetricEvaluableExpression(ctx, metricId)
 		if err != nil {
 			return nil, err
 		}
-		if !r.Exists {
+		if !exists {
 			return nil, errors.New("fail to get evaluable expression, metric does not exists")
 		}
 
-		expression = r.Expression
-		err = e.cache.SetMetricEvExpression(ctx, metricId, expression)
+		expression = exp
+		err = e.cache.SetMetricEvExpression(ctx, metricId, exp)
 		if err != nil {
 			return nil, err
 		}

@@ -25,7 +25,7 @@ func GetBasicHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.GetBasicMetric(ctx, id)
+		exists, metric, err := api.PG.GetBasicMetric(ctx, id)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -34,11 +34,11 @@ func GetBasicHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to get flex legacy metric", logger.ErrField(err))
 			return
 		}
-		if !r.Exists {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, r.Metric)
+		c.JSON(http.StatusOK, metric)
 	}
 }

@@ -24,7 +24,7 @@ func GetBasicHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.GetBasicContainer(ctx, int32(id))
+		exists, container, err := api.PG.GetBasicContainer(ctx, int32(id))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -33,11 +33,11 @@ func GetBasicHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to get basic container", logger.ErrField(err))
 			return
 		}
-		if !r.Exists {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, r.Container)
+		c.JSON(http.StatusOK, container)
 	}
 }

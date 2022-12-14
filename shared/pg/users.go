@@ -6,14 +6,6 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
-// UsersExistsUsernameEmailResponse is the response for ExistsUsernameEmailResponse handler.
-type UsersExistsUsernameEmailResponse struct {
-	// UsernameExists is the username existence.
-	UsernameExists bool
-	// EmailExists is the email existence.
-	EmailExists bool
-}
-
 // UsersLoginInfoResponse is the response for GetLoginInfo handler.
 type UsersLoginInfoResponse struct {
 	// Exists is the user existence.
@@ -24,22 +16,6 @@ type UsersLoginInfoResponse struct {
 	Role int
 	// Password is the user password.
 	Password string
-}
-
-// UsersGetWithoutPWResponse is the response for GetWithoutPW handler.
-type UsersGetWithoutPWResponse struct {
-	// Exists is the user existence.
-	Exists bool
-	// User is the user.
-	User models.UserWithoutPW
-}
-
-// UsersGetRoleResponse is the response for GetRole handler.
-type UsersGetRoleResponse struct {
-	// Exists is the user existence.
-	Exists bool
-	// Role is the user role
-	Role int16
 }
 
 const (
@@ -73,10 +49,10 @@ func (pg *PG) UsernameExists(ctx context.Context, username string) (exists bool,
 	return exists, pg.db.QueryRowContext(ctx, sqlUsersExistsUsername, username).Scan(&exists)
 }
 
-func (pg *PG) UsernameAndEmailExists(ctx context.Context, username string, email string, userId int32) (r UsersExistsUsernameEmailResponse, err error) {
-	return r, pg.db.QueryRowContext(ctx, sqlUsersExistsUsernameEmail, userId, username, email).Scan(
-		&r.UsernameExists,
-		&r.EmailExists,
+func (pg *PG) UsernameAndEmailExists(ctx context.Context, username string, email string, userId int32) (usernameExists bool, emailExists bool, err error) {
+	return usernameExists, emailExists, pg.db.QueryRowContext(ctx, sqlUsersExistsUsernameEmail, userId, username, email).Scan(
+		&usernameExists,
+		&emailExists,
 	)
 }
 
@@ -111,26 +87,26 @@ func (pg *PG) GetUsersSimplified(ctx context.Context, limit int, offset int) (us
 	return users, nil
 }
 
-func (pg *PG) GetUserWithoutPW(ctx context.Context, id int32) (r UsersGetWithoutPWResponse, err error) {
+func (pg *PG) GetUserWithoutPW(ctx context.Context, id int32) (exists bool, user models.UserWithoutPW, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlUsersGetWithoutPW, id)
 	if err != nil {
-		return r, err
+		return false, user, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.User.Username,
-			&r.User.Name,
-			&r.User.Email,
-			&r.User.Role,
+			&user.Username,
+			&user.Name,
+			&user.Email,
+			&user.Role,
 		)
 		if err != nil {
-			return r, err
+			return false, user, err
 		}
-		r.User.Id = id
-		r.Exists = true
+		user.Id = id
+		exists = true
 	}
-	return r, nil
+	return exists, user, nil
 }
 
 func (pg *PG) UpdateUser(ctx context.Context, user models.User) (exists bool, err error) {
@@ -169,20 +145,20 @@ func (pg *PG) GetLoginInfo(ctx context.Context, username string) (r UsersLoginIn
 	return r, nil
 }
 
-func (pg *PG) GetUserRole(ctx context.Context, id int32) (r UsersGetRoleResponse, err error) {
+func (pg *PG) GetUserRole(ctx context.Context, id int32) (exists bool, role int16, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlUsersGetRole, id)
 	if err != nil {
-		return r, err
+		return exists, role, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err = rows.Scan(&r.Role)
+		err = rows.Scan(&role)
 		if err != nil {
-			return r, err
+			return exists, role, err
 		}
-		r.Exists = true
+		exists = true
 	}
-	return r, nil
+	return exists, role, nil
 }
 
 func (pg *PG) GetUserTeams(ctx context.Context, userId int32, limit int, offset int) (teams []models.Team, err error) {

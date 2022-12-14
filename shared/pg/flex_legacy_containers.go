@@ -8,27 +8,6 @@ import (
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
-type FlexLegacyContainersGetProtocolResponse struct {
-	// Exists is the flex legacy container existence.
-	Exists bool
-	// Container is the flex legacy container.
-	Container models.FlexLegacyContainer
-}
-
-type FlexLegacyContainersGetResponse struct {
-	// Exists is the flex legacy container existence.
-	Exists bool
-	// Container is the flex legacy container.
-	Container models.Container[models.FlexLegacyContainer]
-}
-
-type FlexLegacyContainersGetSNMPConfigResponse struct {
-	// Exists is the flex legacy container existence.
-	Exists bool
-	// Container is the flex legacy container.
-	Container models.FlexLegacyContainer
-}
-
 type FlexLegacyContainerExistsContainerTargetAndSerialNumberRespose struct {
 	// ContainerExists is the container existence.
 	ContainerExists bool
@@ -132,74 +111,76 @@ func (pg *PG) DeleteFlexLegacyContainer(ctx context.Context, id int32) (exists b
 	return pg.DeleteContainer(ctx, id)
 }
 
-func (pg *PG) GetFlexLegacyContainer(ctx context.Context, id int32) (r FlexLegacyContainersGetResponse, err error) {
-	baseR, err := pg.GetContainer(ctx, id, types.CTFlexLegacy)
+func (pg *PG) GetFlexLegacyContainer(ctx context.Context, id int32) (exists bool, container models.Container[models.FlexLegacyContainer], err error) {
+	exists, base, err := pg.GetContainer(ctx, id, types.CTFlexLegacy)
 	if err != nil {
-		return r, err
+		return false, container, err
 	}
-	protocolR, err := pg.GetFlexLegacyContainerProtocol(ctx, id)
+	if !exists {
+		return exists, container, nil
+	}
+	exists, protocol, err := pg.GetFlexLegacyContainerProtocol(ctx, id)
 	if err != nil {
-		return r, err
+		return false, container, err
 	}
-	r.Exists = baseR.Exists
-	r.Container.Base = baseR.Container
-	r.Container.Protocol = protocolR.Container
-	return r, nil
+	container.Base = base
+	container.Protocol = protocol
+	return exists, container, nil
 }
 
-func (pg *PG) GetFlexLegacyContainerProtocol(ctx context.Context, id int32) (r FlexLegacyContainersGetProtocolResponse, err error) {
+func (pg *PG) GetFlexLegacyContainerProtocol(ctx context.Context, id int32) (exists bool, container models.FlexLegacyContainer, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlFlexLegacyContainersGetProtocol, id)
 	if err != nil {
-		return r, err
+		return false, container, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.Container.Target,
-			&r.Container.Port,
-			&r.Container.Transport,
-			&r.Container.Community,
-			&r.Container.Retries,
-			&r.Container.MaxOids,
-			&r.Container.Timeout,
-			&r.Container.SerialNumber,
-			&r.Container.Model,
-			&r.Container.City,
-			&r.Container.Region,
-			&r.Container.Coutry,
+			&container.Target,
+			&container.Port,
+			&container.Transport,
+			&container.Community,
+			&container.Retries,
+			&container.MaxOids,
+			&container.Timeout,
+			&container.SerialNumber,
+			&container.Model,
+			&container.City,
+			&container.Region,
+			&container.Coutry,
 		)
 		if err != nil {
-			return r, err
+			return false, container, err
 		}
-		r.Exists = true
-		r.Container.Id = id
+		exists = true
+		container.Id = id
 	}
-	return r, nil
+	return exists, container, nil
 }
 
-func (pg *PG) GetFlexLegacyContainerSNMPConfig(ctx context.Context, id int32) (r FlexLegacyContainersGetSNMPConfigResponse, err error) {
+func (pg *PG) GetFlexLegacyContainerSNMPConfig(ctx context.Context, id int32) (exists bool, container models.FlexLegacyContainer, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlFlexLegacyContainersGetSNMPConfig, id)
 	if err != nil {
-		return r, err
+		return false, container, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.Container.Target,
-			&r.Container.Port,
-			&r.Container.Transport,
-			&r.Container.Community,
-			&r.Container.Retries,
-			&r.Container.MaxOids,
-			&r.Container.Timeout,
+			&container.Target,
+			&container.Port,
+			&container.Transport,
+			&container.Community,
+			&container.Retries,
+			&container.MaxOids,
+			&container.Timeout,
 		)
 		if err != nil {
-			return r, err
+			return false, container, err
 		}
-		r.Exists = true
-		r.Container.Id = id
+		exists = true
+		container.Id = id
 	}
-	return r, nil
+	return exists, container, nil
 }
 
 func (pg *PG) ExistsFlexLegacyContainerTargetPortAndSerialNumber(ctx context.Context, id int32, target string, serialNumber int32) (r FlexLegacyContainerExistsContainerTargetAndSerialNumberRespose, err error) {

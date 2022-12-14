@@ -40,7 +40,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.ExistsCustomQueryIdent(ctx, -1, cq.Ident)
+		_, identExists, err := api.PG.ExistsCustomQueryIdent(ctx, -1, cq.Ident)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -50,7 +50,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		if r.IdentExists {
+		if identExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}

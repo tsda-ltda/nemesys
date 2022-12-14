@@ -8,20 +8,6 @@ import (
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
-type BaseContainerGetResponse struct {
-	// Exists is the existence of the base container.
-	Exists bool
-	// Container is the base container.
-	Container models.BaseContainer
-}
-
-type BasicContainerGetResponse struct {
-	// Exists is the existence of the base container.
-	Exists bool
-	// Container is the base container.
-	Container models.Container[struct{}]
-}
-
 type BaseContainerGetRTSConfigResponse struct {
 	// Exists is the existence of the base container.
 	Exists bool
@@ -107,50 +93,50 @@ func (pg *PG) DeleteContainer(ctx context.Context, id int32) (exists bool, err e
 	return rowsAffected != 0, err
 }
 
-func (pg *PG) GetBasicContainer(ctx context.Context, id int32) (r BasicContainerGetResponse, err error) {
+func (pg *PG) GetBasicContainer(ctx context.Context, id int32) (exists bool, container models.Container[struct{}], err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlContainersGet, id, types.CTBasic)
 	if err != nil {
-		return r, err
+		return false, container, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.Container.Base.Name,
-			&r.Container.Base.Descr,
-			&r.Container.Base.Type,
-			&r.Container.Base.Enabled,
-			&r.Container.Base.RTSPullingInterval,
+			&container.Base.Name,
+			&container.Base.Descr,
+			&container.Base.Type,
+			&container.Base.Enabled,
+			&container.Base.RTSPullingInterval,
 		)
 		if err != nil {
-			return r, err
+			return false, container, err
 		}
-		r.Container.Base.Id = id
-		r.Exists = true
+		container.Base.Id = id
+		exists = true
 	}
-	return r, nil
+	return exists, container, nil
 }
 
-func (pg *PG) GetContainer(ctx context.Context, id int32, t types.ContainerType) (r BaseContainerGetResponse, err error) {
+func (pg *PG) GetContainer(ctx context.Context, id int32, t types.ContainerType) (exists bool, container models.BaseContainer, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlContainersGet, id, t)
 	if err != nil {
-		return r, err
+		return false, container, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.Container.Name,
-			&r.Container.Descr,
-			&r.Container.Type,
-			&r.Container.Enabled,
-			&r.Container.RTSPullingInterval,
+			&container.Name,
+			&container.Descr,
+			&container.Type,
+			&container.Enabled,
+			&container.RTSPullingInterval,
 		)
 		if err != nil {
-			return r, err
+			return false, container, err
 		}
-		r.Container.Id = id
-		r.Exists = true
+		container.Id = id
+		exists = true
 	}
-	return r, nil
+	return exists, container, nil
 }
 
 func (pg *PG) GetContainers(ctx context.Context, t types.ContainerType, limit int, offset int) (containers []models.BaseContainer, err error) {
@@ -178,40 +164,40 @@ func (pg *PG) GetContainers(ctx context.Context, t types.ContainerType, limit in
 	return containers, nil
 }
 
-func (pg *PG) GetContainerRTSConfig(ctx context.Context, id int32) (r BaseContainerGetRTSConfigResponse, err error) {
+func (pg *PG) GetContainerRTSConfig(ctx context.Context, id int32) (exists bool, config models.RTSContainerConfig, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlContainersGetRTSInfo, id)
 	if err != nil {
-		return r, err
+		return false, config, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err = rows.Scan(&r.Config.PullingInterval)
+		err = rows.Scan(&config.PullingInterval)
 		if err != nil {
-			return r, err
+			return false, config, err
 		}
-		r.Exists = true
+		exists = true
 	}
-	return r, nil
+	return exists, config, nil
 }
 
 func (pg *PG) ContainerExist(ctx context.Context, id int32) (exists bool, err error) {
 	return exists, pg.db.QueryRowContext(ctx, sqlContainersExists, id).Scan(&exists)
 }
 
-func (pg *PG) ContainerEnabled(ctx context.Context, id int32) (r BaseContainerEnabledResponse, err error) {
+func (pg *PG) ContainerEnabled(ctx context.Context, id int32) (exists bool, enabled bool, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlContainersEnabled, id)
 	if err != nil {
-		return r, err
+		return false, false, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err = rows.Scan(&r.Enabled)
+		err = rows.Scan(&enabled)
 		if err != nil {
-			return r, err
+			return false, false, err
 		}
-		r.Exists = true
+		exists = true
 	}
-	return r, nil
+	return exists, enabled, nil
 }
 
 func (pg *PG) GetEnabledContainersIds(ctx context.Context, containerType types.ContainerType, limit int, offset int) (ids []int32, err error) {

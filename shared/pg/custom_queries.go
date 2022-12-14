@@ -7,30 +7,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// CustomQueriesGetResponse is the response for the Get handler.
-type CustomQueriesGetResponse struct {
-	// Exists is the custom query existence.
-	Exists bool
-	// CustomQuery is the custom query.
-	CustomQuery models.CustomQuery
-}
-
-// CustomQueriesGetByIdentResponse is the response for the GetByIdent handler.
-type CustomQueriesGetByIdentResponse struct {
-	// Exists is the custom query existence.
-	Exists bool
-	// CustomQuery is the custom query.
-	CustomQuery models.CustomQuery
-}
-
-// CustomQueriesExistsIdent is the response for the ExistsIdent handler.
-type CustomQueriesExistsIdent struct {
-	// Exists is the custom query existence.
-	Exists bool
-	// CustomQuery is the custom query.
-	IdentExists bool
-}
-
 const (
 	sqlCustomQueriesCreate      = `INSERT INTO custom_queries (ident, descr, flux) VALUES ($1, $2, $3) RETURNING id;`
 	sqlCustomQueriesUpdate      = `UPDATE custom_queries SET (ident, descr, flux) = ($1, $2, $3) WHERE id = $4;`
@@ -44,7 +20,6 @@ const (
 )
 
 func (pg *PG) CreateCustomQuery(ctx context.Context, cq models.CustomQuery) (id int32, err error) {
-
 	return id, pg.db.QueryRowContext(ctx, sqlCustomQueriesCreate,
 		cq.Ident,
 		cq.Descr,
@@ -89,43 +64,39 @@ func (pg *PG) GetCustomQueries(ctx context.Context, limit int, offset int) (cqs 
 	return cqs, nil
 }
 
-func (pg *PG) GetCustomQuery(ctx context.Context, id int32) (r CustomQueriesGetResponse, err error) {
+func (pg *PG) GetCustomQuery(ctx context.Context, id int32) (exists bool, cq models.CustomQuery, err error) {
 	err = pg.db.QueryRowContext(ctx, sqlCustomQueriesGet, id).Scan(
-		&r.CustomQuery.Ident,
-		&r.CustomQuery.Descr,
-		&r.CustomQuery.Flux,
+		&cq.Ident,
+		&cq.Descr,
+		&cq.Flux,
 	)
 	if err != nil {
 		if err != pgx.ErrNoRows {
-			return r, err
+			return false, cq, err
 		}
-		return r, nil
+		return false, cq, nil
 	}
-	r.Exists = true
-	r.CustomQuery.Id = id
-	return r, nil
+	cq.Id = id
+	return true, cq, nil
 }
 
-func (pg *PG) GetCustomQueryByIdent(ctx context.Context, ident string) (r CustomQueriesGetResponse, err error) {
-
+func (pg *PG) GetCustomQueryByIdent(ctx context.Context, ident string) (exists bool, cq models.CustomQuery, err error) {
 	err = pg.db.QueryRowContext(ctx, sqlCustomQueriesGetByIdent, ident).Scan(
-		&r.CustomQuery.Id,
-		&r.CustomQuery.Descr,
-		&r.CustomQuery.Flux,
+		&cq.Id,
+		&cq.Descr,
+		&cq.Flux,
 	)
 	if err != nil {
 		if err != pgx.ErrNoRows {
-			return r, err
+			return false, cq, err
 		}
-		return r, nil
+		return false, cq, nil
 	}
-	r.Exists = true
-	r.CustomQuery.Ident = ident
-	return r, nil
+	cq.Ident = ident
+	return true, cq, nil
 }
 
 func (pg *PG) DeleteCustomQuery(ctx context.Context, id int32) (exists bool, err error) {
-
 	t, err := pg.db.ExecContext(ctx, sqlCustomQueriesDelete, id)
 	if err != nil {
 		return false, err
@@ -137,7 +108,6 @@ func (pg *PG) DeleteCustomQuery(ctx context.Context, id int32) (exists bool, err
 	return rowsAffected != 0, err
 }
 
-func (pg *PG) ExistsCustomQueryIdent(ctx context.Context, id int32, ident string) (r CustomQueriesExistsIdent, err error) {
-
-	return r, pg.db.QueryRowContext(ctx, sqlCustomQueriesExistsIdent, id, ident).Scan(&r.IdentExists, &r.Exists)
+func (pg *PG) ExistsCustomQueryIdent(ctx context.Context, id int32, ident string) (existsCq bool, identExists bool, err error) {
+	return existsCq, identExists, pg.db.QueryRowContext(ctx, sqlCustomQueriesExistsIdent, id, ident).Scan(&identExists, &existsCq)
 }

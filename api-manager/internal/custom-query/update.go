@@ -49,7 +49,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 
 		cq.Id = int32(id)
 
-		r, err := api.PG.ExistsCustomQueryIdent(ctx, cq.Id, cq.Ident)
+		exists, identExists, err := api.PG.ExistsCustomQueryIdent(ctx, cq.Id, cq.Ident)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -58,11 +58,11 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to check custom query ident existence", logger.ErrField(err))
 			return
 		}
-		if !r.Exists {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgCustomQueryNotFound))
 			return
 		}
-		if r.IdentExists {
+		if identExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
 			return
 		}

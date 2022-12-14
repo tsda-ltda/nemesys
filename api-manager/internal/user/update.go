@@ -48,7 +48,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.UsernameAndEmailExists(ctx, user.Username, user.Email, int32(id))
+		usernameExists, emailExists, err := api.PG.UsernameAndEmailExists(ctx, user.Username, user.Email, int32(id))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -58,12 +58,12 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		if r.UsernameExists {
+		if usernameExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgUsernameExists))
 			return
 		}
 
-		if r.EmailExists {
+		if emailExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgEmailExists))
 			return
 		}

@@ -18,14 +18,6 @@ type ContextualMetricsGetIdsByIdentResponse struct {
 	TeamId int32
 }
 
-// CtxMetricsGetResponse is the response for Get handler.
-type CtxMetricsGetResponse struct {
-	// Exists is the contextual metric existence.
-	Exists bool
-	// ContextualMetric is the contextual metripg.pool.
-	ContextualMetric models.ContextualMetric
-}
-
 // CtxMetricsGetMetricEnabledAndMetricRequestByIdResponse is the response for GetMetricEnabledAndRequestById handler.
 type CtxMetricsGetMetricEnabledAndMetricRequestByIdResponse struct {
 	// Exists is the contextual metric existence.
@@ -90,24 +82,24 @@ func (pg *PG) GetContextualMetricTreeId(ctx context.Context, metricIdent string,
 	return r, nil
 }
 
-func (pg *PG) GetContextualMetric(ctx context.Context, id int64) (r CtxMetricsGetResponse, err error) {
+func (pg *PG) GetContextualMetric(ctx context.Context, id int64) (exists bool, metric models.ContextualMetric, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlCtxMetricsGet, id)
 	if err != nil {
-		return r, err
+		return false, metric, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.ContextualMetric.ContextId,
-			&r.ContextualMetric.MetricId,
-			&r.ContextualMetric.Ident,
-			&r.ContextualMetric.Name,
-			&r.ContextualMetric.Descr,
+			&metric.ContextId,
+			&metric.MetricId,
+			&metric.Ident,
+			&metric.Name,
+			&metric.Descr,
 		)
-		r.ContextualMetric.Id = id
-		r.Exists = true
+		metric.Id = id
+		exists = true
 	}
-	return r, err
+	return exists, metric, err
 }
 
 func (pg *PG) GetContextualMetrics(ctx context.Context, ctxId int32, limit int, offset int) (metrics []models.ContextualMetric, err error) {

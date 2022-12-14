@@ -23,7 +23,7 @@ func GetSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.GetSNMPv2cContainer(ctx, int32(id))
+		exists, container, err := api.PG.GetSNMPv2cContainer(ctx, int32(id))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -32,11 +32,11 @@ func GetSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to get SNMPv2c container")
 			return
 		}
-		if !r.Exists {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, r.Container)
+		c.JSON(http.StatusOK, container)
 	}
 }

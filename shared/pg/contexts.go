@@ -6,14 +6,6 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
-// ContextsExistsTeamAndIdentResponse is the response for the ExistsTeamAndIdentResponse handler.
-type ContextsExistsTeamAndIdentResponse struct {
-	// TeamExists is the team existence.
-	TeamExists bool
-	// IdentExsts is the ident existence.
-	IdentExists bool
-}
-
 // ContextsExistsTeamAndIdentResponse is the response for the Get handler.
 type ContextsGetResponse struct {
 	// Exists is the context existence.
@@ -50,10 +42,10 @@ func (pg *PG) ContextExists(ctx context.Context, id int32) (exists bool, err err
 	return exists, pg.db.QueryRowContext(ctx, sqlCtxExists, id).Scan(&exists)
 }
 
-func (pg *PG) ExistsTeamAndContextIdent(ctx context.Context, teamId int32, ident string, ctxId int32) (r ContextsExistsTeamAndIdentResponse, err error) {
-	return r, pg.db.QueryRowContext(ctx, sqlCtxExistsTeamAndIdent, teamId, ident, ctxId).Scan(
-		&r.TeamExists,
-		&r.IdentExists,
+func (pg *PG) ExistsTeamAndContextIdent(ctx context.Context, teamId int32, ident string, ctxId int32) (teamExists bool, identExists bool, err error) {
+	return teamExists, identExists, pg.db.QueryRowContext(ctx, sqlCtxExistsTeamAndIdent, teamId, ident, ctxId).Scan(
+		&teamExists,
+		&identExists,
 	)
 }
 
@@ -108,26 +100,26 @@ func (pg *PG) GetContexts(ctx context.Context, teamId int32, limit int, offset i
 	return contexts, nil
 }
 
-func (pg *PG) GetContext(ctx context.Context, id int32) (r ContextsGetResponse, err error) {
+func (pg *PG) GetContext(ctx context.Context, id int32) (exists bool, context models.Context, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlCtxGet, id)
 	if err != nil {
-		return r, err
+		return false, context, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.Context.Ident,
-			&r.Context.Descr,
-			&r.Context.Name,
-			&r.Context.TeamId,
+			&context.Ident,
+			&context.Descr,
+			&context.Name,
+			&context.TeamId,
 		)
 		if err != nil {
-			return r, err
+			return false, context, err
 		}
-		r.Context.Id = id
-		r.Exists = true
+		context.Id = id
+		exists = true
 	}
-	return r, nil
+	return exists, context, nil
 }
 
 func (pg *PG) GetContextTreeId(ctx context.Context, ctxIdent string, teamIdent string) (r ContextsGetIdsByIdentResponse, err error) {

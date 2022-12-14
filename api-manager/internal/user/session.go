@@ -21,7 +21,7 @@ func SessionInfoHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.GetUserWithoutPW(ctx, meta.UserId)
+		exists, user, err := api.PG.GetUserWithoutPW(ctx, meta.UserId)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -30,12 +30,12 @@ func SessionInfoHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to get user in database", logger.ErrField(err))
 			return
 		}
-		if !r.Exists {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
 			api.Log.Warn("User does not exists, but have an alive session, user id: " + strconv.FormatInt(int64(meta.UserId), 10))
 			return
 		}
 
-		c.JSON(http.StatusOK, r.User)
+		c.JSON(http.StatusOK, user)
 	}
 }

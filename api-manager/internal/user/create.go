@@ -41,7 +41,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.UsernameAndEmailExists(ctx, user.Username, user.Email, -1)
+		usernameExists, emailExists, err := api.PG.UsernameAndEmailExists(ctx, user.Username, user.Email, -1)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -50,11 +50,11 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to check if username and email exists", logger.ErrField(err))
 			return
 		}
-		if r.UsernameExists {
+		if usernameExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgUsernameExists))
 			return
 		}
-		if r.EmailExists {
+		if emailExists {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgEmailExists))
 			return
 		}

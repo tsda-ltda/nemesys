@@ -25,7 +25,7 @@ func GetContextHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.GetContext(ctx, int32(contextId))
+		exists, context, err := api.PG.GetContext(ctx, int32(contextId))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -34,12 +34,12 @@ func GetContextHandler(api *api.API) func(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		if !r.Exists {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, r.Context)
+		c.JSON(http.StatusOK, context)
 	}
 }
 

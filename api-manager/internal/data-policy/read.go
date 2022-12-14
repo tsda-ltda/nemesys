@@ -44,7 +44,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 		}
 
-		r, err := api.PG.GetDataPolicy(ctx, int16(id))
+		exists, dp, err := api.PG.GetDataPolicy(ctx, int16(id))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -53,11 +53,11 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to read data policy", logger.ErrField(err))
 			return
 		}
-		if !r.Exists {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgDataPolicyNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, r.DataPolicy)
+		c.JSON(http.StatusOK, dp)
 	}
 }

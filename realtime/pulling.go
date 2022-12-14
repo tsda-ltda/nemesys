@@ -63,12 +63,12 @@ func (s *RTS) startMetricPulling(r models.MetricRequest, config models.RTSMetric
 
 		c, ok := s.pulling[r.ContainerId]
 		if !ok {
-			res, err := s.pg.GetContainerRTSConfig(context.Background(), r.ContainerId)
+			exists, conf, err := s.pg.GetContainerRTSConfig(context.Background(), r.ContainerId)
 			if err != nil {
 				s.log.Error("Fail to get containers's RTS info", logger.ErrField(err))
 				return
 			}
-			if !res.Exists {
+			if !exists {
 				s.log.Warn("Fail to start metric pulling, container does not exists")
 				return
 			}
@@ -76,7 +76,7 @@ func (s *RTS) startMetricPulling(r models.MetricRequest, config models.RTSMetric
 			c = &ContainerPulling{
 				Id:                 r.ContainerId,
 				Type:               r.ContainerType,
-				RTSContainerConfig: res.Config,
+				RTSContainerConfig: conf,
 				Metrics:            make(map[int64]*MetricPulling),
 				stopCh:             make(chan any, 1),
 				RTS:                s,

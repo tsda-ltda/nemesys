@@ -69,7 +69,7 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 
-			r1, err := api.PG.GetMetricRequest(ctx, rk.MetricId)
+			r, err := api.PG.GetMetricRequest(ctx, rk.MetricId)
 			if err != nil {
 				if ctx.Err() != nil {
 					return
@@ -79,7 +79,7 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 
-			r2, err := api.PG.GetMetricDHSEnabled(ctx, rk.MetricId)
+			_, enabled, err := api.PG.GetMetricDHSEnabled(ctx, rk.MetricId)
 			if err != nil {
 				if ctx.Err() != nil {
 					return
@@ -89,12 +89,12 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 
-			form.MetricId = r1.MetricRequest.MetricId
-			form.DataPolicyId = r1.MetricRequest.DataPolicyId
-			form.MetricType = r1.MetricRequest.MetricType
-			form.ContainerId = r1.MetricRequest.ContainerId
-			form.Enabled = r1.Enabled
-			form.DHSEnabled = r2.Enabled
+			form.MetricId = r.MetricRequest.MetricId
+			form.DataPolicyId = r.MetricRequest.DataPolicyId
+			form.MetricType = r.MetricRequest.MetricType
+			form.ContainerId = r.MetricRequest.ContainerId
+			form.Enabled = r.Enabled
+			form.DHSEnabled = enabled
 
 			err = api.Cache.SetMetricAddDataForm(ctx, data.Refkey, form)
 			if err != nil {

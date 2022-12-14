@@ -16,12 +16,12 @@ func (s *RTS) getRTSMetricConfig(ctx context.Context, metricId int64) (cfg model
 		return cacheRes.Config, nil
 	}
 
-	pgRes, err := s.pg.GetMetricRTSConfig(ctx, metricId)
+	exists, conf, err := s.pg.GetMetricRTSConfig(ctx, metricId)
 	if err != nil {
 		return cfg, err
 	}
-	if !pgRes.Exists {
+	if !exists {
 		return cfg, errors.New("metric realtime service configuration does not exists")
 	}
-	return pgRes.RTSConfig, nil
+	return conf, nil
 }

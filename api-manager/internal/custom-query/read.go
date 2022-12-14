@@ -63,7 +63,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.GetCustomQuery(ctx, int32(id))
+		exists, cq, err := api.PG.GetCustomQuery(ctx, int32(id))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -72,11 +72,11 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to get custom query on database", logger.ErrField(err))
 			return
 		}
-		if !r.Exists {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgCustomQueryNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, r.CustomQuery)
+		c.JSON(http.StatusOK, cq)
 	}
 }

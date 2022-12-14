@@ -8,34 +8,6 @@ import (
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
-type MetricsGetEvaluableExpressionResponse struct {
-	// Exists is the metric existence.
-	Exists bool
-	// Expression is the evaluable expression.
-	Expression string
-}
-
-type MetricsGetResponse struct {
-	// Exists is the metric existence.
-	Exists bool
-	// Metric is the metric.
-	Metric models.BaseMetric
-}
-
-type MetricsGetBasicResponse struct {
-	// Exists is the metric existence.
-	Exists bool
-	// Metric is the metric.
-	Metric models.Metric[struct{}]
-}
-
-type MetricsGetRTSConfigResponse struct {
-	// Exists is the metric existence.
-	Exists bool
-	// RTSConfig is the metric RTS configuration.
-	RTSConfig models.RTSMetricConfig
-}
-
 type MetricsExistsContainerAndDataPolicyResponse struct {
 	// Exists is the metric existence.
 	Exists bool
@@ -69,13 +41,6 @@ type GetMetricRequestResult struct {
 	// MetricRequest is the metric request.
 	MetricRequest models.MetricRequest
 	// Enabled is the metric enabled status.
-	Enabled bool
-}
-
-type MetricDHSEnabledResult struct {
-	// Exists is the metric request existence.
-	Exists bool
-	// Enabled is the metric dhs enabled.
 	Enabled bool
 }
 
@@ -113,64 +78,64 @@ const (
 		FULL OUTER JOIN metrics_alarm_expressions_rel r ON r.expression_id = e.id WHERE r.metric_id = ANY ($1);`
 )
 
-func (pg *PG) GetBasicMetric(ctx context.Context, id int64) (r MetricsGetBasicResponse, err error) {
+func (pg *PG) GetBasicMetric(ctx context.Context, id int64) (exists bool, metric models.Metric[struct{}], err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlMetricsGet, id)
 	if err != nil {
-		return r, err
+		return false, metric, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.Metric.Base.ContainerId,
-			&r.Metric.Base.ContainerType,
-			&r.Metric.Base.Name,
-			&r.Metric.Base.Descr,
-			&r.Metric.Base.Enabled,
-			&r.Metric.Base.DataPolicyId,
-			&r.Metric.Base.RTSPullingTimes,
-			&r.Metric.Base.RTSCacheDuration,
-			&r.Metric.Base.DHSEnabled,
-			&r.Metric.Base.DHSInterval,
-			&r.Metric.Base.Type,
-			&r.Metric.Base.EvaluableExpression,
+			&metric.Base.ContainerId,
+			&metric.Base.ContainerType,
+			&metric.Base.Name,
+			&metric.Base.Descr,
+			&metric.Base.Enabled,
+			&metric.Base.DataPolicyId,
+			&metric.Base.RTSPullingTimes,
+			&metric.Base.RTSCacheDuration,
+			&metric.Base.DHSEnabled,
+			&metric.Base.DHSInterval,
+			&metric.Base.Type,
+			&metric.Base.EvaluableExpression,
 		)
 		if err != nil {
-			return r, err
+			return false, metric, err
 		}
-		r.Metric.Base.Id = id
-		r.Exists = true
+		metric.Base.Id = id
+		exists = true
 	}
-	return r, nil
+	return exists, metric, nil
 }
 
-func (pg *PG) GetMetric(ctx context.Context, id int64) (r MetricsGetResponse, err error) {
+func (pg *PG) GetMetric(ctx context.Context, id int64) (exists bool, metric models.BaseMetric, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlMetricsGet, id)
 	if err != nil {
-		return r, err
+		return false, metric, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.Metric.ContainerId,
-			&r.Metric.ContainerType,
-			&r.Metric.Name,
-			&r.Metric.Descr,
-			&r.Metric.Enabled,
-			&r.Metric.DataPolicyId,
-			&r.Metric.RTSPullingTimes,
-			&r.Metric.RTSCacheDuration,
-			&r.Metric.DHSEnabled,
-			&r.Metric.DHSInterval,
-			&r.Metric.Type,
-			&r.Metric.EvaluableExpression,
+			&metric.ContainerId,
+			&metric.ContainerType,
+			&metric.Name,
+			&metric.Descr,
+			&metric.Enabled,
+			&metric.DataPolicyId,
+			&metric.RTSPullingTimes,
+			&metric.RTSCacheDuration,
+			&metric.DHSEnabled,
+			&metric.DHSInterval,
+			&metric.Type,
+			&metric.EvaluableExpression,
 		)
 		if err != nil {
-			return r, err
+			return false, metric, err
 		}
-		r.Metric.Id = id
-		r.Exists = true
+		metric.Id = id
+		exists = true
 	}
-	return r, nil
+	return exists, metric, nil
 }
 
 func (pg *PG) GetMetricsSimplified(ctx context.Context, containerType types.ContainerType, containerId int32, limit int, offset int) (metrics []models.BaseMetricSimplified, err error) {
@@ -217,16 +182,15 @@ func (pg *PG) GetMetricRequest(ctx context.Context, id int64) (r GetMetricReques
 	return r, nil
 }
 
-func (pg *PG) GetMetricDHSEnabled(ctx context.Context, id int64) (r MetricDHSEnabledResult, err error) {
-	err = pg.db.QueryRowContext(ctx, sqlMetricsDHSEnabled, id).Scan(&r.Enabled)
+func (pg *PG) GetMetricDHSEnabled(ctx context.Context, id int64) (exists bool, enabled bool, err error) {
+	err = pg.db.QueryRowContext(ctx, sqlMetricsDHSEnabled, id).Scan(enabled)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return r, nil
+			return false, false, nil
 		}
-		return r, err
+		return false, false, err
 	}
-	r.Exists = true
-	return r, nil
+	return true, enabled, nil
 }
 
 func (pg *PG) createMetric(ctx context.Context, tx *sql.Tx, metric models.BaseMetric) (id int64, err error) {
@@ -316,20 +280,20 @@ func (pg *PG) DeleteMetric(ctx context.Context, id int64) (exists bool, err erro
 	return rowsAffected != 0, err
 }
 
-func (pg *PG) GetMetricEvaluableExpression(ctx context.Context, id int64) (r MetricsGetEvaluableExpressionResponse, err error) {
+func (pg *PG) GetMetricEvaluableExpression(ctx context.Context, id int64) (exists bool, expression string, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlMetricsGetEvaluableExpression, id)
 	if err != nil {
-		return r, err
+		return false, expression, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err = rows.Scan(&r.Expression)
+		err = rows.Scan(&expression)
 		if err != nil {
-			return r, err
+			return false, expression, err
 		}
-		r.Exists = true
+		exists = true
 	}
-	return r, err
+	return exists, expression, err
 }
 
 func (pg *PG) GetMetricsEvaluableExpressions(ctx context.Context, ids []int64) (expressions []models.MetricEvaluableExpression, err error) {
@@ -350,23 +314,23 @@ func (pg *PG) GetMetricsEvaluableExpressions(ctx context.Context, ids []int64) (
 	return expressions, err
 }
 
-func (pg *PG) GetMetricRTSConfig(ctx context.Context, id int64) (r MetricsGetRTSConfigResponse, err error) {
+func (pg *PG) GetMetricRTSConfig(ctx context.Context, id int64) (exists bool, RTSConfig models.RTSMetricConfig, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlMetricsGetRTSConfig, id)
 	if err != nil {
-		return r, err
+		return exists, RTSConfig, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.RTSConfig.PullingTimes,
-			&r.RTSConfig.CacheDuration,
+			&RTSConfig.PullingTimes,
+			&RTSConfig.CacheDuration,
 		)
 		if err != nil {
-			return r, err
+			return false, RTSConfig, err
 		}
-		r.Exists = true
+		exists = true
 	}
-	return r, nil
+	return exists, RTSConfig, nil
 }
 
 func (pg *PG) MetricContainerAndDataPolicyExists(ctx context.Context, base models.BaseMetric) (r MetricsExistsContainerAndDataPolicyResponse, err error) {

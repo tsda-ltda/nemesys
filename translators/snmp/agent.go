@@ -26,42 +26,42 @@ func (s *SNMP) getContainerAgent(containerId int32, t types.ContainerType) (agen
 
 	switch t {
 	case types.CTSNMPv2c:
-		r, err := s.pg.GetSNMPv2cContainerProtocol(ctx, containerId)
+		exists, container, err := s.pg.GetSNMPv2cContainerProtocol(ctx, containerId)
 		if err != nil {
 			return agent, err
 		}
-		if !r.Exists {
+		if !exists {
 			return agent, ErrContainerNotExists
 		}
 
 		agent = models.SNMPv2cAgent{
-			Target:    r.Container.Target,
-			Port:      uint16(r.Container.Port),
-			Community: r.Container.Community,
-			Transport: r.Container.Transport,
-			Timeout:   time.Millisecond * time.Duration(r.Container.Timeout),
-			MaxOids:   int(r.Container.MaxOids),
-			Retries:   int(r.Container.Retries),
+			Target:    container.Target,
+			Port:      uint16(container.Port),
+			Community: container.Community,
+			Transport: container.Transport,
+			Timeout:   time.Millisecond * time.Duration(container.Timeout),
+			MaxOids:   int(container.MaxOids),
+			Retries:   int(container.Retries),
 			Version:   g.Version2c,
 		}
 	case types.CTFlexLegacy:
-		r, err := s.pg.GetFlexLegacyContainerProtocol(ctx, containerId)
+		exists, container, err := s.pg.GetFlexLegacyContainerProtocol(ctx, containerId)
 		if err != nil {
 			return agent, err
 		}
 
-		if !r.Exists {
+		if !exists {
 			return agent, ErrContainerNotExists
 		}
 
 		agent = models.SNMPv2cAgent{
-			Target:    r.Container.Target,
-			Port:      uint16(r.Container.Port),
-			Community: r.Container.Community,
-			Transport: r.Container.Transport,
-			Timeout:   time.Millisecond * time.Duration(r.Container.Timeout),
-			MaxOids:   int(r.Container.MaxOids),
-			Retries:   int(r.Container.Retries),
+			Target:    container.Target,
+			Port:      uint16(container.Port),
+			Community: container.Community,
+			Transport: container.Transport,
+			Timeout:   time.Millisecond * time.Duration(container.Timeout),
+			MaxOids:   int(container.MaxOids),
+			Retries:   int(container.Retries),
 			Version:   g.Version2c,
 		}
 	default:

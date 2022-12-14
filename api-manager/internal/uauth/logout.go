@@ -69,7 +69,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.GetUserRole(ctx, int32(id))
+		exists, role, err := api.PG.GetUserRole(ctx, int32(id))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -79,11 +79,11 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		if !r.Exists {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
 			return
 		}
-		if uint8(r.Role) > meta.Role {
+		if uint8(role) > meta.Role {
 			c.Status(http.StatusForbidden)
 			return
 		}

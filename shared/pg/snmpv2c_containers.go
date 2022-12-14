@@ -7,20 +7,6 @@ import (
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
-type SNMPv2cContainersGetResponse struct {
-	// Exists is the container existence.
-	Exists bool
-	// Container is the SNMPv2c container.
-	Container models.Container[models.SNMPv2cContainer]
-}
-
-type SNMPv2cContainersGetProtocolResponse struct {
-	// Exists is the container existence.
-	Exists bool
-	// Container is the SNMPv2c container.
-	Container models.SNMPv2cContainer
-}
-
 const (
 	sqlSNMPv2cContainerGetProtocol = `SELECT target, port, transport, community,
 		retries, max_oids, timeout FROM snmpv2c_containers WHERE container_id = $1; `
@@ -93,44 +79,46 @@ func (pg *PG) DeleteSNMPv2cContainer(ctx context.Context, id int32) (exists bool
 	return pg.DeleteContainer(ctx, id)
 }
 
-func (pg *PG) GetSNMPv2cContainer(ctx context.Context, id int32) (r SNMPv2cContainersGetResponse, err error) {
-	baseR, err := pg.GetContainer(ctx, id, types.CTSNMPv2c)
+func (pg *PG) GetSNMPv2cContainer(ctx context.Context, id int32) (exists bool, container models.Container[models.SNMPv2cContainer], err error) {
+	exists, base, err := pg.GetContainer(ctx, id, types.CTSNMPv2c)
 	if err != nil {
-		return r, err
+		return false, container, err
 	}
-	protocolR, err := pg.GetSNMPv2cContainerProtocol(ctx, id)
+	if !exists {
+		return false, container, nil
+	}
+	exists, protocol, err := pg.GetSNMPv2cContainerProtocol(ctx, id)
 	if err != nil {
-		return r, err
+		return false, container, err
 	}
-	r.Exists = baseR.Exists
-	r.Container.Base = baseR.Container
-	r.Container.Protocol = protocolR.Container
-	return r, nil
+	container.Base = base
+	container.Protocol = protocol
+	return exists, container, nil
 }
 
-func (pg *PG) GetSNMPv2cContainerProtocol(ctx context.Context, id int32) (r SNMPv2cContainersGetProtocolResponse, err error) {
+func (pg *PG) GetSNMPv2cContainerProtocol(ctx context.Context, id int32) (exists bool, container models.SNMPv2cContainer, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlSNMPv2cContainerGetProtocol, id)
 	if err != nil {
-		return r, err
+		return false, container, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(
-			&r.Container.Target,
-			&r.Container.Port,
-			&r.Container.Transport,
-			&r.Container.Community,
-			&r.Container.Retries,
-			&r.Container.MaxOids,
-			&r.Container.Timeout,
+			&container.Target,
+			&container.Port,
+			&container.Transport,
+			&container.Community,
+			&container.Retries,
+			&container.MaxOids,
+			&container.Timeout,
 		)
 		if err != nil {
-			return r, err
+			return false, container, err
 		}
-		r.Container.Id = id
-		r.Exists = true
+		container.Id = id
+		exists = true
 	}
-	return r, nil
+	return exists, container, nil
 }
 
 func (pg *PG) AvailableSNMPv2cContainerTargetPort(ctx context.Context, target string, port int32, id int32) (exists bool, err error) {
