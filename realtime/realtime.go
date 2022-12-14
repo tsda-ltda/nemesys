@@ -75,13 +75,19 @@ func New(serviceNumber int) service.Service {
 	})
 	go t.ServicePing(amqph, tools.ServiceIdent)
 
+	cache, err := cache.New()
+	if err != nil {
+		log.Fatal("Fail to connect to cache (redis)", logger.ErrField(err))
+		return nil
+	}
+
 	return &RTS{
 		Tools:                    tools,
 		log:                      log,
 		pg:                       pg.New(),
 		amqp:                     amqpConn,
 		amqph:                    amqph,
-		cache:                    cache.New(),
+		cache:                    cache,
 		plumber:                  models.NewAMQPPlumber(),
 		pendingMetricDataRequest: make(map[string]models.RTSMetricConfig),
 		pulling:                  make(map[int32]*ContainerPulling),

@@ -77,9 +77,15 @@ func New(serviceNumber int) service.Service {
 	})
 	go t.ServicePing(amqph, tools.ServiceIdent)
 
+	cache, err := cache.New()
+	if err != nil {
+		log.Fatal("Fail to connect to cache (redis)", logger.ErrField(err))
+		return nil
+	}
+
 	return &Alarm{
 		pg:       pg.New(),
-		cache:    cache.New(),
+		cache:    cache,
 		amqpConn: amqpConn,
 		log:      log,
 		amqph:    amqph,

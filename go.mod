@@ -11,6 +11,7 @@ require (
 	github.com/influxdata/influxdb-client-go/v2 v2.12.0
 	github.com/jackc/pgx/v5 v5.0.1
 	github.com/joho/godotenv v1.4.0
+	github.com/json-iterator/go v1.1.12
 	github.com/rabbitmq/amqp091-go v1.5.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/vmihailenco/msgpack/v5 v5.3.5
@@ -30,7 +31,6 @@ require (
 	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
-	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect

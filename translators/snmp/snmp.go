@@ -69,14 +69,21 @@ func New(serviceNumber int) service.Service {
 		Publishers: publishers,
 	})
 	go t.ServicePing(amqph, tools.ServiceIdent)
+
+	cache, err := cache.New()
+	if err != nil {
+		log.Fatal("Fail to connect to cache (redis)", logger.ErrField(err))
+		return nil
+	}
+
 	return &SNMP{
 		Tools:             tools,
 		amqph:             amqph,
 		amqpConn:          amqpConn,
 		pg:                pg,
 		log:               log,
-		evaluator:         evaluator.New(pg),
-		cache:             cache.New(),
+		evaluator:         evaluator.New(pg, cache),
+		cache:             cache,
 		stopGetListener:   make(chan any),
 		stopDataPublisher: make(chan any),
 	}

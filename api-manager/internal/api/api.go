@@ -126,6 +126,12 @@ func New(serviceNumber int) service.Service {
 	})
 	go t.ServicePing(amqph, tools.ServiceIdent)
 
+	cache, err := cache.New()
+	if err != nil {
+		log.Fatal("Fail to connect to cache (redis)", logger.ErrField(err))
+		return nil
+	}
+
 	api := &API{
 		amqpConn:         amqpConn,
 		Tools:            tools,
@@ -135,7 +141,7 @@ func New(serviceNumber int) service.Service {
 		Auth:             auth,
 		Validate:         validate,
 		Log:              log,
-		Cache:            cache.New(),
+		Cache:            cache,
 		Amqph:            amqph,
 		UserPWBcryptCost: bcryptCost,
 		Counter:          counter.New(&influxClient, pg, log, time.Second*10),

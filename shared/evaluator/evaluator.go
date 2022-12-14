@@ -15,10 +15,10 @@ type Evaluator struct {
 	cache  *cache.Cache
 }
 
-func New(pgConn *pg.PG) *Evaluator {
+func New(pgConn *pg.PG, cache *cache.Cache) *Evaluator {
 	return &Evaluator{
 		pgConn: pgConn,
-		cache:  cache.New(),
+		cache:  cache,
 	}
 }
 
