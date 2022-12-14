@@ -272,7 +272,6 @@ func Set(s service.Service) {
 	// metric data
 	{
 		r.GET("/teams/:teamId/ctx/:ctxId/metrics/:ctxMetricId/data",
-			middleware.Limiter(api, time.Millisecond*300),
 			middleware.Protect(api, roles.Viewer),
 			middleware.RealtimeDataRequestsCounter(api),
 			middleware.ParseContextualMetricParams(api),
@@ -280,7 +279,6 @@ func Set(s service.Service) {
 			ctxmetric.DataHandler(api),
 		)
 		r.GET("/teams/:teamId/ctx/:ctxId/metrics/:ctxMetricId/data/history",
-			middleware.Limiter(api, time.Millisecond*650),
 			middleware.Protect(api, roles.Viewer),
 			middleware.DataHistoryRequestsCounter(api),
 			middleware.ParseContextualMetricParams(api),
