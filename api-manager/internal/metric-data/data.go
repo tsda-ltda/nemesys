@@ -165,6 +165,15 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 			},
 		})
 
-		api.Log.Debug("Metric data to Alarm service, metric id: " + metricIdString)
+		api.Amqph.Publish(amqph.Publish{
+			Exchange:   amqp.ExchangeMetricDataRes,
+			RoutingKey: "rts",
+			Publishing: amqp091.Publishing{
+				Body: b,
+				Type: amqp.FromMessageType(amqp.OK),
+			},
+		})
+
+		api.Log.Debug("Metric data sent to Alarm service and RTS, metric id: " + metricIdString)
 	}
 }
