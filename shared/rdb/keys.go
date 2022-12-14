@@ -21,8 +21,8 @@ func AuthReverseAPIKeyKey(apikeyId int32) string {
 	return "auth:apikey:id:" + strconv.FormatInt(int64(apikeyId), 10)
 }
 
-func CacheUserLimited(ip string) string {
-	return "cache:user-limited:" + ip
+func CacheUserLimited(ip string, route string) string {
+	return "cache:user-limited:" + ip + ":" + route
 }
 
 func CacheMetricRequestByIdent(teamIdent string, contextIdent string, metricIdent string) string {

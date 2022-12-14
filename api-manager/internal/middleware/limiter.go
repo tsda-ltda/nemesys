@@ -16,7 +16,9 @@ func Limiter(api *api.API, duration time.Duration) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 		ip := c.ClientIP()
-		suspended, err := api.Cache.GetUserLimited(ctx, ip)
+		route := c.FullPath()
+
+		suspended, err := api.Cache.GetUserLimited(ctx, ip, route)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -29,7 +31,7 @@ func Limiter(api *api.API, duration time.Duration) func(c *gin.Context) {
 			c.AbortWithStatus(http.StatusTooManyRequests)
 			return
 		}
-		err = api.Cache.SetUserLimited(ctx, ip, duration)
+		err = api.Cache.SetUserLimited(ctx, ip, route, duration)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
