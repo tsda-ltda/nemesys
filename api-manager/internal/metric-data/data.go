@@ -8,6 +8,7 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/amqp"
+	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
@@ -156,22 +157,14 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		api.Amqph.PublisherCh <- models.DetailedPublishing{
-			Exchange:   amqp.ExchangeMetricDataRes,
-			RoutingKey: "rts",
-			Publishing: amqp091.Publishing{
-				Body: b,
-				Type: amqp.FromMessageType(amqp.OK),
-			},
-		}
-
-		api.Amqph.PublisherCh <- models.DetailedPublishing{
+		api.Amqph.Publish(amqph.Publish{
 			Exchange: amqp.ExchangeCheckMetricAlarm,
 			Publishing: amqp091.Publishing{
 				Body: b,
 				Type: amqp.FromMessageType(amqp.OK),
 			},
-		}
-		api.Log.Debug("Metric data point sent to RTS and to Alarm service, metric id: " + metricIdString)
+		})
+
+		api.Log.Debug("Metric data to Alarm service, metric id: " + metricIdString)
 	}
 }
