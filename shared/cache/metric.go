@@ -92,8 +92,8 @@ func (c *Cache) SetMetricRequestByIdent(ctx context.Context, teamIdent string, c
 	return c.redis.Set(ctx, rdb.CacheMetricRequestByIdent(teamIdent, contextIdent, metricIdent), bytes, c.metricRequestByIdentExp).Err()
 }
 
-func (c *Cache) GetMetricRequest(ctx context.Context, id int64) (r GetMetricRequestResponse, err error) {
-	b, err := c.redis.Get(ctx, rdb.CacheMetricRequest(id)).Bytes()
+func (c *Cache) GetMetricRequest(ctx context.Context, ctxMetricId int64) (r GetMetricRequestResponse, err error) {
+	b, err := c.redis.Get(ctx, rdb.CacheMetricRequest(ctxMetricId)).Bytes()
 	if err != nil {
 		if err != redis.Nil {
 			return r, err
@@ -104,12 +104,12 @@ func (c *Cache) GetMetricRequest(ctx context.Context, id int64) (r GetMetricRequ
 	return r, c.decode(b, &r.Request)
 }
 
-func (c *Cache) SetMetricRequest(ctx context.Context, request models.MetricRequest) (err error) {
+func (c *Cache) SetMetricRequest(ctx context.Context, ctxMetricId int64, request models.MetricRequest) (err error) {
 	b, err := c.encode(request)
 	if err != nil {
 		return err
 	}
-	return c.redis.Set(ctx, rdb.CacheMetricRequest(request.MetricId), b, c.metricRequestExp).Err()
+	return c.redis.Set(ctx, rdb.CacheMetricRequest(ctxMetricId), b, c.metricRequestExp).Err()
 }
 
 func (c *Cache) SetMetricEvExpression(ctx context.Context, metricId int64, expression string) (err error) {

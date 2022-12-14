@@ -12,10 +12,10 @@ import (
 )
 
 type QueryOptions struct {
-	// Start is the start range.
-	Start string
-	// Stop is the end range. Can be ommited.
-	Stop string
+	// Start is the start range in seconds.
+	Start int64
+	// Stop is the end range in seconds. Can be ommited.
+	Stop int64
 	// CustomQueryFlux is the custom query flux. Can be ommited.
 	CustomQueryFlux string
 	// DataPolicyId is the data policy id.
@@ -64,14 +64,20 @@ func getBaseQuery(opts QueryOptions, rawBucket *domain.Bucket, useAggr bool) (qu
 		return query, errors.New("invalid bucket")
 	}
 
+	var stopDur string
+	var startDur string
+
+	if opts.Stop == 0 {
+		stopDur = "now()"
+	} else {
+		stopDur = strconv.FormatInt(opts.Stop, 10)
+	}
+	startDur = strconv.FormatInt(opts.Start, 10)
+
 	retentionSeconds := rawBucket.RetentionRules[0].EverySeconds
 	retention := time.Duration(retentionSeconds) * time.Second
-	start, err := ParseDuration(opts.Start)
-	if err != nil {
-		return query, err
-	}
 
-	if retention+start >= 0 || !useAggr {
+	if retention+(time.Duration(opts.Start)*time.Second) >= 0 || !useAggr {
 		query = fmt.Sprintf(`
 			data = from(bucket: "%s")
 				|> range(start: %s, stop: %s)
@@ -79,8 +85,8 @@ func getBaseQuery(opts QueryOptions, rawBucket *domain.Bucket, useAggr bool) (qu
 				|> filter(fn: (r) => r["metric_id"] == "%s")
 				|> filter(fn: (r) => r["_field"] == "%s")`,
 			GetBucketName(opts.DataPolicyId, false),
-			opts.Start,
-			opts.Stop,
+			startDur,
+			stopDur,
 			strconv.FormatInt(opts.MetricId, 10),
 			getField(opts.MetricType),
 		)
@@ -99,11 +105,11 @@ func getBaseQuery(opts QueryOptions, rawBucket *domain.Bucket, useAggr bool) (qu
 			data = union(tables: [aggr, raw])`,
 			GetBucketName(opts.DataPolicyId, false),
 			DurationFromSeconds(-retentionSeconds),
-			opts.Stop,
+			stopDur,
 			strconv.FormatInt(opts.MetricId, 10),
 			getField(opts.MetricType),
 			GetBucketName(opts.DataPolicyId, true),
-			opts.Start,
+			startDur,
 			DurationFromSeconds(-retentionSeconds),
 			strconv.FormatInt(opts.MetricId, 10),
 			getField(opts.MetricType),

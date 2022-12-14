@@ -16,13 +16,13 @@ func MetricRequest(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		id, err := strconv.ParseInt(c.Param("ctxMetricId"), 10, 64)
+		ctxMetricId, err := strconv.ParseInt(c.Param("ctxMetricId"), 10, 64)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
 			return
 		}
 
-		cacheR, err := api.Cache.GetMetricRequest(ctx, id)
+		cacheR, err := api.Cache.GetMetricRequest(ctx, ctxMetricId)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -37,7 +37,7 @@ func MetricRequest(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.GetMetricRequestByContextualMetric(ctx, id)
+		r, err := api.PG.GetMetricRequestByContextualMetric(ctx, ctxMetricId)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -55,7 +55,7 @@ func MetricRequest(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		err = api.Cache.SetMetricRequest(ctx, r.MetricRequest)
+		err = api.Cache.SetMetricRequest(ctx, ctxMetricId, r.MetricRequest)
 		if err != nil {
 			if ctx.Err() != nil {
 				return

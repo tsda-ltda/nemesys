@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -12,7 +13,9 @@ import (
 	"github.com/fernandotsda/nemesys/shared/influxdb"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/fernandotsda/nemesys/shared/uuid"
 	"github.com/gin-gonic/gin"
+	"github.com/rabbitmq/amqp091-go"
 )
 
 var (
@@ -27,8 +30,25 @@ var (
 //   - 503 If data is not available.
 //   - 200 If succeeded.
 func DataHandler(api *api.API) func(c *gin.Context) {
+	p := models.NewAMQPPlumber()
+	go func() {
+		var options amqph.ListenerOptions
+		options.QueueDeclarationOptions.Exclusive = true
+		options.QueueBindOptions.Exchange = amqp.ExchangeMetricDataRes
+		options.QueueBindOptions.RoutingKey = api.GetServiceIdent()
+
+		msgs, done := api.Amqph.Listen(options)
+		for {
+			select {
+			case d := <-msgs:
+				p.Send(d)
+			case <-done:
+				return
+			}
+		}
+	}()
+
 	return func(c *gin.Context) {
-		// get metric request
 		r, err := tools.GetMetricRequest(c)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
@@ -36,28 +56,43 @@ func DataHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		// fetch data
-		d, err := api.Amqph.GetRTSData(r, api.GetServiceIdent())
+		b, err := amqp.Encode(r)
 		if err != nil {
-			if err == amqph.ErrRequestTimeout {
-				c.JSON(http.StatusServiceUnavailable, tools.JSONMSG(tools.MsgRequestTimeout))
-				return
-			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("Fail to publish data request", logger.ErrField(err))
+			api.Log.Error("Fail to encode amqp body", logger.ErrField(err))
 			return
 		}
 
-		// parse type
+		uuid, err := uuid.New()
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			api.Log.Error("Fail to get new uuid", logger.ErrField(err))
+			return
+		}
+
+		api.Amqph.Publish(amqph.Publish{
+			Exchange:   amqp.ExchangeMetricDataReq,
+			RoutingKey: "rts",
+			Publishing: amqp091.Publishing{
+				Body:          b,
+				CorrelationId: uuid,
+				Headers:       amqp.RouteHeader(api.GetServiceIdent()),
+			},
+		})
+
+		d, err := p.Listen(uuid, time.Second*30)
+		if err == amqph.ErrRequestTimeout {
+			c.JSON(http.StatusServiceUnavailable, tools.JSONMSG(tools.MsgRequestTimeout))
+			return
+		}
+
 		t := amqp.ToMessageType(d.Type)
 
-		// check if something is wrong
 		if t != amqp.OK {
 			c.JSON(amqp.ParseToHttpStatus(t), tools.JSONMSG(amqp.GetMessage(t)))
 			return
 		}
 
-		// parse body
 		var data models.MetricDataResponse
 		err = amqp.Decode(d.Body, &data)
 		if err != nil {
@@ -88,8 +123,23 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 		opts.MetricType = r.MetricType
 		opts.DataPolicyId = r.DataPolicyId
 
-		opts.Start = c.Query("start")
-		opts.Stop = c.Query("stop")
+		start, err := strconv.ParseInt(c.Query("start"), 0, 64)
+		if err != nil || start < 1 {
+			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			return
+		}
+		opts.Start = start
+
+		stopS := c.Query("stop")
+		if stopS != "" {
+			stop, err := strconv.ParseInt(stopS, 0, 64)
+			if err != nil || stop < 1 {
+				c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+				return
+			}
+			opts.Stop = stop
+		}
+
 		cq, err := GetCustomQueryFlux(api, c)
 		if err != nil {
 			if ctx.Err() != nil {
