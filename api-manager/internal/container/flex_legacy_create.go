@@ -5,6 +5,7 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
@@ -70,7 +71,7 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 		container.Base.Id = id
 		container.Protocol.Id = id
 		api.Log.Debug("Flex legacy container created with success, name: " + container.Base.Name)
-		api.Amqph.NotifyContainerCreated(container.Base, container.Protocol, types.CTFlexLegacy)
+		t.NotifyContainerCreated(api.Amqph, container.Base, container.Protocol)
 
 		c.Status(http.StatusOK)
 	}

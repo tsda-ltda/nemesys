@@ -1,65 +1,119 @@
 package amqph
 
 import (
-	"errors"
+	"time"
 
-	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/fernandotsda/nemesys/shared/amqp"
+	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/rabbitmq/amqp091-go"
 )
 
-func (a *Amqph) Listen(queueName string, exchange string, options ...models.ListenerOptions) (msgs <-chan amqp091.Delivery, err error) {
-	var option *models.ListenerOptions
-	if len(options) == 0 {
-		option = &models.ListenerOptions{}
-	} else if len(options) == 1 {
-		option = &options[0]
-	} else {
-		return msgs, errors.New("options may not more than 1 element")
-	}
+type ListenerOptions struct {
+	QueueDeclarationOptions QueueDeclarationOptions
+	QueueBindOptions        QueueBindOptions
+	QueueConsumeOptions     QueueConsumeOptions
+}
 
-	// open socket channel
-	ch, err := a.conn.Channel()
+type QueueDeclarationOptions struct {
+	Name              string
+	Durable           bool
+	DeletedWhenUnused bool
+	Exclusive         bool
+	NoWait            bool
+	Arguments         amqp091.Table
+}
+
+type QueueBindOptions struct {
+	RoutingKey string
+	Exchange   string
+	NoWait     bool
+	Arguments  amqp091.Table
+}
+
+type QueueConsumeOptions struct {
+	Consumer  string
+	Exclusive bool
+	NoLocal   bool
+	NoWait    bool
+	Arguments amqp091.Table
+}
+
+var listenerChannelReconnetionTimeout = time.Second * 10
+
+func (a *Amqph) getDelivery(options ListenerOptions) (ch *amqp091.Channel, msgs <-chan amqp091.Delivery, err error) {
+	ch, err = a.conn.Channel()
 	if err != nil {
-		return msgs, err
+		return ch, msgs, err
 	}
 
-	// declare queue
 	q, err := ch.QueueDeclare(
-		queueName,           // name
-		option.Durable,      // durable'
-		option.AutoDelete,   // delete when unused
-		!option.NoExclusive, // exclusive
-		option.NoWait,       // no-wait
-		option.Args,         // arguments
+		options.QueueDeclarationOptions.Name,
+		options.QueueDeclarationOptions.Durable,
+		options.QueueDeclarationOptions.DeletedWhenUnused,
+		options.QueueDeclarationOptions.Exclusive,
+		options.QueueDeclarationOptions.NoWait,
+		options.QueueDeclarationOptions.Arguments,
 	)
 	if err != nil {
-		return msgs, err
+		return ch, msgs, err
 	}
 
-	// bind queue
 	err = ch.QueueBind(
-		q.Name,                 // queue name
-		option.Bind.RoutingKey, // routing key
-		exchange,               // exchange
-		option.Bind.NoWait,     // no-wait
-		option.Bind.Args,       // args
+		q.Name,
+		options.QueueBindOptions.RoutingKey,
+		options.QueueBindOptions.Exchange,
+		options.QueueBindOptions.NoWait,
+		options.QueueBindOptions.Arguments,
 	)
 	if err != nil {
-		return msgs, err
+		return ch, msgs, err
 	}
 
-	// consume messages
 	msgs, err = ch.Consume(
-		queueName,                 // queue
-		option.Consume.Consumer,   // consumer
-		!option.Consume.ManualAck, // auto-ack
-		option.Consume.Exclusive,  // exclusive
-		option.Consume.NoLocal,    // no-local
-		option.Consume.NoWait,     // no-wait
-		option.Consume.Args,       // args
+		q.Name,
+		options.QueueConsumeOptions.Consumer,
+		true, // auto-ack
+		options.QueueConsumeOptions.Exclusive,
+		options.QueueConsumeOptions.NoLocal,
+		options.QueueConsumeOptions.NoWait,
+		options.QueueConsumeOptions.Arguments,
 	)
-	if err != nil {
-		return msgs, err
+	return ch, msgs, err
+}
+
+func (a *Amqph) autoDelivery(options ListenerOptions, output chan amqp091.Delivery, done <-chan struct{}, noWait bool) {
+	if !noWait {
+		time.Sleep(listenerChannelReconnetionTimeout)
 	}
-	return msgs, nil
+	ch, msgs, err := a.getDelivery(options)
+	if err != nil {
+		a.log.Error("Fail to get amqp delivery", logger.ErrField(err))
+		go a.autoDelivery(options, output, done, false)
+		return
+	}
+	defer ch.Close()
+
+	canceled, closed := amqp.OnChannelCloseOrCancel(ch)
+	for {
+		select {
+		case d := <-msgs:
+			output <- d
+		case <-canceled:
+			a.log.Error("Channel canceled, restarting auto delivery")
+			go a.autoDelivery(options, output, done, false)
+			return
+		case <-closed:
+			a.log.Error("Channel closed, restarting auto delivery")
+			go a.autoDelivery(options, output, done, false)
+			return
+		case <-done:
+			return
+		}
+	}
+}
+
+func (a *Amqph) Listen(options ListenerOptions) (msgs <-chan amqp091.Delivery, done <-chan struct{}) {
+	output := make(chan amqp091.Delivery)
+	go a.autoDelivery(options, output, a.done(), true)
+	return output, a.done()
 }

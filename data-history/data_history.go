@@ -2,9 +2,11 @@ package dhs
 
 import (
 	stdlog "log"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/amqph"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/influxdb"
 	"github.com/fernandotsda/nemesys/shared/logger"
@@ -64,12 +66,26 @@ func New(serviceNumber int) service.Service {
 		return nil
 	}
 	log.Info("Connected to influxdb")
+
+	publishers, err := strconv.Atoi(env.DHSAMQPPublishers)
+	if err != nil {
+		log.Fatal("Fail to parse env.DHSAMQPPublishers", logger.ErrField(err))
+		return nil
+	}
+
+	amqph := amqph.New(amqph.Config{
+		Log:        log,
+		Conn:       amqpConn,
+		Publishers: publishers,
+	})
+	go t.ServicePing(amqph, tools.ServiceIdent)
+
 	return &DHS{
 		Tools:                    tools,
 		influxClient:             &influxClient,
 		pg:                       pg.New(),
 		amqpConn:                 amqpConn,
-		amqph:                    amqph.New(amqpConn, log, tools.ServiceIdent),
+		amqph:                    amqph,
 		log:                      log,
 		containersPulling:        make(map[string]*containerPulling),
 		metricsContainerMap:      make(map[int64]string),
@@ -88,8 +104,23 @@ func (d *DHS) Run() {
 		return
 	}
 	d.log.Info("Starting listeners...")
+
 	go d.metricsDataListener()
-	go d.notificationListener()
+	go t.HandleAPINotifications(d.amqph, &t.NotificationHandler{
+		ContainerCreatedQueue: amqp.QueueDHSContainerCreated,
+		MetricCreatedQueue:    amqp.QueueDHSMetricCreated,
+		OnContainerCreated:    d.onContainerCreated,
+		OnContainerUpdated:    d.onContainerUpdated,
+		OnContainerDeleted:    d.onContainerDeleted,
+		OnMetricCreated:       d.onMetricCreated,
+		OnMetricUpdated:       d.onMetricUpdated,
+		OnMetricDeleted:       d.onMetricDeleted,
+		OnDataPolicyDeleted:   d.onDataPolicyDeleted,
+
+		OnError: func(err error) {
+			d.log.Error("Error handling API notifications", logger.ErrField(err))
+		},
+	})
 
 	d.IsReady = true
 	d.log.Info("Service is ready!")

@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
+	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/logger"
-	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/service"
 	"github.com/fernandotsda/nemesys/shared/uuid"
 	"github.com/rabbitmq/amqp091-go"
@@ -41,12 +41,12 @@ func (s *ServiceManager) pingHandler() {
 				s.log.Error("Fail to encode amqp body", logger.ErrField(err))
 				return
 			}
-			s.amqph.PublisherCh <- models.DetailedPublishing{
+			s.amqph.Publish(amqph.Publish{
 				Exchange: amqp.ExchangeServicesStatus,
 				Publishing: amqp091.Publishing{
 					Body: b,
 				},
-			}
+			})
 		case <-s.Done():
 			return
 		}
@@ -59,32 +59,29 @@ func (s *ServiceManager) pingService(serviceIdent string) (online bool) {
 		s.log.Error("Fail to generate new uuid", logger.ErrField(err))
 		return false
 	}
-	s.amqph.PublisherCh <- models.DetailedPublishing{
+	s.amqph.Publish(amqph.Publish{
 		Exchange:   amqp.ExchangeServicePing,
 		RoutingKey: serviceIdent,
 		Publishing: amqp091.Publishing{
 			CorrelationId: pingId,
 		},
-	}
+	})
 	_, err = s.pingPlumber.Listen(pingId, s.pingInterval)
 	return err == nil
 }
 
 func (s *ServiceManager) pongHandler() {
-	msgs, err := s.amqph.Listen("", amqp.ExchangeServicePong, models.ListenerOptions{
-		Bind: models.QueueBindOptions{
-			RoutingKey: "service-manager",
-		},
-	})
-	if err != nil {
-		s.log.Fatal("Fail to listen services pongs", logger.ErrField(err))
-		return
-	}
+	var options amqph.ListenerOptions
+	options.QueueDeclarationOptions.Exclusive = true
+	options.QueueBindOptions.Exchange = amqp.ExchangeServicePong
+	options.QueueBindOptions.RoutingKey = "service-manager"
+
+	msgs, done := s.amqph.Listen(options)
 	for {
 		select {
 		case d := <-msgs:
 			s.pingPlumber.Send(d)
-		case <-s.Done():
+		case <-done:
 			return
 		}
 	}

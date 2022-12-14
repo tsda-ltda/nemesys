@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
+	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/logger"
-	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/service"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/rabbitmq/amqp091-go"
@@ -13,11 +13,12 @@ import (
 
 func (s *ServiceManager) logListener() {
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
-	msgs, err := s.amqph.Listen("", amqp.ExchangeServiceLogs)
-	if err != nil {
-		s.log.Fatal("Fail to listen service unregister requests", logger.ErrField(err))
-		return
-	}
+
+	var options amqph.ListenerOptions
+	options.QueueDeclarationOptions.Exclusive = true
+	options.QueueBindOptions.Exchange = amqp.ExchangeServiceLogs
+
+	msgs, done := s.amqph.Listen(options)
 	for {
 		select {
 		case d := <-msgs:
@@ -27,23 +28,21 @@ func (s *ServiceManager) logListener() {
 				continue
 			}
 			s.influxClient.WriteLog(context.Background(), log)
-		case <-s.Done():
+		case <-done:
 			return
 		}
 	}
 }
 
 func (s *ServiceManager) registryListener() {
-	register, err := s.amqph.Listen("", amqp.ExchangeServiceRegisterReq)
-	if err != nil {
-		s.log.Fatal("Fail to listen service register requests", logger.ErrField(err))
-		return
-	}
-	unregister, err := s.amqph.Listen("", amqp.ExchangeServiceUnregister)
-	if err != nil {
-		s.log.Fatal("Fail to listen service unregister requests", logger.ErrField(err))
-		return
-	}
+	var options amqph.ListenerOptions
+	options.QueueDeclarationOptions.Exclusive = true
+
+	options.QueueBindOptions.Exchange = amqp.ExchangeServiceRegisterReq
+	register, done1 := s.amqph.Listen(options)
+
+	options.QueueBindOptions.Exchange = amqp.ExchangeServiceUnregister
+	unregister, done2 := s.amqph.Listen(options)
 	for {
 		select {
 		case d := <-register:
@@ -60,13 +59,13 @@ func (s *ServiceManager) registryListener() {
 				s.log.Error("Fail to encode body", logger.ErrField(err))
 				continue
 			}
-			s.amqph.PublisherCh <- models.DetailedPublishing{
+			s.amqph.Publish(amqph.Publish{
 				Exchange: amqp.ExchangeServiceRegisterRes,
 				Publishing: amqp091.Publishing{
 					CorrelationId: d.CorrelationId,
 					Body:          b,
 				},
-			}
+			})
 			s.log.Info("New service registrated, service ident: " + service.Ident)
 		case d := <-unregister:
 			var ident string
@@ -103,7 +102,9 @@ func (s *ServiceManager) registryListener() {
 				continue
 			}
 			s.services = newServices
-		case <-s.Done():
+		case <-done1:
+			return
+		case <-done2:
 			return
 		}
 	}

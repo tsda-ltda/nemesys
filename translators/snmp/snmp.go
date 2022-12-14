@@ -2,9 +2,11 @@ package snmp
 
 import (
 	stdlog "log"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/amqph"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
 	"github.com/fernandotsda/nemesys/shared/cache"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/evaluator"
@@ -54,9 +56,22 @@ func New(serviceNumber int) service.Service {
 	log.Info("Connected to amqp server")
 
 	pg := pg.New()
+
+	publishers, err := strconv.Atoi(env.SNMPAMQPPublishers)
+	if err != nil {
+		log.Fatal("Fail to parse env.SNMPAMQPPublishers", logger.ErrField(err))
+		return nil
+	}
+
+	amqph := amqph.New(amqph.Config{
+		Log:        log,
+		Conn:       amqpConn,
+		Publishers: publishers,
+	})
+	go t.ServicePing(amqph, tools.ServiceIdent)
 	return &SNMP{
 		Tools:             tools,
-		amqph:             amqph.New(amqpConn, log, tools.ServiceIdent),
+		amqph:             amqph,
 		amqpConn:          amqpConn,
 		pg:                pg,
 		log:               log,

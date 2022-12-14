@@ -49,7 +49,7 @@ status_log_04.txt.gz;Mon Nov 28 16:43:59 2022`
 			PortType: types.FLPTCommand,
 		},
 		{
-			PortType: types.FLPTVirtual,
+			PortType: types.FLPTSNMPVirtual,
 		},
 	})
 	if err != nil {

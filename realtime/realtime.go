@@ -2,10 +2,12 @@ package rts
 
 import (
 	stdlog "log"
+	"strconv"
 	"sync"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/amqph"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
 	"github.com/fernandotsda/nemesys/shared/cache"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/logger"
@@ -59,12 +61,26 @@ func New(serviceNumber int) service.Service {
 		stdlog.Panicf("Fail to create logger, err: %s", err)
 	}
 	log.Info("Connected to amqp server")
+
+	publishers, err := strconv.Atoi(env.RTSAMQPPublishers)
+	if err != nil {
+		log.Fatal("Fail to parse env.RTSAMQPPublishers", logger.ErrField(err))
+		return nil
+	}
+
+	amqph := amqph.New(amqph.Config{
+		Log:        log,
+		Conn:       amqpConn,
+		Publishers: publishers,
+	})
+	go t.ServicePing(amqph, tools.ServiceIdent)
+
 	return &RTS{
 		Tools:                    tools,
 		log:                      log,
 		pg:                       pg.New(),
 		amqp:                     amqpConn,
-		amqph:                    amqph.New(amqpConn, log, tools.ServiceIdent),
+		amqph:                    amqph,
 		cache:                    cache.New(),
 		plumber:                  models.NewAMQPPlumber(),
 		pendingMetricDataRequest: make(map[string]models.RTSMetricConfig),
@@ -74,10 +90,21 @@ func New(serviceNumber int) service.Service {
 
 func (s *RTS) Run() {
 	s.log.Info("Starting listeners...")
-	go s.notificationListener()      // listen to notification
-	go s.metricDataRequestListener() // listen to data requests
-	go s.metricDataListener()        // listen to new data
-	go s.metricsDataListener()       // listen to new data
+
+	go t.HandleAPINotifications(s.amqph, &t.NotificationHandler{
+		OnContainerUpdated:  s.onContainerUpdated,
+		OnContainerDeleted:  s.onContainerDeleted,
+		OnMetricUpdated:     s.onMetricUpdated,
+		OnMetricDeleted:     s.onMetricDeleted,
+		OnDataPolicyDeleted: s.onDataPolicyDeleted,
+		OnError: func(err error) {
+			s.log.Error("Error handling API notifications", logger.ErrField(err))
+		},
+	})
+	go s.metricDataRequestListener()
+	go s.metricDataListener()
+	go s.globalMetricDataListener()
+	go s.metricsDataListener()
 
 	s.log.Info("Service is ready!")
 	<-s.Done()

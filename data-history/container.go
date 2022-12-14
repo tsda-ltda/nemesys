@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
+	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
@@ -58,8 +59,7 @@ func (c *containerPulling) Run() {
 				continue
 			}
 
-			// publish request
-			c.dhs.amqph.PublisherCh <- models.DetailedPublishing{
+			c.dhs.amqph.Publish(amqph.Publish{
 				Exchange:   amqp.ExchangeMetricsDataReq,
 				RoutingKey: routingKey,
 				Publishing: amqp091.Publishing{
@@ -67,7 +67,8 @@ func (c *containerPulling) Run() {
 					Expiration: amqp.DefaultExp,
 					Body:       c.encodedRequest,
 				},
-			}
+			})
+
 			c.dhs.log.Debug("Metrics data request sent, container id: " + c.containerIdString)
 		case <-c.close:
 			return

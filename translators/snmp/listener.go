@@ -4,23 +4,23 @@ import (
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
+	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
 func (s *SNMP) getMetricListener() {
-	msgs, err := s.amqph.Listen(amqp.QueueSNMPMetricDataReq, amqp.ExchangeMetricDataReq,
-		models.ListenerOptions{Bind: models.QueueBindOptions{RoutingKey: "snmp"}},
-	)
-	if err != nil {
-		s.log.Panic("Fail to listen amqp messages", logger.ErrField(err))
-		return
-	}
+	var options amqph.ListenerOptions
+	options.QueueDeclarationOptions.Name = amqp.QueueSNMPMetricDataReq
+	options.QueueBindOptions.Exchange = amqp.ExchangeMetricDataReq
+	options.QueueBindOptions.RoutingKey = "snmp"
+
+	msgs, done := s.amqph.Listen(options)
 	for {
 		select {
 		case d := <-msgs:
 			var r models.MetricRequest
-			err = amqp.Decode(d.Body, &r)
+			err := amqp.Decode(d.Body, &r)
 			if err != nil {
 				s.log.Error("Fail to unmarshal amqp message body", logger.ErrField(err))
 				continue
@@ -40,25 +40,24 @@ func (s *SNMP) getMetricListener() {
 			}
 
 			go s.fetchMetricData(agent, r, d.CorrelationId, rk)
-		case <-s.Done():
+		case <-done:
 			return
 		}
 	}
 }
 
 func (s *SNMP) getMetricsListener() {
-	msgs, err := s.amqph.Listen(amqp.QueueSNMPMetricsDataReq, amqp.ExchangeMetricsDataReq,
-		models.ListenerOptions{Bind: models.QueueBindOptions{RoutingKey: "snmp"}},
-	)
-	if err != nil {
-		s.log.Panic("Fail to listen amqp messages", logger.ErrField(err))
-		return
-	}
+	var options amqph.ListenerOptions
+	options.QueueDeclarationOptions.Name = amqp.QueueSNMPMetricsDataReq
+	options.QueueBindOptions.Exchange = amqp.ExchangeMetricsDataReq
+	options.QueueBindOptions.RoutingKey = "snmp"
+
+	msgs, done := s.amqph.Listen(options)
 	for {
 		select {
 		case d := <-msgs:
 			var r models.MetricsRequest
-			err = amqp.Decode(d.Body, &r)
+			err := amqp.Decode(d.Body, &r)
 			if err != nil {
 				s.log.Error("Fail to unmarshal amqp message body", logger.ErrField(err))
 				continue
@@ -77,7 +76,7 @@ func (s *SNMP) getMetricsListener() {
 				continue
 			}
 			go s.fetchMetricsData(agent, r, d.CorrelationId, rk)
-		case <-s.Done():
+		case <-done:
 			return
 		}
 	}

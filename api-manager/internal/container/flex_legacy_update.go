@@ -6,6 +6,7 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
@@ -87,7 +88,7 @@ func UpdateFlexLegacy(api *api.API) func(c *gin.Context) {
 			return
 		}
 		api.Log.Debug("Flex legacy container updated with success, name: " + container.Base.Name)
-		api.Amqph.NotifyContainerUpdated(container.Base, container.Protocol, types.CTFlexLegacy)
+		t.NotifyContainerUpdated(api.Amqph, container.Base, container.Protocol)
 
 		c.Status(http.StatusOK)
 	}

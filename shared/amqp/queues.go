@@ -4,8 +4,7 @@ const (
 	QueueSNMPMetricDataReq      = "snmp_metric_data_req"
 	QueueSNMPMetricsDataReq     = "snmp_metrics_data_req"
 	QueueRTSMetricDataReq       = "rts_metric_data_req"
-	QueueRTSMetricDataRes       = "rts_metric_data_res"
-	QueueRTSMetricsDataRes      = "rts_metrics_data_res"
+	QueueRTSMetricData          = "rts_metric_data"
 	QueueDHSMetricsDataRes      = "dhs_metrics_data_res"
 	QueueDHSMetricCreated       = "dhs_metric_created"
 	QueueDHSContainerCreated    = "dhs_container_created"
@@ -28,8 +27,8 @@ const (
 	ExchangeServiceUnregister  = "unregister_service"   // fanout
 	ExchangeCheckMetricsAlarm  = "check_metrics_alarm"  // fanout
 	ExchangeCheckMetricAlarm   = "check_metric_alarm"   // fanout
-	ExchangeMetricsAlarmed     = "metrics_alarmed"      // fantout
-	ExchangeMetricAlarmed      = "metric_alarmed"       // fantout
+	ExchangeMetricsAlarmed     = "metrics_alarmed"      // fanout
+	ExchangeMetricAlarmed      = "metric_alarmed"       // fanout
 
 	ExchangeServicePing    = "ping"             // direct
 	ExchangeServicePong    = "pong"             // direct

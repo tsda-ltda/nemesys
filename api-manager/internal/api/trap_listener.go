@@ -26,7 +26,6 @@ func (api *API) startTrapListeners() {
 	api.trapsListeners = make([]*trap.Trap, len(listeners))
 	for i, tl := range listeners {
 		api.trapsListeners[i] = trap.New(trap.Config{
-			AmqpConn:     api.amqpConn,
 			Logger:       api.Log,
 			TrapListener: tl,
 			ServiceIdent: api.GetServiceIdent(),
@@ -43,7 +42,6 @@ func (api *API) CreateTrapListener(tl models.TrapListener) {
 	defer api.trapHandlersMU.Unlock()
 
 	api.trapsListeners = append(api.trapsListeners, trap.New(trap.Config{
-		AmqpConn:     api.amqpConn,
 		Logger:       api.Log,
 		TrapListener: tl,
 		ServiceIdent: api.GetServiceIdent(),

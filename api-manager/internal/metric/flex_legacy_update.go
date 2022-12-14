@@ -6,7 +6,9 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
+
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
 	"github.com/gin-gonic/gin"
@@ -95,7 +97,7 @@ func UpdateFlexLegacyHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		api.Log.Debug("Metric updated, name" + metric.Base.Name)
-		api.Amqph.NotifyMetricUpdated(metric.Base, metric.Protocol, types.CTFlexLegacy)
+		t.NotifyMetricUpdated(api.Amqph, metric.Base, metric.Protocol)
 
 		c.Status(http.StatusOK)
 	}

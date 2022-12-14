@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
+	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
@@ -54,13 +55,13 @@ func (t *Trap) handleFlexLegacyTrap(s *g.SnmpPacket, u *net.UDPAddr) {
 		return
 	}
 
-	t.amqph.PublisherCh <- models.DetailedPublishing{
+	t.amqph.Publish(amqph.Publish{
 		Exchange: amqp.ExchangeMetricAlarmed,
 		Publishing: amqp091.Publishing{
 			Type: strconv.Itoa(int(types.ATTrapFlexLegacy)),
 			Body: b,
 		},
-	}
+	})
 }
 
 func parseFlexLegacyTrapVariables(variables []g.SnmpPDU) (tp models.FlexLegacyTrapAlarm, err error) {
@@ -89,7 +90,7 @@ func parseFlexLegacyTrapVariables(variables []g.SnmpPDU) (tp models.FlexLegacyTr
 	if err != nil {
 		return tp, ErrInvalidPortValue
 	}
-	portType, err := types.ParseValue(variables[2].Name[23:24], types.MTInt)
+	portType, err := types.ParseFlexPortTypeFromOID(variables[2].Name)
 	if err != nil {
 		return tp, ErrInvalidPortValueOID
 	}
@@ -97,7 +98,7 @@ func parseFlexLegacyTrapVariables(variables []g.SnmpPDU) (tp models.FlexLegacyTr
 	tp = models.FlexLegacyTrapAlarm{
 		Timestamp:   time.Unix(timestamp.(int64), 0),
 		Value:       variables[2].Value,
-		PortType:    int16(portType.(int64)),
+		PortType:    int16(portType),
 		Port:        int16(port.(int64)),
 		Description: string(descrBytes),
 	}

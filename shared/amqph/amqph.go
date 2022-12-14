@@ -6,37 +6,59 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-// Amqph is an amqp handler common tasks between services.
+type Config struct {
+	// Log is the logger.
+	Log *logger.Logger
+	// Conn is the amqp connection.
+	Conn *amqp091.Connection
+	// Publishers is the number of publishers.
+	Publishers int
+}
+
 type Amqph struct {
+	// config is the config
+	config Config
 	// conn is the amqp connection.
 	conn *amqp091.Connection
 	// log is the Logger.
 	log *logger.Logger
 	// plumber is the plumber for responses.
 	plumber *models.AMQPPlumber
-	// PublisherCh is the channel to pubish messages.
-	PublisherCh chan models.DetailedPublishing
-	// serviceIdent is the service identification.
-	serviceIdent string
+	// doneChs are the done channels.
+	doneChs []chan struct{}
+	// publisherCh is the channel for publishing.
+	publisherCh chan Publish
 }
 
-// New returns a new Amqph.
-func New(conn *amqp091.Connection, log *logger.Logger, serviceIdent string) *Amqph {
+func New(config Config) *Amqph {
 	amqph := &Amqph{
-		conn:         conn,
-		log:          log,
-		plumber:      models.NewAMQPPlumber(),
-		serviceIdent: serviceIdent,
-		PublisherCh:  make(chan models.DetailedPublishing),
+		config:      config,
+		conn:        config.Conn,
+		log:         config.Log,
+		plumber:     models.NewAMQPPlumber(),
+		doneChs:     []chan struct{}{},
+		publisherCh: make(chan Publish),
 	}
 	amqph.declareExchages()
-	go amqph.publisher()
-	go amqph.pingHandler()
+
+	for i := 0; i < config.Publishers; i++ {
+		go amqph.publisher()
+	}
+
 	return amqph
 }
 
+func (a *Amqph) done() <-chan struct{} {
+	ch := make(chan struct{})
+	a.doneChs = append(a.doneChs, ch)
+	return ch
+}
+
+// Close closes publishers and listeners channels, but not
+// the amqp connection or the log.
 func (a *Amqph) Close() {
-	if !a.conn.IsClosed() {
-		a.conn.Close()
+	for _, v := range a.doneChs {
+		v <- struct{}{}
+		close(v)
 	}
 }

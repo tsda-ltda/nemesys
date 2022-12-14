@@ -84,7 +84,11 @@ func Start() {
 		log.Info("Requests count bucket created with success")
 	}
 
-	amqph := amqph.New(amqpConn, log, service.GetServiceIdent(service.ServiceManager, 1))
+	amqph := amqph.New(amqph.Config{
+		Log:        log,
+		Conn:       amqpConn,
+		Publishers: 1,
+	})
 
 	s := ServiceManager{
 		amqpConn:     amqpConn,

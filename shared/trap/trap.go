@@ -9,13 +9,12 @@ import (
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	g "github.com/gosnmp/gosnmp"
-	"github.com/rabbitmq/amqp091-go"
 )
 
 type Config struct {
 	models.TrapListener
-	// AmqpConn is the ampq connection.
-	AmqpConn *amqp091.Connection
+	// Amqph is the amqp handler.
+	Amqph *amqph.Amqph
 	// Logger is the logger.
 	Logger *logger.Logger
 	// ServiceIdent is the service ident.
@@ -42,7 +41,7 @@ func New(config Config) *Trap {
 		tl:     config.TrapListener,
 		config: config,
 		log:    config.Logger,
-		amqph:  amqph.New(config.AmqpConn, config.Logger, config.ServiceIdent),
+		amqph:  config.Amqph,
 		done:   make(chan struct{}),
 	}
 	go trap.run()

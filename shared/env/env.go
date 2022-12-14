@@ -138,4 +138,20 @@ var (
 	MetricAlarmEmailSenderHost = ""
 	// MetricAlarmEmailSenderHostPort is the host port of the sender. Default is "";
 	MetricAlarmEmailSenderHostPort = ""
+
+	// AlarmServiceAMQPPublishers is the number of amqp publishers, which means number
+	// of socket channels openned. Default is "1".
+	AlarmServiceAMQPPublishers = "1"
+	// APIManagerAMQPPublishers is the number of amqp publishers, which means number
+	// of socket channels openned. Default is "3".
+	APIManagerAMQPPublishers = "3"
+	// DHSAMQPPublishers is the number of amqp publishers, which means number
+	// of socket channels openned. Default is "5".
+	DHSAMQPPublishers = "5"
+	// RTSAMQPPublishers is the number of amqp publishers, which means number
+	// of socket channels openned. Default is "5".
+	RTSAMQPPublishers = "5"
+	// SNMPAMQPPublishers is the number of amqp publishers, which means number
+	// of socket channels openned. Default is "5".
+	SNMPAMQPPublishers = "5"
 )

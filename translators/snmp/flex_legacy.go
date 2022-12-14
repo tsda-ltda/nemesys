@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
+	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
@@ -58,13 +59,13 @@ func (s *SNMP) notifyAlarms(containerId int32, alarms []flexLegacyAlarm) {
 		return
 	}
 
-	s.amqph.PublisherCh <- models.DetailedPublishing{
+	s.amqph.Publish(amqph.Publish{
 		Exchange: amqp.ExchangeMetricsAlarmed,
 		Publishing: amqp091.Publishing{
 			Type: strconv.Itoa(int(types.ATDirect)),
 			Body: b,
 		},
-	}
+	})
 }
 
 func getFlexLegacyAlarmOID(oid string) (alarm string, err error) {

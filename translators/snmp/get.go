@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
+	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
@@ -35,34 +36,38 @@ func (s *SNMP) fetchMetricData(agent models.SNMPv2cAgent, request models.MetricR
 		}
 	}
 
-	if len(metricsRes.Metrics) != 1 {
+	if len(metricsRes.Metrics) < 1 {
 		p.Type = amqp.GetMessage(amqp.InternalError)
-		s.log.Error("Expected 1 metric data response got: " + strconv.Itoa(len(metricsRes.Metrics)))
+		s.log.Error("Expected at least 1 metric data response got: " + strconv.Itoa(len(metricsRes.Metrics)))
 	} else {
 		response := models.MetricDataResponse{
 			ContainerId:            metricsRes.ContainerId,
-			MetricBasicDataReponse: metricsRes.Metrics[1],
+			MetricBasicDataReponse: metricsRes.Metrics[0],
 		}
-		b, err := amqp.Encode(response)
-		if err != nil {
-			p.Type = amqp.FromMessageType(amqp.InternalError)
-			s.log.Error("Fail to encode amqp body", logger.ErrField(err))
+		if !metricsRes.Metrics[1].Failed {
+			p.Type = amqp.FromMessageType(amqp.OK)
+			b, err := amqp.Encode(response)
+			if err != nil {
+				p.Type = amqp.FromMessageType(amqp.InternalError)
+				s.log.Error("Fail to encode amqp body", logger.ErrField(err))
+			}
+			p.Body = b
 		}
-		p.Body = b
-
 	}
 
-	s.amqph.PublisherCh <- models.DetailedPublishing{
+	s.amqph.Publish(amqph.Publish{
 		Exchange:   amqp.ExchangeMetricDataRes,
 		RoutingKey: routingKey,
 		Publishing: p,
-	}
+	})
+	s.log.Debug("Metric data published, metric id: " + strconv.FormatInt(request.MetricId, 10))
 
 	if types.IsNonFlex(request.ContainerType) && p.Type == amqp.FromMessageType(amqp.OK) {
-		s.amqph.PublisherCh <- models.DetailedPublishing{
+		s.amqph.Publish(amqph.Publish{
 			Exchange:   amqp.ExchangeCheckMetricAlarm,
 			Publishing: p,
-		}
+		})
+		s.log.Debug("Metric data sent to alarm validation")
 	}
 }
 
@@ -87,18 +92,22 @@ func (s *SNMP) fetchMetricsData(agent models.SNMPv2cAgent, request models.Metric
 		s.log.Error("Fail to encode amqp body", logger.ErrField(err))
 	}
 	p.Body = b
+	p.Type = amqp.FromMessageType(amqp.OK)
 
-	s.amqph.PublisherCh <- models.DetailedPublishing{
+	s.amqph.Publish(amqph.Publish{
 		Exchange:   amqp.ExchangeMetricsDataRes,
 		RoutingKey: routingKey,
 		Publishing: p,
-	}
+	})
+	s.log.Debug("Metrics data published, container id: " + strconv.FormatInt(int64(request.ContainerId), 10))
 
 	if types.IsNonFlex(request.ContainerType) && p.Type == amqp.FromMessageType(amqp.OK) {
-		s.amqph.PublisherCh <- models.DetailedPublishing{
+		s.amqph.Publish(amqph.Publish{
 			Exchange:   amqp.ExchangeCheckMetricsAlarm,
 			Publishing: p,
-		}
+		})
+
+		s.log.Debug("Metrics data sent to alarm validation")
 	}
 }
 

@@ -107,4 +107,10 @@ func Init() {
 	set("METRIC_ALARM_EMAIL_SENDER_PASSWORD", &MetricAlarmEmailSenderPassword)
 	set("METRIC_ALARM_EMAIL_SENDER_HOST", &MetricAlarmEmailSenderHost)
 	set("METRIC_ALARM_EMAIL_SENDER_HOST_PORT", &MetricAlarmEmailSenderHostPort)
+
+	set("ALARM_SERVICE_AMQP_PUBLISHERS", &AlarmServiceAMQPPublishers)
+	set("API_MANAGER_AMQP_PUBLISHERS", &APIManagerAMQPPublishers)
+	set("DHS_SERVICE_AMQP_PUBLISHERS", &DHSAMQPPublishers)
+	set("RTS_SERVICE_AMQP_PUBLISHERS", &RTSAMQPPublishers)
+	set("SNMP_AMQP_PUBLISHERS", &SNMPAMQPPublishers)
 }

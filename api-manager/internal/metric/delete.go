@@ -6,7 +6,9 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -60,7 +62,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		api.Log.Debug("Metric deleted, id: " + rawId)
-		api.Amqph.NotifyMetricDeleted(id, int32(containerId))
+		t.NotifyMetricDeleted(api.Amqph, int32(containerId), id)
 
 		c.Status(http.StatusNoContent)
 	}

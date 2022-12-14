@@ -8,6 +8,8 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
+
 	"github.com/fernandotsda/nemesys/shared/types"
 	"github.com/gin-gonic/gin"
 )
@@ -80,7 +82,8 @@ func CreateFlexLegacyHandler(api *api.API) func(c *gin.Context) {
 		metric.Protocol.Id = id
 
 		api.Log.Debug("Flex legacy metric created, name: " + metric.Base.Name)
-		api.Amqph.NotifyMetricCreated(metric.Base, metric.Protocol, types.CTFlexLegacy)
+		t.NotifyMetricCreated(api.Amqph,metric.Base, metric.Protocol)
+
 
 		c.Status(http.StatusOK)
 	}

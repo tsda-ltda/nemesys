@@ -6,6 +6,7 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -44,7 +45,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		api.Log.Debug("Container deleted, id: " + rawId)
-		api.Amqph.NotifyContainerDeleted(int32(id))
+		t.NotifyContainerDeleted(api.Amqph, int32(id))
 
 		c.Status(http.StatusNoContent)
 	}

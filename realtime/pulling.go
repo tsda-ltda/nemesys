@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
+	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
@@ -156,15 +157,17 @@ func (c *ContainerPulling) Run() {
 			}
 
 			// send metric data request to translators
-			c.RTS.amqph.PublisherCh <- models.DetailedPublishing{
+			c.RTS.amqph.Publish(amqph.Publish{
 				Exchange:   amqp.ExchangeMetricsDataReq,
 				RoutingKey: routingKey,
 				Publishing: amqp091.Publishing{
 					Expiration: amqp.DefaultExp,
-					Headers:    amqp.RouteHeader("rts"),
+					Headers:    amqp.RouteHeader(c.RTS.GetServiceIdent()),
 					Body:       b,
 				},
-			}
+			})
+
+			c.RTS.log.Debug("Metrics data request sent, container id: " + strconv.FormatInt(int64(c.Id), 10))
 		case <-c.stopCh:
 			return
 		}

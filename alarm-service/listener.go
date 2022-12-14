@@ -4,17 +4,18 @@ import (
 	"strconv"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
+	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
 func (a *Alarm) listenCheckMetricAlarm() {
-	msgs, err := a.amqph.Listen(amqp.QueueAlarmCheckMetricAlarm, amqp.ExchangeCheckMetricAlarm)
-	if err != nil {
-		a.log.Fatal("Fail to listen to metric check alarm", logger.ErrField(err))
-		return
-	}
+	var options amqph.ListenerOptions
+	options.QueueDeclarationOptions.Name = amqp.QueueAlarmCheckMetricAlarm
+	options.QueueBindOptions.Exchange = amqp.ExchangeCheckMetricAlarm
+
+	msgs, done := a.amqph.Listen(options)
 	for {
 		select {
 		case d := <-msgs:
@@ -29,6 +30,8 @@ func (a *Alarm) listenCheckMetricAlarm() {
 			}
 
 			go a.checkMetricAlarm(dataResponse)
+		case <-done:
+			return
 		case <-a.Done():
 			return
 		}
@@ -36,11 +39,11 @@ func (a *Alarm) listenCheckMetricAlarm() {
 }
 
 func (a *Alarm) listenCheckMetricsAlarm() {
-	msgs, err := a.amqph.Listen(amqp.QueueAlarmCheckMetricsAlarm, amqp.ExchangeCheckMetricsAlarm)
-	if err != nil {
-		a.log.Fatal("Fail to listen to metrics check alarm", logger.ErrField(err))
-		return
-	}
+	var options amqph.ListenerOptions
+	options.QueueDeclarationOptions.Name = amqp.QueueAlarmCheckMetricsAlarm
+	options.QueueBindOptions.Exchange = amqp.ExchangeCheckMetricsAlarm
+
+	msgs, done := a.amqph.Listen(options)
 	for {
 		select {
 		case d := <-msgs:
@@ -61,6 +64,8 @@ func (a *Alarm) listenCheckMetricsAlarm() {
 			dataResponse.Metrics = m
 
 			go a.checkMetricsAlarm(dataResponse)
+		case <-done:
+			return
 		case <-a.Done():
 			return
 		}
@@ -71,11 +76,11 @@ func (a *Alarm) listenMetricAlarmed() {
 	direct := strconv.Itoa(int(types.ATDirect))
 	trapFlexLegacy := strconv.Itoa(int(types.ATTrapFlexLegacy))
 
-	msgs, err := a.amqph.Listen(amqp.QueueAlarmMetricAlarmed, amqp.ExchangeMetricAlarmed)
-	if err != nil {
-		a.log.Fatal("Fail to listen to metric alarmed", logger.ErrField(err))
-		return
-	}
+	var options amqph.ListenerOptions
+	options.QueueDeclarationOptions.Name = amqp.QueueAlarmMetricAlarmed
+	options.QueueBindOptions.Exchange = amqp.ExchangeMetricAlarmed
+
+	msgs, done := a.amqph.Listen(options)
 	for {
 		select {
 		case d := <-msgs:
@@ -87,6 +92,8 @@ func (a *Alarm) listenMetricAlarmed() {
 			default:
 				a.log.Warn("Unsupported amqp message type on metrics alarmed listener, type: " + d.Type)
 			}
+		case <-done:
+			return
 		case <-a.Done():
 			return
 		}
@@ -96,11 +103,11 @@ func (a *Alarm) listenMetricAlarmed() {
 func (a *Alarm) listenMetricsAlarmed() {
 	direct := strconv.Itoa(int(types.ATDirect))
 
-	msgs, err := a.amqph.Listen(amqp.QueueAlarmMetricsAlarmed, amqp.ExchangeMetricsAlarmed)
-	if err != nil {
-		a.log.Fatal("Fail to listen to metrics alarmed", logger.ErrField(err))
-		return
-	}
+	var options amqph.ListenerOptions
+	options.QueueDeclarationOptions.Name = amqp.QueueAlarmMetricsAlarmed
+	options.QueueBindOptions.Exchange = amqp.ExchangeMetricsAlarmed
+
+	msgs, done := a.amqph.Listen(options)
 	for {
 		select {
 		case d := <-msgs:
@@ -110,6 +117,8 @@ func (a *Alarm) listenMetricsAlarmed() {
 			default:
 				a.log.Warn("Unsupported amqp message type on metrics alarmed listener, type: " + d.Type)
 			}
+		case <-done:
+			return
 		case <-a.Done():
 			return
 		}

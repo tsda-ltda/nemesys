@@ -12,6 +12,7 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/counter"
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/amqph"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
 	"github.com/fernandotsda/nemesys/shared/cache"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/influxdb"
@@ -111,6 +112,20 @@ func New(serviceNumber int) service.Service {
 
 	validate := validator.New()
 	pg := pg.New()
+
+	publishers, err := strconv.Atoi(env.APIManagerAMQPPublishers)
+	if err != nil {
+		log.Fatal("Fail to parse env.APIManagerAMQPPublishers", logger.ErrField(err))
+		return nil
+	}
+
+	amqph := amqph.New(amqph.Config{
+		Log:        log,
+		Conn:       amqpConn,
+		Publishers: publishers,
+	})
+	go t.ServicePing(amqph, tools.ServiceIdent)
+
 	api := &API{
 		amqpConn:         amqpConn,
 		Tools:            tools,
@@ -121,7 +136,7 @@ func New(serviceNumber int) service.Service {
 		Validate:         validate,
 		Log:              log,
 		Cache:            cache.New(),
-		Amqph:            amqph.New(amqpConn, log, tools.ServiceIdent),
+		Amqph:            amqph,
 		UserPWBcryptCost: bcryptCost,
 		Counter:          counter.New(&influxClient, pg, log, time.Second*10),
 		servicesStatus:   []service.ServiceStatus{},

@@ -9,6 +9,8 @@ import (
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -95,7 +97,7 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		api.Log.Debug("Metric updated, name" + metric.Base.Name)
-		api.Amqph.NotifyMetricUpdated(metric.Base, metric.Protocol, types.CTSNMPv2c)
+		t.NotifyMetricUpdated(api.Amqph,metric.Base, metric.Protocol)
 
 		c.Status(http.StatusOK)
 	}

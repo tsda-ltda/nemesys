@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
+	"github.com/fernandotsda/nemesys/shared/amqph"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/rdb"
@@ -13,61 +14,59 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-func (s *RTS) notificationListener() {
-	for {
-		select {
-		case <-s.amqph.OnDataPolicyDeleted():
-			for _, cp := range s.pulling {
-				cp.Close()
-			}
-		case n := <-s.amqph.OnContainerUpdated():
-			c, ok := s.pulling[n.Base.Id]
-			if !ok {
-				continue
-			}
-			c.Close()
-		case id := <-s.amqph.OnContainerDeleted():
-			c, ok := s.pulling[id]
-			if !ok {
-				continue
-			}
-			c.Close()
-		case n := <-s.amqph.OnMetricUpdated():
-			c, ok := s.pulling[n.Base.ContainerId]
-			if !ok {
-				continue
-			}
-			m, ok := c.Metrics[n.Base.Id]
-			if !ok {
-				continue
-			}
-			m.Stop()
-		case pair := <-s.amqph.OnMetricDeleted():
-			cp, ok := s.pulling[pair.ContainerId]
-			if !ok {
-				continue
-			}
-			m, ok := cp.Metrics[pair.Id]
-			if !ok {
-				continue
-			}
-			m.Stop()
-		case <-s.Done():
-			return
-		}
+func (s *RTS) onDataPolicyDeleted(id int16) {
+	for _, cp := range s.pulling {
+		cp.Close()
 	}
 }
 
-func (s *RTS) metricDataRequestListener() {
-	msgs, err := s.amqph.Listen(amqp.QueueRTSMetricDataReq, amqp.ExchangeMetricDataReq, models.ListenerOptions{
-		Bind: models.QueueBindOptions{
-			RoutingKey: "rts",
-		},
-	})
-	if err != nil {
-		s.log.Panic("Fail to listen amqp messages", logger.ErrField(err))
+func (s *RTS) onContainerUpdated(base models.BaseContainer, protocol any) {
+	c, ok := s.pulling[base.Id]
+	if !ok {
 		return
 	}
+	c.Close()
+}
+
+func (s *RTS) onContainerDeleted(id int32) {
+	c, ok := s.pulling[id]
+	if !ok {
+		return
+	}
+	c.Close()
+}
+
+func (s *RTS) onMetricUpdated(base models.BaseMetric, protocol any) {
+	c, ok := s.pulling[base.ContainerId]
+	if !ok {
+		return
+	}
+	m, ok := c.Metrics[base.Id]
+	if !ok {
+		return
+	}
+	m.Stop()
+}
+
+func (s *RTS) onMetricDeleted(containerId int32, id int64) {
+	cp, ok := s.pulling[containerId]
+	if !ok {
+		return
+	}
+	m, ok := cp.Metrics[id]
+	if !ok {
+		return
+	}
+	m.Stop()
+}
+
+func (s *RTS) metricDataRequestListener() {
+	var options amqph.ListenerOptions
+	options.QueueDeclarationOptions.Name = amqp.QueueRTSMetricDataReq
+	options.QueueBindOptions.Exchange = amqp.ExchangeMetricDataReq
+	options.QueueBindOptions.RoutingKey = "rts"
+
+	msgs, done := s.amqph.Listen(options)
 	for {
 		select {
 		case d := <-msgs:
@@ -79,7 +78,7 @@ func (s *RTS) metricDataRequestListener() {
 			}
 
 			var r models.MetricRequest
-			err = amqp.Decode(d.Body, &r)
+			err := amqp.Decode(d.Body, &r)
 			if err != nil {
 				s.log.Error("Fail to decode message body", logger.ErrField(err))
 				continue
@@ -139,7 +138,7 @@ func (s *RTS) metricDataRequestListener() {
 				s.startMetricPulling(r, config)
 				go func(correlationId string, r models.MetricRequest) {
 					// send metric data request to translators
-					s.amqph.PublisherCh <- models.DetailedPublishing{
+					s.amqph.Publish(amqph.Publish{
 						Exchange:   amqp.ExchangeMetricDataReq,
 						RoutingKey: routingKey,
 						Publishing: amqp091.Publishing{
@@ -148,7 +147,8 @@ func (s *RTS) metricDataRequestListener() {
 							CorrelationId: correlationId,
 							Body:          d.Body,
 						},
-					}
+					})
+
 					s.pendingMetricDataRequest[correlationId] = config
 					defer func(correlationId string) {
 						delete(s.pendingMetricDataRequest, correlationId)
@@ -177,87 +177,98 @@ func (s *RTS) metricDataRequestListener() {
 				CorrelationId: d.CorrelationId,
 			}, responseRk)
 			s.log.Debug("Metric data fetched on cache, metric id: " + metricIdString)
-		case <-s.Done():
+		case <-done:
 			return
 		}
 	}
+}
+
+func (s *RTS) metricDataListenerHandler(d amqp091.Delivery) {
+	s.plumber.Send(d)
+	if amqp.ToMessageType(d.Type) != amqp.OK {
+		return
+	}
+	ctx := context.Background()
+
+	var m models.MetricDataResponse
+	err := amqp.Decode(d.Body, &m)
+	if err != nil {
+		s.log.Error("Fail to decode amqp message body", logger.ErrField(err))
+		return
+	}
+
+	config, ok := s.pendingMetricDataRequest[d.CorrelationId]
+	if !ok {
+		var err error
+		config, err = s.getRTSMetricConfig(ctx, m.Id)
+		if err != nil {
+			s.log.Error("Fail to get metric configuration", logger.ErrField(err))
+			return
+		}
+	}
+
+	err = s.cache.Set(ctx, d.Body, rdb.CacheMetricDataKey(m.Id), time.Millisecond*time.Duration(config.CacheDuration))
+	if err != nil {
+		s.log.Error("Fail to save metric data on cache", logger.ErrField(err))
+		return
+	}
+
+	s.log.Debug("Metric data received, id: " + strconv.FormatInt(m.Id, 10))
 }
 
 // metricDataListen listen to metric data response, using a unique routing key,
-// to resolve rts data requests. Also saves the metric data on cache.
+// to resolve rts data requests.
 func (s *RTS) metricDataListener() {
-	msgs, err := s.amqph.Listen("", amqp.ExchangeMetricDataRes,
-		models.ListenerOptions{
-			Bind: models.QueueBindOptions{
-				RoutingKey: s.GetServiceIdent(),
-			},
-		},
-	)
-	if err != nil {
-		s.log.Panic("Fail to listen amqp msgs", logger.ErrField(err))
-		return
-	}
+	var options amqph.ListenerOptions
+	options.QueueDeclarationOptions.Exclusive = true
+	options.QueueBindOptions.Exchange = amqp.ExchangeMetricDataRes
+	options.QueueBindOptions.RoutingKey = s.GetServiceIdent()
+
+	msgs, done := s.amqph.Listen(options)
 	for {
 		select {
 		case d := <-msgs:
-			s.plumber.Send(d)
-			ctx := context.Background()
-
-			if amqp.ToMessageType(d.Type) != amqp.OK {
-				continue
-			}
-
-			var m models.MetricDataResponse
-			err := amqp.Decode(d.Body, &m)
-			if err != nil {
-				s.log.Error("Fail to decode amqp message body", logger.ErrField(err))
-				continue
-			}
-
-			config, ok := s.pendingMetricDataRequest[d.CorrelationId]
-			if !ok {
-				var err error
-				config, err = s.getRTSMetricConfig(ctx, m.Id)
-				if err != nil {
-					s.log.Error("Fail to get metric configuration", logger.ErrField(err))
-					continue
-				}
-			}
-
-			err = s.cache.Set(ctx, d.Body, rdb.CacheMetricDataKey(m.Id), time.Millisecond*time.Duration(config.CacheDuration))
-			if err != nil {
-				s.log.Error("Fail to save metric data on cache", logger.ErrField(err))
-				continue
-			}
-
-			s.log.Debug("metric data received, id: " + strconv.FormatInt(m.Id, 10))
-		case <-s.Done():
+			s.metricDataListenerHandler(d)
+		case <-done:
 			return
 		}
 	}
 }
 
-// metricsDataListener listen to metrics data response and save it on cache.
-func (s *RTS) metricsDataListener() {
-	msgs, err := s.amqph.Listen(amqp.QueueRTSMetricsDataRes, amqp.ExchangeMetricsDataRes,
-		models.ListenerOptions{
-			Bind: models.QueueBindOptions{
-				RoutingKey: s.GetServiceIdent(),
-			},
-		},
-	)
-	if err != nil {
-		s.log.Panic("Fail to listen amqp msgs", logger.ErrField(err))
-		return
-	}
+// globalMetricDataListener listen to metric data response, using rts routing key,
+// to resolve incoming data that are not rts requests responses.
+func (s *RTS) globalMetricDataListener() {
+	var options amqph.ListenerOptions
+	options.QueueDeclarationOptions.Name = amqp.QueueRTSMetricData
+	options.QueueBindOptions.Exchange = amqp.ExchangeMetricDataRes
+	options.QueueBindOptions.RoutingKey = "rts"
+
+	msgs, done := s.amqph.Listen(options)
 	for {
 		select {
 		case d := <-msgs:
-			ctx := context.Background()
+			s.metricDataListenerHandler(d)
+		case <-done:
+			return
+		}
+	}
+}
 
+// metricsDataListener listen to metrics data response.
+func (s *RTS) metricsDataListener() {
+	var options amqph.ListenerOptions
+	options.QueueDeclarationOptions.Exclusive = true
+	options.QueueBindOptions.Exchange = amqp.ExchangeMetricsDataRes
+	options.QueueBindOptions.RoutingKey = s.GetServiceIdent()
+
+	msgs, done := s.amqph.Listen(options)
+	for {
+		select {
+		case d := <-msgs:
 			if amqp.ToMessageType(d.Type) != amqp.OK {
 				continue
 			}
+			ctx := context.Background()
 
 			var m models.MetricsDataResponse
 			err := amqp.Decode(d.Body, &m)
@@ -298,7 +309,7 @@ func (s *RTS) metricsDataListener() {
 			}
 
 			s.log.Debug("Metrics data received, container id: " + strconv.FormatInt(int64(m.ContainerId), 10))
-		case <-s.Done():
+		case <-done:
 			return
 		}
 	}

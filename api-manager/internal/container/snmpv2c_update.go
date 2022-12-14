@@ -6,6 +6,7 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
@@ -76,7 +77,7 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		api.Log.Debug("SNMPv2c container updated, name: " + container.Base.Name)
-		api.Amqph.NotifyContainerUpdated(container.Base, container.Protocol, types.CTSNMPv2c)
+		t.NotifyContainerUpdated(api.Amqph, container.Base, container.Protocol)
 
 		c.Status(http.StatusOK)
 	}

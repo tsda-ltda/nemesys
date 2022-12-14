@@ -7,6 +7,8 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
+
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
 	"github.com/gin-gonic/gin"
@@ -79,7 +81,7 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		metric.Base.Id = id
 		metric.Protocol.Id = id
 		api.Log.Debug("SNMPv2c metric created, name: " + metric.Base.Name)
-		api.Amqph.NotifyMetricCreated(metric.Base, metric.Protocol, types.CTSNMPv2c)
+		t.NotifyMetricCreated(api.Amqph,metric.Base, metric.Protocol)
 
 		c.Status(http.StatusOK)
 	}

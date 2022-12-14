@@ -7,14 +7,12 @@ import (
 )
 
 func (a *Amqph) declareExchages() {
-	// open socket channel
 	ch, err := a.conn.Channel()
 	if err != nil {
 		a.log.Panic("Fail to open socket channel")
 	}
 	defer ch.Close()
 
-	// helper function
 	declare := func(name string, kind string, durable bool, autoDelete bool, internal bool, noWait bool, args amqp091.Table) {
 		err = ch.ExchangeDeclare(
 			name,

@@ -9,6 +9,7 @@ import (
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/amqph"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
 	"github.com/fernandotsda/nemesys/shared/cache"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/logger"
@@ -62,12 +63,26 @@ func New(serviceNumber int) service.Service {
 		log.Fatal("Fail to parse env.MetricAlarmEmailSenderHostPort", logger.ErrField(err))
 		return nil
 	}
+
+	publishers, err := strconv.Atoi(env.AlarmServiceAMQPPublishers)
+	if err != nil {
+		log.Fatal("Fail to parse env.AlarmServiceAMQPPublishers", logger.ErrField(err))
+		return nil
+	}
+
+	amqph := amqph.New(amqph.Config{
+		Log:        log,
+		Conn:       amqpConn,
+		Publishers: publishers,
+	})
+	go t.ServicePing(amqph, tools.ServiceIdent)
+
 	return &Alarm{
 		pg:       pg.New(),
 		cache:    cache.New(),
 		amqpConn: amqpConn,
 		log:      log,
-		amqph:    amqph.New(amqpConn, log, tools.GetServiceIdent()),
+		amqph:    amqph,
 		Tools:    tools,
 		smtpAuth: smtp.PlainAuth("", env.MetricAlarmEmailSender, env.MetricAlarmEmailSenderPassword, env.MetricAlarmEmailSenderHost),
 		smtpConnPool: tlspool.New(tlspool.Config{

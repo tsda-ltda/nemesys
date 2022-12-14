@@ -212,7 +212,7 @@ func (w *flexLegacyDatalogWorker) Run() {
 					if t > newRegistry.Status {
 						newRegistry.Status = t
 					}
-				case types.FLPTVirtual:
+				case types.FLPTSNMPVirtual:
 					if t > newRegistry.Virtual {
 						newRegistry.Virtual = t
 					}
@@ -287,7 +287,7 @@ func processDownloadControlFile(txt string, resgistry models.FlexLegacyDatalogDo
 			skipCommand = false
 		case types.FLPTMetering:
 			skipMetering = false
-		case types.FLPTVirtual:
+		case types.FLPTSNMPVirtual:
 			skipVirtual = false
 		case types.FLPTStatus:
 			skipStatus = false
@@ -340,7 +340,7 @@ func processDownloadControlFile(txt string, resgistry models.FlexLegacyDatalogDo
 			if timestamp.Unix() > resgistry.Command && !skipCommand {
 				logs = append(logs, log)
 			}
-		case types.FLPTVirtual:
+		case types.FLPTSNMPVirtual:
 			if timestamp.Unix() > resgistry.Virtual && !skipVirtual {
 				logs = append(logs, log)
 			}
