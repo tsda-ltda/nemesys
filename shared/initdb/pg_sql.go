@@ -342,7 +342,7 @@ var sqlCommands []string = []string{
 		alarm_profile FLOAT8 NOT NULL,
 		alarm_profile_email FLOAT8 NOT NULL,
 		alarm_category FLOAT8 NOT NULL,
-		trap_relation FLOAT8 NOT NULL,
+		traps_categories_rel FLOAT8 NOT NULL,
 		refkey FLOAT8 NOT NULL,
 		api_key FLOAT8 NOT NULL,
 		influx_data_point FLOAT8 NOT NULL,
@@ -352,7 +352,7 @@ var sqlCommands []string = []string{
 	);`,
 	`INSERT INTO price_table (id, coin_type, _user, team, context, contextual_metric, basic_container,
 		snmpv2c_container, flex_legacy_container, basic_metric, snmpv2c_metric, flex_legacy_metric, custom_query,
-		data_policy, alarm_expression, alarm_profile, alarm_profile_email, alarm_category, trap_relation, refkey, api_key, influx_data_point, request, realtime_data_request,
+		data_policy, alarm_expression, alarm_profile, alarm_profile_email, alarm_category, traps_categories_rel, refkey, api_key, influx_data_point, request, realtime_data_request,
 		history_data_request) VALUES (1, 'R$', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)`,
 
 	// Create base plan table
@@ -375,7 +375,7 @@ var sqlCommands []string = []string{
 		alarm_profiles INT4 NOT NULL,
 		alarm_profiles_emails INT4 NOT NULL,
 		alarm_categories INT4 NOT NULL,
-		trap_relation INT4 NOT NULL,
+		traps_categories_rels INT4 NOT NULL,
 		refkeys INT8 NOT NULL,
 		api_keys INT4 NOT NULL,
 		influx_data_points INT8 NOT NULL,
@@ -385,7 +385,7 @@ var sqlCommands []string = []string{
 	);`,
 	`INSERT INTO base_plan (id, cost, users, teams, contexts, contextual_metrics, basic_containers,
 		snmpv2c_containers, flex_legacy_containers, basic_metrics, snmpv2c_metrics, flex_legacy_metrics, custom_queries,
-		data_policies, alarm_expressions, alarm_profiles, refkeys, api_keys, influx_data_points, requests, realtime_data_requests,
+		data_policies, alarm_expressions, alarm_profiles, alarm_profiles_emails, alarm_categories, traps_categories_rels, refkeys, api_keys, influx_data_points, requests, realtime_data_requests,
 		history_data_requests) VALUES (1,0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)`,
 
 	// Create requests users whitelist

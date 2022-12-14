@@ -157,9 +157,9 @@ func calculate(ctx context.Context, api *api.API) (result models.ServerCostResul
 			Price:     priceTable.AlarmCategory,
 		},
 		{
-			N:         elements.TrapRelations,
-			BasePlanN: basePlan.TrapRelations,
-			Price:     priceTable.TrapRelation,
+			N:         elements.TrapCategoryRelations,
+			BasePlanN: basePlan.TrapCategoryRelations,
+			Price:     priceTable.TrapCategoryRelation,
 		},
 		{
 			N:         elements.Refkeys,
