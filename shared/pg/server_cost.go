@@ -10,11 +10,11 @@ import (
 const (
 	sqlCostUpdatePriceTable = `UPDATE price_table SET (coin_type, _user, team, context, contextual_metric, basic_container,
 		snmpv2c_container, flex_legacy_container, basic_metric, snmpv2c_metric, flex_legacy_metric, custom_query,
-		data_policy, alarm_expression, alarm_profile, refkey, api_key, influx_data_point, request, realtime_data_request,
-		history_data_request) = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) WHERE id = 1;`
+		data_policy, alarm_expression, alarm_profile, alarm_profile_email, alarm_category, trap_relation, refkey, api_key, influx_data_point, request, realtime_data_request,
+		history_data_request) = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24) WHERE id = 1;`
 	sqlCostGetPriceTable = `SELECT coin_type, _user, team, context, contextual_metric, basic_container,
 		snmpv2c_container, flex_legacy_container, basic_metric, snmpv2c_metric, flex_legacy_metric, custom_query,
-		data_policy, alarm_expression, alarm_profile, refkey, api_key, influx_data_point, request, realtime_data_request,
+		data_policy, alarm_expression, alarm_profile, alarm_profile_email, alarm_category, trap_relation, refkey, api_key, influx_data_point, request, realtime_data_request,
 		history_data_request FROM price_table WHERE id = 1;`
 	sqlCostCountElements = `SELECT 
 		(SELECT COUNT (*) FROM users),
@@ -31,15 +31,18 @@ const (
 		(SELECT COUNT (*) FROM data_policies),
 		(SELECT COUNT (*) FROM alarm_expressions),
 		(SELECT COUNT (*) FROM alarm_profiles),
+		(SELECT COUNT (*) FROM alarm_profiles_emails),
+		(SELECT COUNT (*) FROM alarm_categories),
+		(SELECT COUNT (*) FROM trap_relations),
 		(SELECT COUNT (*) FROM metrics_ref),
 		(SELECT COUNT (*) FROM apikeys)`
 	sqlCostUpdateBasePlan = `UPDATE base_plan SET (cost, users, teams, contexts, contextual_metrics, basic_containers,
 		snmpv2c_containers, flex_legacy_containers, basic_metrics, snmpv2c_metrics, flex_legacy_metrics, custom_queries,
-		data_policies, alarm_expressions, alarm_profiles, refkeys, api_keys, influx_data_points, requests, realtime_data_requests,
-		history_data_requests) = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) WHERE id = 1`
+		data_policies, alarm_expressions, alarm_profiles, alarm_profiles_emails, alarm_categories, trap_relations, refkeys, api_keys, influx_data_points, requests, realtime_data_requests,
+		history_data_requests) = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24) WHERE id = 1`
 	sqlCostGetBasePlan = `SELECT cost, users, teams, contexts, contextual_metrics, basic_containers,
 	snmpv2c_containers, flex_legacy_containers, basic_metrics, snmpv2c_metrics, flex_legacy_metrics, custom_queries,
-	data_policies, alarm_expressions, alarm_profiles, refkeys, api_keys, influx_data_points, requests, realtime_data_requests,
+	data_policies, alarm_expressions, alarm_profiles, alarm_profiles_emails, alarm_categories, trap_relations, refkeys, api_keys, influx_data_points, requests, realtime_data_requests,
 	history_data_requests FROM base_plan WHERE id = 1;`
 )
 
@@ -60,6 +63,9 @@ func (pg *PG) UpdatePriceTable(ctx context.Context, table models.ServerPriceTabl
 		table.DataPolicy,
 		table.AlarmExpression,
 		table.AlarmProfile,
+		table.AlarmProfileEmail,
+		table.AlarmCategory,
+		table.TrapRelation,
 		table.Refkey,
 		table.APIKey,
 		table.InfluxDataPoint,
@@ -87,6 +93,9 @@ func (pg *PG) GetPriceTable(ctx context.Context) (table models.ServerPriceTable,
 		&table.DataPolicy,
 		&table.AlarmExpression,
 		&table.AlarmProfile,
+		&table.AlarmProfileEmail,
+		&table.AlarmCategory,
+		&table.TrapRelation,
 		&table.Refkey,
 		&table.APIKey,
 		&table.InfluxDataPoint,
@@ -112,6 +121,9 @@ func (pg *PG) CountServerElements(ctx context.Context) (e models.ServerElements,
 		&e.DataPolicies,
 		&e.AlarmExpressions,
 		&e.AlarmProfiles,
+		&e.AlarmProfilesEmails,
+		&e.AlarmCategories,
+		&e.TrapRelations,
 		&e.Refkeys,
 		&e.APIKeys,
 	)
@@ -134,6 +146,9 @@ func (pg *PG) UpdateBasePlan(ctx context.Context, plan models.ServerBasePlan) (e
 		plan.DataPolicies,
 		plan.AlarmExpressions,
 		plan.AlarmProfiles,
+		plan.AlarmProfilesEmails,
+		plan.AlarmCategories,
+		plan.TrapRelations,
 		plan.Refkeys,
 		plan.APIKeys,
 		plan.InfluxDataPoints,
@@ -161,6 +176,9 @@ func (pg *PG) GetBasePlan(ctx context.Context) (plan models.ServerBasePlan, err 
 		&plan.DataPolicies,
 		&plan.AlarmExpressions,
 		&plan.AlarmProfiles,
+		&plan.AlarmProfilesEmails,
+		&plan.AlarmCategories,
+		&plan.TrapRelations,
 		&plan.Refkeys,
 		&plan.APIKeys,
 		&plan.InfluxDataPoints,

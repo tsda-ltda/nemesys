@@ -15,6 +15,9 @@ type ServerElements struct {
 	DataPolicies         int `json:"data-policies"`
 	AlarmExpressions     int `json:"alarm-expressions"`
 	AlarmProfiles        int `json:"alarm-profiles"`
+	AlarmProfilesEmails  int `json:"alarm-profiles-emails"`
+	AlarmCategories      int `json:"alarm-categories"`
+	TrapRelations        int `json:"trap-relations"`
 	Refkeys              int `json:"ref-keys"`
 	APIKeys              int `json:"api-keys"`
 	InfluxDataPoints     int `json:"influx-data-points"`
@@ -39,6 +42,9 @@ type ServerBasePlan struct {
 	DataPolicies         int     `json:"data-policies"`
 	AlarmExpressions     int     `json:"alarm-expressions"`
 	AlarmProfiles        int     `json:"alarm-profiles"`
+	AlarmProfilesEmails  int     `json:"alarm-profiles-emails"`
+	AlarmCategories      int     `json:"alarm-categories"`
+	TrapRelations        int     `json:"trap-relations"`
 	Refkeys              int     `json:"ref-keys"`
 	APIKeys              int     `json:"api-keys"`
 	InfluxDataPoints     int     `json:"influx-data-points"`
@@ -63,6 +69,9 @@ type ServerPriceTable struct {
 	DataPolicy          float64 `json:"data-policy" validate:"min=0"`
 	AlarmExpression     float64 `json:"alarm-expression" validate:"min=0"`
 	AlarmProfile        float64 `json:"alarm-profile" validate:"min=0"`
+	AlarmProfileEmail   float64 `json:"alarm-profile-email" validate:"min=0"`
+	AlarmCategory       float64 `json:"alarm-category" validate:"min=0"`
+	TrapRelation        float64 `json:"trap-relation" validate:"min=0"`
 	Refkey              float64 `json:"ref-key" validate:"min=0"`
 	APIKey              float64 `json:"api-key" validate:"min=0"`
 	InfluxDataPoint     float64 `json:"influx-data-point" validate:"min=0"`
