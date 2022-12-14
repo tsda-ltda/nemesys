@@ -25,13 +25,13 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 		var container models.Container[models.FlexLegacyContainer]
 		err := c.ShouldBind(&container)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(container)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -51,11 +51,11 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if r.TargetExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTargetExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgTargetExists))
 			return
 		}
 		if r.SerialNumberExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgSerialNumberExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgSerialNumberExists))
 			return
 		}
 
@@ -73,6 +73,6 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 		api.Log.Debug("Flex legacy container created with success, name: " + container.Base.Name)
 		t.NotifyContainerCreated(api.Amqph, container.Base, container.Protocol)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}
 }

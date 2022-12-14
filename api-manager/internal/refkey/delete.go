@@ -20,7 +20,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 
 		rkId, err := strconv.ParseInt(c.Param("refkeyId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -34,10 +34,10 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgRefkeyNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgRefkeyNotFound))
 			return
 		}
 
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

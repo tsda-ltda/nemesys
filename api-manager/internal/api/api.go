@@ -26,6 +26,11 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
+type APIResponse struct {
+	Data    any    `json:"data"`
+	Message string `json:"message"`
+}
+
 type API struct {
 	service.Tools
 	// amqpConn is the amqp connection.

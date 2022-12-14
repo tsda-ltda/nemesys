@@ -26,18 +26,18 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		var dp models.DataPolicy
 		err := c.ShouldBind(&dp)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		err = api.Validate.Struct(dp)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		if !influxdb.ValidateAggrFunction(dp.AggrFn) {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidAggrFn))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidAggrFn))
 			return
 		}
 
@@ -58,7 +58,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if n >= max {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgMaxDataPolicy))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgMaxDataPolicy))
 			api.Log.Warn("Attempt to create data-policy failed, maximum number reached")
 			return
 		}
@@ -103,6 +103,6 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		api.Log.Info("Data policy created")
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}
 }

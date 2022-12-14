@@ -27,20 +27,20 @@ func CreateAPIKeyHandler(api *api.API) func(c *gin.Context) {
 		rawUserId := c.Param("userId")
 		userId, err := strconv.ParseInt(rawUserId, 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var apikeyInfo models.APIKeyInfo
 		err = c.ShouldBind(&apikeyInfo)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(apikeyInfo)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -61,7 +61,7 @@ func CreateAPIKeyHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgUserNotFound))
 			return
 		}
 		if userId != int64(meta.UserId) && role >= int16(meta.Role) {
@@ -107,30 +107,31 @@ func CreateAPIKeyHandler(api *api.API) func(c *gin.Context) {
 		}
 		api.Log.Info("API Key created, id:" + strconv.FormatInt(int64(id), 10))
 
-		c.JSON(http.StatusOK, models.APIkey{
+		c.JSON(http.StatusOK, tools.DataRes(models.APIkey{
 			APIKey: apikey,
-		})
+			Id:     id,
+		}))
 	}
 }
 
 // Deletes a API Key.
 // Responses:
 //   - 404 If not found.
-//   - 204 If succeeded.
+//   - 200 If succeeded.
 func DeleteAPIKeyHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		userId, err := strconv.ParseInt(c.Param("userId"), 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		rawId := c.Param("apikeyId")
 		id, err := strconv.ParseInt(rawId, 0, 16)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -151,7 +152,7 @@ func DeleteAPIKeyHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgUserNotFound))
 			return
 		}
 		if userId != int64(meta.UserId) && role >= int16(meta.Role) {
@@ -169,7 +170,7 @@ func DeleteAPIKeyHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAPIKeyNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAPIKeyNotFound))
 			return
 		}
 
@@ -193,7 +194,7 @@ func DeleteAPIKeyHandler(api *api.API) func(c *gin.Context) {
 		}
 		api.Log.Info("API Key deleted, id: " + rawId)
 
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 
 }
@@ -201,14 +202,14 @@ func DeleteAPIKeyHandler(api *api.API) func(c *gin.Context) {
 // Deletes a API Key.
 // Responses:
 //   - 404 If not found.
-//   - 204 If succeeded.
+//   - 200 If succeeded.
 func MGetAPIKeyHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		userId, err := strconv.ParseInt(c.Param("userId"), 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -229,7 +230,7 @@ func MGetAPIKeyHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgUserNotFound))
 			return
 		}
 
@@ -268,6 +269,6 @@ func MGetAPIKeyHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, keysAlived)
+		c.JSON(http.StatusOK, tools.DataRes(keysAlived))
 	}
 }

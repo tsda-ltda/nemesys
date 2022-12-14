@@ -13,14 +13,14 @@ import (
 // Delete an alarm category.
 // Responses:
 //   - 404 If not found.
-//   - 204 If succeeded.
+//   - 200 If succeeded.
 func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		id, err := strconv.ParseInt(c.Param("categoryId"), 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -34,11 +34,11 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmCategoryNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmCategoryNotFound))
 			return
 		}
 		api.Log.Debug("Alarm category delete with success, id: " + strconv.FormatInt(id, 10))
 
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

@@ -25,20 +25,20 @@ func CreateHandler(api *api.API, containerType types.ContainerType) func(c *gin.
 
 		metricId, err := strconv.ParseInt(c.Param("metricId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var rk models.MetricRefkey
 		err = c.ShouldBind(&rk)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(rk)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -53,15 +53,15 @@ func CreateHandler(api *api.API, containerType types.ContainerType) func(c *gin.
 			return
 		}
 		if !metricExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgMetricNotFound))
 			return
 		}
 		if rkExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgRefkeyExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgRefkeyExists))
 			return
 		}
 
-		_, err = api.PG.CreateMetricRefkey(ctx, rk)
+		id, err := api.PG.CreateMetricRefkey(ctx, rk)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -71,6 +71,6 @@ func CreateHandler(api *api.API, containerType types.ContainerType) func(c *gin.
 			return
 		}
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(id))
 	}
 }

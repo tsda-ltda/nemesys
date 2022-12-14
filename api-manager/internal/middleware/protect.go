@@ -71,7 +71,7 @@ func ProtectUser(api *api.API, accessLevel roles.Role) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id, err := strconv.ParseInt(c.Param("userId"), 10, 32)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.AbortWithStatusJSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 

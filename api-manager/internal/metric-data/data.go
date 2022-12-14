@@ -23,7 +23,7 @@ import (
 //   - 400 If json fields are invalid.
 //   - 404 If refkey not found.
 //   - 400 If metric is disabled.
-//   - 204 If succeeded.
+//   - 200 If succeeded.
 func AddHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -31,13 +31,13 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 		var data models.MetricDataByRefkey
 		err := c.ShouldBind(&data)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		err = api.Validate.Struct(data)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
@@ -65,7 +65,7 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			if !exists {
-				c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgRefkeyNotFound))
+				c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgRefkeyNotFound))
 				return
 			}
 
@@ -108,13 +108,13 @@ func AddHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		if !form.Enabled {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgMetricDisabled))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgMetricDisabled))
 			return
 		}
 
 		value, err := types.ParseValue(data.Value, form.MetricType)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidMetricData))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidMetricData))
 			return
 		}
 

@@ -26,25 +26,25 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 
 		id, err := strconv.ParseInt(c.Param("dpId"), 10, 16)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var dp models.DataPolicy
 		err = c.ShouldBind(&dp)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(dp)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
 		if !influxdb.ValidateAggrFunction(dp.AggrFn) {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidAggrFn))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidAggrFn))
 			return
 		}
 
@@ -59,7 +59,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgDataPolicyNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgDataPolicyNotFound))
 			return
 		}
 
@@ -92,6 +92,6 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 
 		api.Log.Info("Data policy updated, id: " + fmt.Sprint(id))
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

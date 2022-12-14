@@ -14,7 +14,7 @@ import (
 // Responses:
 //   - 400 If invalid params.
 //   - 404 If not found.
-//   - 204 If succeeded.
+//   - 200 If succeeded.
 func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -22,7 +22,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		rawId := c.Param("profileId")
 		id, err := strconv.ParseInt(rawId, 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -36,11 +36,11 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmProfileNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmProfileNotFound))
 			return
 		}
 		api.Log.Debug("Alarm profile deleted, id: " + rawId)
 
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

@@ -26,18 +26,18 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		var user models.User
 		err := c.ShouldBind(&user)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(user)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
 		if !roles.ValidateRole(user.Role) {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidRole))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidRole))
 			return
 		}
 
@@ -51,11 +51,11 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if usernameExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgUsernameExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgUsernameExists))
 			return
 		}
 		if emailExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgEmailExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgEmailExists))
 			return
 		}
 
@@ -66,7 +66,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		_, err = api.PG.CreateUser(ctx, models.User{
+		id, err := api.PG.CreateUser(ctx, models.User{
 			Role:     user.Role,
 			Name:     user.Name,
 			Username: user.Username,
@@ -83,6 +83,6 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 		api.Log.Debug("new user created, username: " + user.Username)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}
 }

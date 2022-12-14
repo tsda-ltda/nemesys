@@ -18,7 +18,7 @@ func MetricRequest(api *api.API) func(c *gin.Context) {
 
 		ctxMetricId, err := strconv.ParseInt(c.Param("ctxMetricId"), 10, 64)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.AbortWithStatusJSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -47,11 +47,11 @@ func MetricRequest(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !r.Exists {
-			c.AbortWithStatusJSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgContextualMetricNotFound))
+			c.AbortWithStatusJSON(http.StatusBadRequest, tools.MsgRes(tools.MsgContextualMetricNotFound))
 			return
 		}
 		if !r.Enabled {
-			c.AbortWithStatusJSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgMetricDisabled))
+			c.AbortWithStatusJSON(http.StatusBadRequest, tools.MsgRes(tools.MsgMetricDisabled))
 			return
 		}
 

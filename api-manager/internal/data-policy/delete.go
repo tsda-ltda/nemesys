@@ -16,14 +16,14 @@ import (
 // Responses:
 //   - 400 If invalid id.
 //   - 404 If data policy not found.
-//   - 204 If succeeded.
+//   - 200 If succeeded.
 func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		id, err := strconv.ParseInt(c.Param("dpId"), 10, 16)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -37,7 +37,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgDataPolicyNotFound))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgDataPolicyNotFound))
 			return
 		}
 
@@ -53,6 +53,6 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		t.NotifyDataPolicyDeleted(api.Amqph, int16(id))
 
 		api.Log.Info("Data policy deleted, id: " + fmt.Sprint(id))
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

@@ -24,19 +24,19 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		var cq models.CustomQuery
 		err := c.ShouldBind(&cq)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		err = api.Validate.Struct(cq)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
 		_, err = strconv.Atoi(cq.Ident)
 		if err == nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -51,11 +51,11 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		if identExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgIdentExists))
 			return
 		}
 
-		_, err = api.PG.CreateCustomQuery(ctx, cq)
+		id, err := api.PG.CreateCustomQuery(ctx, cq)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -66,6 +66,6 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 		api.Log.Debug("Custom query created, ident: " + cq.Ident)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}
 }

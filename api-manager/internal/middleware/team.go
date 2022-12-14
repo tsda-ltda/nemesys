@@ -24,7 +24,7 @@ func TeamGuard(api *api.API, accessLevel roles.Role, freepassLevel roles.Role) f
 
 		teamId, err := strconv.ParseInt(c.Param("teamId"), 10, 32)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.AbortWithStatusJSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 

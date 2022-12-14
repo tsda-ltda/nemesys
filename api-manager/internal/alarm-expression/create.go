@@ -23,13 +23,13 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		var exp models.AlarmExpression
 		err := c.ShouldBind(&exp)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(exp)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -43,7 +43,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmCategoryNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmCategoryNotFound))
 			return
 		}
 
@@ -58,6 +58,6 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 		api.Log.Debug("Alarm expression created, id: " + strconv.FormatInt(int64(id), 10))
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}
 }

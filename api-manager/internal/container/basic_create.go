@@ -23,19 +23,19 @@ func CreateBasicHandler(api *api.API) func(c *gin.Context) {
 		var container models.Container[struct{}]
 		err := c.ShouldBind(&container)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(container)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
 		container.Base.Type = types.CTBasic
 
-		_, err = api.PG.CreateBasicContainer(ctx, container)
+		id, err := api.PG.CreateBasicContainer(ctx, container)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -45,6 +45,6 @@ func CreateBasicHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}
 }

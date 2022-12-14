@@ -82,14 +82,14 @@ func DataHandler(api *api.API) func(c *gin.Context) {
 
 		d, err := p.Listen(uuid, time.Second*30)
 		if err == amqph.ErrRequestTimeout {
-			c.JSON(http.StatusServiceUnavailable, tools.JSONMSG(tools.MsgRequestTimeout))
+			c.JSON(http.StatusServiceUnavailable, tools.MsgRes(tools.MsgRequestTimeout))
 			return
 		}
 
 		t := amqp.ToMessageType(d.Type)
 
 		if t != amqp.OK {
-			c.JSON(amqp.ParseToHttpStatus(t), tools.JSONMSG(amqp.GetMessage(t)))
+			c.JSON(amqp.ParseToHttpStatus(t), tools.MsgRes(amqp.GetMessage(t)))
 			return
 		}
 
@@ -101,9 +101,7 @@ func DataHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, models.Data{
-			Value: data.Value,
-		})
+		c.JSON(http.StatusOK, tools.DataRes(data.Value))
 	}
 }
 
@@ -125,7 +123,7 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 
 		start, err := strconv.ParseInt(c.Query("start"), 0, 64)
 		if err != nil || start < 1 {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 		opts.Start = start
@@ -134,7 +132,7 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 		if stopS != "" {
 			stop, err := strconv.ParseInt(stopS, 0, 64)
 			if err != nil || stop < 1 {
-				c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+				c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 				return
 			}
 			opts.Stop = stop
@@ -146,7 +144,7 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			if err == ErrCustomQueryNotFound {
-				c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgCustomQueryNotFound))
+				c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgCustomQueryNotFound))
 				return
 			}
 			c.Status(http.StatusInternalServerError)
@@ -160,14 +158,14 @@ func QueryDataHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			if err == influxdb.ErrInvalidQueryOptions {
-				c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+				c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 				return
 			}
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("Fail to query metric data", logger.ErrField(err))
 			return
 		}
-		c.JSON(http.StatusOK, points)
+		c.JSON(http.StatusOK, tools.DataRes(points))
 	}
 }
 

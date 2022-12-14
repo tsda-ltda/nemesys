@@ -6,10 +6,10 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
+	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
-	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,32 +27,32 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		rawContainerId := c.Param("containerId")
 		containerId, err := strconv.ParseInt(rawContainerId, 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		rawId := c.Param("metricId")
 		id, err := strconv.ParseInt(rawId, 10, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var metric models.Metric[models.SNMPMetric]
 		err = c.ShouldBind(&metric)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(metric)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
 		if !types.ValidateMetricType(metric.Base.Type) {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidMetricType))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidMetricType))
 			return
 		}
 
@@ -71,15 +71,15 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !r.Exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgMetricNotFound))
 			return
 		}
 		if !r.DataPolicyExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgDataPolicyNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgDataPolicyNotFound))
 			return
 		}
 		if !r.ContainerExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContainerNotFound))
 			return
 		}
 
@@ -93,12 +93,12 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgMetricNotFound))
 			return
 		}
 		api.Log.Debug("Metric updated, name" + metric.Base.Name)
-		t.NotifyMetricUpdated(api.Amqph,metric.Base, metric.Protocol)
+		t.NotifyMetricUpdated(api.Amqph, metric.Base, metric.Protocol)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

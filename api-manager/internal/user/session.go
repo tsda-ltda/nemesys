@@ -31,11 +31,11 @@ func SessionInfoHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgUserNotFound))
 			api.Log.Warn("User does not exists, but have an alive session, user id: " + strconv.FormatInt(int64(meta.UserId), 10))
 			return
 		}
 
-		c.JSON(http.StatusOK, user)
+		c.JSON(http.StatusOK, tools.DataRes(user))
 	}
 }

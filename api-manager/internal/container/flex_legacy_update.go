@@ -26,20 +26,20 @@ func UpdateFlexLegacy(api *api.API) func(c *gin.Context) {
 
 		id, err := strconv.ParseInt(c.Param("containerId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var container models.Container[models.FlexLegacyContainer]
 		err = c.ShouldBind(&container)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(container)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -61,15 +61,15 @@ func UpdateFlexLegacy(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !r.ContainerExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContainerNotFound))
 			return
 		}
 		if r.TargetExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTargetExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgTargetExists))
 			return
 		}
 		if r.SerialNumberExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgSerialNumberExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgSerialNumberExists))
 			return
 		}
 
@@ -84,12 +84,12 @@ func UpdateFlexLegacy(api *api.API) func(c *gin.Context) {
 		}
 
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContainerNotFound))
 			return
 		}
 		api.Log.Debug("Flex legacy container updated with success, name: " + container.Base.Name)
 		t.NotifyContainerUpdated(api.Amqph, container.Base, container.Protocol)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

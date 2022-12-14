@@ -24,18 +24,18 @@ func TeamsHandler(api *api.API) func(c *gin.Context) {
 
 		id, err := strconv.ParseInt(c.Param("userId"), 10, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -49,6 +49,6 @@ func TeamsHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, teams)
+		c.JSON(http.StatusOK, tools.DataRes(teams))
 	}
 }

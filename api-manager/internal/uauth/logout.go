@@ -35,12 +35,12 @@ func Logout(api *api.API) func(c *gin.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgSessionAlreadyRemoved))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgSessionAlreadyRemoved))
 			return
 		}
 		api.Log.Debug(fmt.Sprintf("user '%d' logout with success", meta.UserId))
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }
 
@@ -65,7 +65,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 		rawId := c.Param("userId")
 		id, err := strconv.ParseInt(rawId, 10, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -80,7 +80,7 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 		}
 
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgUserNotFound))
 			return
 		}
 		if uint8(role) > meta.Role {
@@ -93,10 +93,10 @@ func ForceLogout(api *api.API) func(c *gin.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgSessionAlreadyRemoved))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgSessionAlreadyRemoved))
 			return
 		}
 		api.Log.Debug("User forcibly logout with success, id: " + rawId)
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

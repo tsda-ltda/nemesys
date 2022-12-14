@@ -26,25 +26,25 @@ func CreateBasicHandler(api *api.API) func(c *gin.Context) {
 
 		containerId, err := strconv.ParseInt(c.Param("containerId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var metric models.Metric[struct{}]
 		err = c.ShouldBind(&metric)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(metric)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
 		if !types.ValidateMetricType(metric.Base.Type) {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidMetricType))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidMetricType))
 			return
 		}
 
@@ -61,15 +61,15 @@ func CreateBasicHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !r.DataPolicyExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgDataPolicyNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgDataPolicyNotFound))
 			return
 		}
 		if !r.ContainerExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContainerNotFound))
 			return
 		}
 
-		_, err = api.PG.CreateBasicMetric(ctx, metric)
+		id, err := api.PG.CreateBasicMetric(ctx, metric)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -81,6 +81,6 @@ func CreateBasicHandler(api *api.API) func(c *gin.Context) {
 		api.Log.Debug("Basic metric created, name: " + metric.Base.Name)
 		t.NotifyMetricCreated(api.Amqph, metric.Base, metric.Protocol)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(id))
 	}
 }

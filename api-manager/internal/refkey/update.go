@@ -25,26 +25,26 @@ func UpdateHandler(api *api.API, containerType types.ContainerType) func(c *gin.
 
 		metricId, err := strconv.ParseInt(c.Param("metricId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		rkId, err := strconv.ParseInt(c.Param("refkeyId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var rk models.MetricRefkey
 		err = c.ShouldBind(&rk)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(rk)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -61,11 +61,11 @@ func UpdateHandler(api *api.API, containerType types.ContainerType) func(c *gin.
 			return
 		}
 		if !metricExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgMetricNotFound))
 			return
 		}
 		if rkExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgRefkeyExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgRefkeyExists))
 			return
 		}
 
@@ -79,10 +79,10 @@ func UpdateHandler(api *api.API, containerType types.ContainerType) func(c *gin.
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgRefkeyNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgRefkeyNotFound))
 			return
 		}
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

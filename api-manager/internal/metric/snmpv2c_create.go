@@ -6,8 +6,8 @@ import (
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
-	"github.com/fernandotsda/nemesys/shared/logger"
 	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
+	"github.com/fernandotsda/nemesys/shared/logger"
 
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
@@ -26,25 +26,25 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 
 		containerId, err := strconv.ParseInt(c.Param("containerId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var metric models.Metric[models.SNMPMetric]
 		err = c.ShouldBind(&metric)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(metric)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
 		if !types.ValidateMetricType(metric.Base.Type) {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidMetricType))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidMetricType))
 			return
 		}
 
@@ -61,11 +61,11 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !r.DataPolicyExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgDataPolicyNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgDataPolicyNotFound))
 			return
 		}
 		if !r.ContainerExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContainerNotFound))
 			return
 		}
 
@@ -81,8 +81,8 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		metric.Base.Id = id
 		metric.Protocol.Id = id
 		api.Log.Debug("SNMPv2c metric created, name: " + metric.Base.Name)
-		t.NotifyMetricCreated(api.Amqph,metric.Base, metric.Protocol)
+		t.NotifyMetricCreated(api.Amqph, metric.Base, metric.Protocol)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(id))
 	}
 }

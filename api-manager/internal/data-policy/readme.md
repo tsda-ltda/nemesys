@@ -93,4 +93,4 @@ Deletes a data policy by id.
 - **Body**: No body.
 - **Responses**:
   - 404 If data policy not found.
-  - 204 If succeeded.
+  - 200 If succeeded.

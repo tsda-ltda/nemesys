@@ -15,21 +15,21 @@ import (
 // Delete a metric.
 // Responses:
 //   - 404 If not found.
-//   - 204 If succeeded.
+//   - 200 If succeeded.
 func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		containerId, err := strconv.ParseInt(c.Param("containerId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		rawId := c.Param("metricId")
 		id, err := strconv.ParseInt(rawId, 10, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -43,7 +43,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContainerNotFound))
 			return
 		}
 
@@ -58,12 +58,12 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgMetricNotFound))
 			return
 		}
 		api.Log.Debug("Metric deleted, id: " + rawId)
 		t.NotifyMetricDeleted(api.Amqph, int32(containerId), id)
 
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

@@ -24,14 +24,14 @@ func AddCategoryHandler(api *api.API) func(c *gin.Context) {
 
 		profileId, err := strconv.ParseInt(c.Param("profileId"), 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var id32 models.Id32
 		err = c.ShouldBind(&id32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -45,15 +45,15 @@ func AddCategoryHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !r.Exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmProfileNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmProfileNotFound))
 			return
 		}
 		if !r.CategoryExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmCategoryNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmCategoryNotFound))
 			return
 		}
 		if r.RelationExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgAlarmProfileAndCategoryRelExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgAlarmProfileAndCategoryRelExists))
 			return
 		}
 
@@ -68,7 +68,7 @@ func AddCategoryHandler(api *api.API) func(c *gin.Context) {
 		}
 		api.Log.Debug("New alarm category added to alarm profile, profile id: " + strconv.FormatInt(profileId, 10))
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }
 
@@ -82,13 +82,13 @@ func RemoveCategoryHandler(api *api.API) func(c *gin.Context) {
 
 		profileId, err := strconv.ParseInt(c.Param("profileId"), 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		categoryId, err := strconv.ParseInt(c.Param("categoryId"), 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -102,12 +102,12 @@ func RemoveCategoryHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmProfileAndCategoryRelNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmProfileAndCategoryRelNotFound))
 			return
 		}
 		api.Log.Debug("Alarm category and alarm profile relation deleted, profile id: " + strconv.FormatInt(profileId, 10))
 
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }
 
@@ -121,18 +121,18 @@ func GetCategoriesHandler(api *api.API) func(c *gin.Context) {
 
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		profileId, err := strconv.ParseInt(c.Param("profileId"), 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -146,6 +146,6 @@ func GetCategoriesHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, categories)
+		c.JSON(http.StatusOK, tools.DataRes(categories))
 	}
 }

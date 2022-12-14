@@ -25,13 +25,13 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		var container models.Container[models.SNMPv2cContainer]
 		err := c.ShouldBind(&container)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(container)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -51,7 +51,7 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if exists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTargetPortExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgTargetPortExists))
 			return
 		}
 
@@ -69,6 +69,6 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		api.Log.Debug("SNMPv2c container crated, name: " + container.Base.Name)
 		t.NotifyContainerCreated(api.Amqph, container.Base, container.Protocol)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}
 }

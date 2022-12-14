@@ -20,7 +20,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 
 		metricId, err := strconv.ParseInt(c.Param("metricId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -34,7 +34,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusNoContent, rks)
+		c.JSON(http.StatusOK, tools.DataRes(rks))
 	}
 }
 
@@ -56,10 +56,10 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgRefkeyNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgRefkeyNotFound))
 			return
 		}
 
-		c.JSON(http.StatusNoContent, rk)
+		c.JSON(http.StatusOK, tools.DataRes(rk))
 	}
 }

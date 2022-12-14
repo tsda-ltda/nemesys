@@ -22,13 +22,13 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		var category models.AlarmCategory
 		err := c.ShouldBind(&category)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(category)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -42,11 +42,11 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if exists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgAlarmCategoryLevelExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgAlarmCategoryLevelExists))
 			return
 		}
 
-		_, err = api.PG.CreateAlarmCategory(ctx, category)
+		id, err := api.PG.CreateAlarmCategory(ctx, category)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -57,6 +57,6 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 		api.Log.Debug("Alarm category created with success, name: " + category.Name)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}
 }

@@ -17,7 +17,7 @@ import (
 //   - 400 If invalid body.
 //   - 400 If invalid json fields.
 //   - 404 If contextual metric does not exists.
-//   - 204 If succeeded.
+//   - 200 If succeeded.
 func UpdateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -25,27 +25,27 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		rawCtxId := c.Param("ctxId")
 		ctxId, err := strconv.ParseInt(rawCtxId, 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		rawId := c.Param("ctxMetricId")
 		id, err := strconv.ParseInt(rawId, 10, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var cmetric models.ContextualMetric
 		err = c.ShouldBind(&cmetric)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(cmetric)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -59,7 +59,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if ie {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgIdentExists))
 			return
 		}
 
@@ -75,11 +75,11 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContextualMetricNotFound))
 			return
 		}
 		api.Log.Debug("Contextual metric updated, id: " + rawId)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

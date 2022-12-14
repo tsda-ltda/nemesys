@@ -25,19 +25,19 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		var team models.Team
 		err := c.ShouldBind(&team)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		err = api.Validate.Struct(team)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		_, err = strconv.ParseInt(team.Ident, 10, 64)
 		if err == nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentIsNumber))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgIdentIsNumber))
 			return
 		}
 
@@ -51,11 +51,11 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if exists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgIdentExists))
 			return
 		}
 
-		_, err = api.PG.CreateTeam(ctx, models.Team{
+		id, err := api.PG.CreateTeam(ctx, models.Team{
 			Name:  team.Name,
 			Ident: team.Ident,
 			Descr: team.Descr,
@@ -70,6 +70,6 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 		api.Log.Debug("Team created, ident: " + team.Ident)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}
 }

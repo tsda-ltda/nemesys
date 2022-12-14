@@ -26,26 +26,26 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 
 		id, err := strconv.ParseInt(c.Param("teamId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var team models.Team
 		err = c.ShouldBind(&team)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(team)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
 		_, err = strconv.ParseInt(team.Ident, 10, 64)
 		if err == nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentIsNumber))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgIdentIsNumber))
 			return
 		}
 
@@ -59,7 +59,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if exists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgIdentExists))
 			return
 		}
 
@@ -74,12 +74,12 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTeamNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgTeamNotFound))
 			return
 		}
 
 		api.Log.Debug("Team updated successfully, id" + fmt.Sprint(id))
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

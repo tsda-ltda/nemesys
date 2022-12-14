@@ -27,7 +27,7 @@ func GetPriceTableHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, table)
+		c.JSON(http.StatusOK, tools.DataRes(table))
 	}
 }
 
@@ -42,13 +42,13 @@ func UpdatePriceTableHandler(api *api.API) func(c *gin.Context) {
 		var table models.ServerPriceTable
 		err := c.ShouldBind(&table)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(table)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -61,6 +61,6 @@ func UpdatePriceTableHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to update price table", logger.ErrField(err))
 			return
 		}
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

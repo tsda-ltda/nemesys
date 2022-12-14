@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -25,6 +26,6 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, listeners)
+		c.JSON(http.StatusOK, tools.DataRes(listeners))
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
@@ -45,6 +46,6 @@ func GetCostHandler(api *api.API) func(c *gin.Context) {
 			}
 		}
 
-		c.JSON(http.StatusOK, result)
+		c.JSON(http.StatusOK, tools.DataRes(result))
 	}
 }

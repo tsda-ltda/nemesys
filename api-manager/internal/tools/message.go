@@ -1,5 +1,7 @@
 package tools
 
+import "github.com/fernandotsda/nemesys/api-manager/internal/api"
+
 const (
 	MsgContainerNotFound                   = "Container does not exists."
 	MsgMetricNotFound                      = "Metric does not exists."
@@ -58,12 +60,28 @@ const (
 	MsgTrapListerHostPortExists          = "Trap listener host port already exists."
 )
 
-type Message struct {
-	Message string `json:"message"`
+// MsgRes returns an APIResponse with empty data but with the message.
+func MsgRes(msg string) (response api.APIResponse) {
+	response.Message = msg
+	return response
 }
 
-func JSONMSG(msg string) Message {
-	return Message{
-		Message: msg,
-	}
+// EmptyRes returns an empty APIResponse.
+func EmptyRes() (response api.APIResponse) {
+	return response
+}
+
+type idMSG struct {
+	Id int64 `json:"id"`
+}
+
+func DataRes(data any) (response api.APIResponse) {
+	response.Data = data
+	return response
+}
+
+// IdRes return and APIResponse with empty message but and id as data.
+func IdRes(id int64) (response api.APIResponse) {
+	response.Data = idMSG{Id: id}
+	return response
 }

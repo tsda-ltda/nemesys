@@ -14,7 +14,7 @@ import (
 // Responses:
 //   - 400 If invalid id.
 //   - 404 If contextual metric does not exists.
-//   - 204 If succeeded.
+//   - 200 If succeeded.
 func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -22,7 +22,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		rawId := c.Param("ctxMetricId")
 		id, err := strconv.ParseInt(rawId, 10, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -37,11 +37,11 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		if !e {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContextualMetricNotFound))
 			return
 		}
 		api.Log.Debug("Contextual metric deleted, id: " + rawId)
 
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

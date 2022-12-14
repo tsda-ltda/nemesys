@@ -24,26 +24,26 @@ func CreateContextHandler(api *api.API) func(c *gin.Context) {
 
 		teamId, err := strconv.ParseInt(c.Param("teamId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var context models.Context
 		err = c.ShouldBind(&context)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(context)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
 		_, err = strconv.ParseInt(context.Ident, 10, 64)
 		if err == nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentIsNumber))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgIdentIsNumber))
 			return
 		}
 
@@ -57,15 +57,15 @@ func CreateContextHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !teamExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTeamNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgTeamNotFound))
 			return
 		}
 		if identExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgIdentExists))
 			return
 		}
 
-		_, err = api.PG.CreateContext(ctx, models.Context{
+		id, err := api.PG.CreateContext(ctx, models.Context{
 			TeamId: int32(teamId),
 			Name:   context.Name,
 			Ident:  context.Ident,
@@ -81,6 +81,6 @@ func CreateContextHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		api.Log.Debug("Context created with success, ident: " + context.Ident)
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}
 }

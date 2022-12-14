@@ -24,26 +24,26 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 
 		id, err := strconv.ParseInt(c.Param("cqId"), 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var cq models.CustomQuery
 		err = c.ShouldBind(&cq)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		err = api.Validate.Struct(cq)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
 		_, err = strconv.Atoi(cq.Ident)
 		if err == nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -59,11 +59,11 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgCustomQueryNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgCustomQueryNotFound))
 			return
 		}
 		if identExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgIdentExists))
 			return
 		}
 
@@ -78,6 +78,6 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		}
 		api.Log.Debug("Custom query updated, ident: " + cq.Ident)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

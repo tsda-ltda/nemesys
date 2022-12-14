@@ -24,20 +24,20 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		contextId, err := strconv.ParseInt(c.Param("ctxId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var cmetric models.ContextualMetric
 		err = c.ShouldBind(&cmetric)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(cmetric)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -54,19 +54,19 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		if !r.ContextExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContextNotFound))
 			return
 		}
 		if !r.MetricExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgMetricNotFound))
 			return
 		}
 		if r.IdentExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgIdentExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgIdentExists))
 			return
 		}
 
-		_, err = api.PG.CreateContextualMetric(ctx, cmetric)
+		id, err := api.PG.CreateContextualMetric(ctx, cmetric)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -76,6 +76,6 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 		api.Log.Debug("Contextual metric created, ident: " + cmetric.Ident)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(id))
 	}
 }

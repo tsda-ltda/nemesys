@@ -21,7 +21,7 @@ func GetContextHandler(api *api.API) func(c *gin.Context) {
 
 		contextId, err := strconv.ParseInt(c.Param("ctxId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -35,11 +35,11 @@ func GetContextHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContextNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, context)
+		c.JSON(http.StatusOK, tools.DataRes(context))
 	}
 }
 
@@ -57,17 +57,17 @@ func MGetContextHandler(api *api.API) func(c *gin.Context) {
 
 		teamId, err := strconv.ParseInt(c.Param("teamId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -81,6 +81,6 @@ func MGetContextHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, ctxs)
+		c.JSON(http.StatusOK, tools.DataRes(ctxs))
 	}
 }

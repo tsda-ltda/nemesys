@@ -24,20 +24,20 @@ func CreateMetricRelationHandler(api *api.API) func(c *gin.Context) {
 
 		id, err := strconv.ParseInt(c.Param("expressionId"), 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var id64 models.Id64
 		err = c.ShouldBind(&id64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(id64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -51,15 +51,15 @@ func CreateMetricRelationHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !r.Exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmExpressionNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmExpressionNotFound))
 			return
 		}
 		if !r.MetricExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMetricNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgMetricNotFound))
 			return
 		}
 		if r.RelationExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgAlarmExpressionAndMetricRelExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgAlarmExpressionAndMetricRelExists))
 			return
 		}
 
@@ -74,7 +74,7 @@ func CreateMetricRelationHandler(api *api.API) func(c *gin.Context) {
 		}
 		api.Log.Debug("Metric and alarm expression created, metric id: " + strconv.FormatInt(id64.Id, 10))
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }
 
@@ -89,14 +89,14 @@ func DeleteMetricRelationHandler(api *api.API) func(c *gin.Context) {
 
 		expressionId, err := strconv.ParseInt(c.Param("expressionId"), 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		rawMetricId := c.Param("metricId")
 		metricId, err := strconv.ParseInt(rawMetricId, 0, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 		exists, err := api.PG.RemoveMetricAlarmExpressionRel(ctx, int32(expressionId), metricId)
@@ -109,12 +109,12 @@ func DeleteMetricRelationHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmExpressionAndMetricRelNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmExpressionAndMetricRelNotFound))
 			return
 		}
 
 		api.Log.Debug("Metric and alarm expression removed, metric id: " + rawMetricId)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

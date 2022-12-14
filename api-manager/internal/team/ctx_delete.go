@@ -13,7 +13,7 @@ import (
 // Deletes a context.
 // Responses:
 //   - 404 If context not found.
-//   - 204 If succeeded.
+//   - 200 If succeeded.
 func DeleteContextHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -21,7 +21,7 @@ func DeleteContextHandler(api *api.API) func(c *gin.Context) {
 		rawId := c.Param("ctxId")
 		id, err := strconv.ParseInt(rawId, 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -35,11 +35,11 @@ func DeleteContextHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContextNotFound))
 			return
 		}
 
 		api.Log.Debug("Context deleted, id: " + rawId)
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

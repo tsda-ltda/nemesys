@@ -26,25 +26,25 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 
 		id, err := strconv.ParseInt(c.Param("userId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var user models.User
 		err = c.ShouldBind(&user)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(user)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
 		if !roles.ValidateRole(user.Role) {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidRole))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidRole))
 			return
 		}
 
@@ -59,12 +59,12 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		if usernameExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgUsernameExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgUsernameExists))
 			return
 		}
 
 		if emailExists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgEmailExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgEmailExists))
 			return
 		}
 
@@ -92,11 +92,11 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgUserNotFound))
 			return
 		}
 
 		api.Log.Debug("User updated with success, username: " + user.Username)
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

@@ -31,7 +31,7 @@ const (
 		EXISTS (SELECT 1 FROM alarm_profiles WHERE id = $1),
 		EXISTS (SELECT 1 FROM alarm_categories WHERE id = $2),
 		EXISTS (SELECT 1 FROM alarm_profiles_categories_rel WHERE profile_id = $1 AND category_id = $2);`
-	sqlAlarmProfilesCreateEmail   = `INSERT INTO alarm_profiles_emails (alarm_profile_id, email) VALUES($1, $2);`
+	sqlAlarmProfilesCreateEmail   = `INSERT INTO alarm_profiles_emails (alarm_profile_id, email) VALUES($1, $2) RETURNING id;`
 	sqlAlarmProfilesGetAllEmails  = `SELECT id, email FROM alarm_profiles_emails WHERE alarm_profile_id = $1;`
 	sqlAlarmProfilesGetEmails     = `SELECT id, email FROM alarm_profiles_emails WHERE alarm_profile_id = $1 LIMIT $2 OFFSET $3;`
 	sqlAlarmProfilesGetOnlyEmails = `SELECT email FROM alarm_profiles_emails WHERE alarm_profile_id = ANY($1);`
@@ -150,9 +150,8 @@ func (pg *PG) CategoryAndAlarmProfileRelationExists(ctx context.Context, profile
 	return r, pg.db.QueryRowContext(ctx, sqlAlarmProfilesExistsCategoryAndRelation, profileId, categoryId).Scan(&r.Exists, &r.CategoryExists, &r.RelationExists)
 }
 
-func (pg *PG) CreateAlarmProfileEmail(ctx context.Context, id int32, email string) (err error) {
-	_, err = pg.db.ExecContext(ctx, sqlAlarmProfilesCreateEmail, id, email)
-	return err
+func (pg *PG) CreateAlarmProfileEmail(ctx context.Context, profileId int32, email string) (id int32, err error) {
+	return id, pg.db.QueryRowContext(ctx, sqlAlarmProfilesCreateEmail, profileId, email).Scan(&id)
 }
 
 func (pg *PG) GetAllAlarmProfileEmails(ctx context.Context, id int32) (emails []models.AlarmProfileEmailWithoutProfileId, err error) {

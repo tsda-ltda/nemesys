@@ -18,13 +18,13 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		var id32 models.Id32
 		err := c.ShouldBind(&id32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(id32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -38,7 +38,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgUserNotFound))
 			return
 		}
 
@@ -54,7 +54,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		api.Counter.LoadWhitelist()
 		api.Log.Debug("User added to counter whitelist, user id: " + strconv.FormatInt(int64(id32.Id), 10))
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }
 
@@ -65,7 +65,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		rawId := c.Param("userId")
 		id, err := strconv.ParseInt(rawId, 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -79,13 +79,13 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserWhitelistNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgUserWhitelistNotFound))
 			return
 		}
 		api.Counter.LoadWhitelist()
 		api.Log.Debug("User removed from counter whitelist, user id: " + rawId)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }
 
@@ -95,12 +95,12 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -113,6 +113,6 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to get counter whitelist", logger.ErrField(err))
 			return
 		}
-		c.JSON(http.StatusOK, ids)
+		c.JSON(http.StatusOK, tools.DataRes(ids))
 	}
 }

@@ -14,14 +14,14 @@ import (
 // Deletes team from databse
 // Responses:
 //   - 404 If team not founded
-//   - 204 If succeeded
+//   - 200 If succeeded
 func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		id, err := strconv.ParseInt(c.Param("teamId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -35,11 +35,11 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTeamNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgTeamNotFound))
 			return
 		}
 		api.Log.Debug("Team deleted, id: " + fmt.Sprint(id))
 
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

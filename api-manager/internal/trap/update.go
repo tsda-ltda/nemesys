@@ -25,20 +25,20 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 		rawId := c.Param("listenerId")
 		id, err := strconv.ParseInt(rawId, 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var tl models.TrapListener
 		err = c.ShouldBind(&tl)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		err = api.Validate.Struct(tl)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -54,7 +54,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmCategoryNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmCategoryNotFound))
 			return
 		}
 
@@ -68,7 +68,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if exists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTrapListerHostPortExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgTrapListerHostPortExists))
 			return
 		}
 
@@ -82,11 +82,11 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTrapListenerNotFound))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgTrapListenerNotFound))
 			return
 		}
 		api.UpdateTrapListener(tl)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

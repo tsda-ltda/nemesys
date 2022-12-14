@@ -24,20 +24,20 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 
 		teamId, err := strconv.ParseInt(c.Param("teamId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var userId models.AddMemberReq
 		err = c.ShouldBind(&userId)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(userId)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -51,15 +51,15 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if r.RelationExist {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgRelationExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgRelationExists))
 			return
 		}
 		if !r.UserExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgUserNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgUserNotFound))
 			return
 		}
 		if !r.TeamExists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTeamNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgTeamNotFound))
 			return
 		}
 
@@ -73,7 +73,7 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }
 
@@ -82,7 +82,7 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 //   - 400 If invalid user or team id.
 //   - 400 If user is already a member.
 //   - 404 If relation does not exists.
-//   - 204 If succeeded.
+//   - 200 If succeeded.
 func RemoveMemberHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -92,13 +92,13 @@ func RemoveMemberHandler(api *api.API) func(c *gin.Context) {
 
 		teamId, err := strconv.ParseInt(rawTeamId, 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		userId, err := strconv.ParseInt(rawUserId, 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -112,12 +112,12 @@ func RemoveMemberHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgMemberNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgMemberNotFound))
 			return
 		}
 		api.Log.Debug("User " + rawUserId + " removed from team " + rawTeamId)
 
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }
 
@@ -128,24 +128,24 @@ func RemoveMemberHandler(api *api.API) func(c *gin.Context) {
 //
 // Responses:
 //   - 400 If invalid user or team id.
-//   - 204 If succeeded.
+//   - 200 If succeeded.
 func MGetMembersHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
 		id, err := strconv.ParseInt(c.Param("teamId"), 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -159,6 +159,6 @@ func MGetMembersHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, m)
+		c.JSON(http.StatusOK, tools.DataRes(m))
 	}
 }

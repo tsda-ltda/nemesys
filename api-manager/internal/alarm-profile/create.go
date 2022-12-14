@@ -22,13 +22,13 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		var profile models.AlarmProfile
 		err := c.ShouldBind(&profile)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(profile)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -43,6 +43,6 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		}
 		api.Log.Debug("Alarm profile created, id: " + strconv.FormatInt(id, 10))
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(id))
 	}
 }

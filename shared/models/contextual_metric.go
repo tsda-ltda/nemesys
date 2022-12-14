@@ -14,7 +14,3 @@ type ContextualMetric struct {
 	// Descr is the conextual metric description.
 	Descr string `json:"descr" validate:"max=255"`
 }
-
-type Data struct {
-	Value any `json:"value"`
-}

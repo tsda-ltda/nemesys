@@ -24,13 +24,13 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -44,7 +44,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, cqs)
+		c.JSON(http.StatusOK, tools.DataRes(cqs))
 	}
 }
 
@@ -59,7 +59,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 
 		id, err := strconv.ParseInt(c.Param("cqId"), 0, 10)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -73,10 +73,10 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgCustomQueryNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgCustomQueryNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, cq)
+		c.JSON(http.StatusOK, tools.DataRes(cq))
 	}
 }

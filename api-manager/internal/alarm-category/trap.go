@@ -23,13 +23,13 @@ func CreateTrapRelationHandler(api *api.API) func(c *gin.Context) {
 		var relation models.TrapCategoryRelation
 		err := c.ShouldBind(&relation)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(relation)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -39,7 +39,7 @@ func CreateTrapRelationHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmCategoryNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmCategoryNotFound))
 			return
 		}
 
@@ -53,7 +53,7 @@ func CreateTrapRelationHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTrapRelationExists))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgTrapRelationExists))
 			return
 		}
 
@@ -68,7 +68,7 @@ func CreateTrapRelationHandler(api *api.API) func(c *gin.Context) {
 		}
 		api.Log.Debug("Trap category relation created, category id: " + strconv.Itoa(int(relation.AlarmCategoryId)))
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }
 
@@ -76,7 +76,7 @@ func CreateTrapRelationHandler(api *api.API) func(c *gin.Context) {
 // Responses:
 //   - 400 If invalid params.
 //   - 404 If relation not found.
-//   - 204 If succeeded.
+//   - 200 If succeeded.
 func DeleteTrapRelationHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -84,7 +84,7 @@ func DeleteTrapRelationHandler(api *api.API) func(c *gin.Context) {
 		rawTrapId := c.Param("trapId")
 		trapId, err := strconv.ParseInt(rawTrapId, 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -98,12 +98,12 @@ func DeleteTrapRelationHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgTrapRelationNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgTrapRelationNotFound))
 			return
 		}
 		api.Log.Debug("Trap relation removed, trap id: " + rawTrapId)
 
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }
 
@@ -121,12 +121,12 @@ func GetTrapRelationsHandler(api *api.API) func(c *gin.Context) {
 
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -140,6 +140,6 @@ func GetTrapRelationsHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, emails)
+		c.JSON(http.StatusOK, tools.DataRes(emails))
 	}
 }

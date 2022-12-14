@@ -158,4 +158,4 @@ Deletes a SNMP container.
 - **Body**: No body.
 - **Responses**:
   - 404 If container not found.
-  - 204 If succeeded.
+  - 200 If succeeded.

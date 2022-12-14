@@ -22,7 +22,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 		rawId := c.Param("profileId")
 		id, err := strconv.ParseInt(rawId, 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -36,11 +36,11 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmProfileNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmProfileNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, profile)
+		c.JSON(http.StatusOK, tools.DataRes(profile))
 	}
 }
 
@@ -54,12 +54,12 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -73,6 +73,6 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, profiles)
+		c.JSON(http.StatusOK, tools.DataRes(profiles))
 	}
 }

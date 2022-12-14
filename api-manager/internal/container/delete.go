@@ -15,7 +15,7 @@ import (
 // Responses:
 //   - 400 If invalid params.
 //   - 404 If not found.
-//   - 204 If succeeded.
+//   - 200 If succeeded.
 func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -24,7 +24,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		rawId := c.Param("containerId")
 		id, err := strconv.ParseInt(rawId, 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -41,12 +41,12 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 
 		// check if exists
 		if !e {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContainerNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContainerNotFound))
 			return
 		}
 		api.Log.Debug("Container deleted, id: " + rawId)
 		t.NotifyContainerDeleted(api.Amqph, int32(id))
 
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

@@ -30,13 +30,13 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 
 		err := c.ShouldBind(&form)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(form)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -50,12 +50,12 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !r.Exists {
-			c.JSON(http.StatusUnauthorized, tools.JSONMSG(tools.MsgWrongUsernameOrPW))
+			c.JSON(http.StatusUnauthorized, tools.MsgRes(tools.MsgWrongUsernameOrPW))
 			return
 		}
 
 		if !auth.CheckHash(form.Password, r.Password) {
-			c.JSON(http.StatusUnauthorized, tools.JSONMSG(tools.MsgWrongUsernameOrPW))
+			c.JSON(http.StatusUnauthorized, tools.MsgRes(tools.MsgWrongUsernameOrPW))
 			return
 		}
 
@@ -74,6 +74,6 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 		ttl, _ := strconv.Atoi(env.UserSessionTTL)
 		c.SetCookie(auth.SessionCookieName, token, ttl, "/", env.APIManagerHost, false, true)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

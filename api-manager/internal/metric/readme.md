@@ -147,4 +147,4 @@ Deletes a SNMP metric.
 - **Body**: No body.
 - **Responses**:
   - 404 If metric not found.
-  - 204 If succeeded.
+  - 200 If succeeded.

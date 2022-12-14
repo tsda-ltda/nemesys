@@ -23,20 +23,20 @@ func CreateEmailHandler(api *api.API) func(c *gin.Context) {
 		rawId := c.Param("profileId")
 		id, err := strconv.ParseInt(rawId, 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		var email models.AlarmProfileEmail
 		err = c.ShouldBind(&email)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(email)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -46,11 +46,11 @@ func CreateEmailHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmProfileNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmProfileNotFound))
 			return
 		}
 
-		err = api.PG.CreateAlarmProfileEmail(ctx, int32(id), email.Email)
+		nId, err := api.PG.CreateAlarmProfileEmail(ctx, int32(id), email.Email)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			api.Log.Error("Fail to add email to alarm profile", logger.ErrField(err))
@@ -58,7 +58,7 @@ func CreateEmailHandler(api *api.API) func(c *gin.Context) {
 		}
 		api.Log.Debug("Email added to alarm profile, profile id: " + rawId)
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.IdRes(int64(nId)))
 	}
 }
 
@@ -66,7 +66,7 @@ func CreateEmailHandler(api *api.API) func(c *gin.Context) {
 // Responses:
 //   - 400 If invalid params.
 //   - 404 If relation not found.
-//   - 204 If succeeded.
+//   - 200 If succeeded.
 func DeleteEmailHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -74,7 +74,7 @@ func DeleteEmailHandler(api *api.API) func(c *gin.Context) {
 		rawEmailId := c.Param("emailId")
 		emailId, err := strconv.ParseInt(rawEmailId, 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -85,12 +85,12 @@ func DeleteEmailHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmProfileEmailNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmProfileEmailNotFound))
 			return
 		}
 		api.Log.Debug("Email removed from alarm profile, id: " + rawEmailId)
 
-		c.Status(http.StatusNoContent)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }
 
@@ -109,18 +109,18 @@ func GetEmailsHandler(api *api.API) func(c *gin.Context) {
 		rawId := c.Param("profileId")
 		id, err := strconv.ParseInt(rawId, 0, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		limit, err := tools.IntRangeQuery(c, "limit", 30, 30, 1)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 		offset, err := tools.IntMinQuery(c, "offset", 0, 0)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 

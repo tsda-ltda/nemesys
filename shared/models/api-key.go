@@ -14,5 +14,8 @@ type APIKeyInfo struct {
 }
 
 type APIkey struct {
+	// Id is the APIKey unique identifier.
+	Id int32 `json:"id"`
+	// APIKey is the api key.
 	APIKey string `json:"api-key"`
 }

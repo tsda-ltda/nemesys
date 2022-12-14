@@ -27,7 +27,7 @@ func GetBasePlanHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, basePlan)
+		c.JSON(http.StatusOK, tools.DataRes(basePlan))
 	}
 }
 
@@ -42,13 +42,13 @@ func UpdateBasePlanHandler(api *api.API) func(c *gin.Context) {
 		var basePlan models.ServerBasePlan
 		err := c.ShouldBind(&basePlan)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidBody))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
 		err = api.Validate.Struct(basePlan)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -61,6 +61,6 @@ func UpdateBasePlanHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to update base plan", logger.ErrField(err))
 			return
 		}
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

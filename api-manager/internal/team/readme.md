@@ -151,7 +151,7 @@ Remove a member from the team.
 - **Responses**:
   - 400 If invalid user id.
   - 404 If team not found or user was not a member.
-  - 204 If succeeded.
+  - 200 If succeeded.
 
 ## Get members
 
@@ -217,7 +217,7 @@ Remove a context from the team.
 - **Responses**:
   - 400 If invalid team or context id.
   - 404 If team or context not found.
-  - 204 If succeeded.
+  - 200 If succeeded.
 
 ## Get contexts
 

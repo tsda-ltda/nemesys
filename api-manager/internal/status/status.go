@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
+	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,6 +13,6 @@ import (
 //   - 200 If succeeded.
 func GetHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, api.GetServicesStatus())
+		c.JSON(http.StatusOK, tools.DataRes(api.GetServicesStatus()))
 	}
 }

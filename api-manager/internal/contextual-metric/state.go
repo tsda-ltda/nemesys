@@ -23,7 +23,7 @@ func GetAlarmStateHandler(api *api.API) func(c *gin.Context) {
 		rawId := c.Param("ctxMetricId")
 		id, err := strconv.ParseInt(rawId, 0, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -37,11 +37,11 @@ func GetAlarmStateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmStateNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmStateNotFound))
 			return
 		}
 
-		c.JSON(http.StatusOK, state)
+		c.JSON(http.StatusOK, tools.DataRes(state))
 	}
 }
 
@@ -57,7 +57,7 @@ func RecognizeAlarmStateHandler(api *api.API) func(c *gin.Context) {
 		rawId := c.Param("ctxMetricId")
 		id, err := strconv.ParseInt(rawId, 0, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -71,12 +71,12 @@ func RecognizeAlarmStateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmStateNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmStateNotFound))
 			return
 		}
 
 		if state.State != types.ASAlarmed {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgMetricIsNotAlarmed))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgMetricIsNotAlarmed))
 			return
 		}
 
@@ -93,7 +93,7 @@ func RecognizeAlarmStateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }
 
@@ -109,7 +109,7 @@ func ResolveAlarmStateHandler(api *api.API) func(c *gin.Context) {
 		rawId := c.Param("ctxMetricId")
 		id, err := strconv.ParseInt(rawId, 0, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
@@ -123,12 +123,12 @@ func ResolveAlarmStateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmStateNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmStateNotFound))
 			return
 		}
 
 		if state.State != types.ASRecognized {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgMetricIsNotRecognized))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgMetricIsNotRecognized))
 			return
 		}
 
@@ -145,6 +145,6 @@ func ResolveAlarmStateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

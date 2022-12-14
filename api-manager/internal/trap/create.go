@@ -23,13 +23,13 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		var tl models.TrapListener
 		err := c.ShouldBind(&tl)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidParams))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
 		err = api.Validate.Struct(tl)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgInvalidJSONFields))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
@@ -43,7 +43,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, tools.JSONMSG(tools.MsgAlarmCategoryNotFound))
+			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmCategoryNotFound))
 			return
 		}
 
@@ -57,7 +57,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if exists {
-			c.JSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgTrapListerHostPortExists))
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgTrapListerHostPortExists))
 			return
 		}
 
@@ -75,6 +75,6 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 
 		api.Log.Debug("New trap listener created")
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

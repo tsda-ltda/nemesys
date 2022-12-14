@@ -22,7 +22,7 @@ func ParseContextParams(api *api.API) func(c *gin.Context) {
 		_, err2 := strconv.ParseInt(ctxRawId, 10, 32)
 
 		if (err1 != nil) != (err2 != nil) {
-			c.AbortWithStatusJSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgParamsNotSameType))
+			c.AbortWithStatusJSON(http.StatusBadRequest, tools.MsgRes(tools.MsgParamsNotSameType))
 			return
 		}
 		if err1 == nil {
@@ -39,7 +39,7 @@ func ParseContextParams(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !r.Exists {
-			c.AbortWithStatusJSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextNotFound))
+			c.AbortWithStatusJSON(http.StatusNotFound, tools.MsgRes(tools.MsgContextNotFound))
 			return
 		}
 
@@ -75,7 +75,7 @@ func ParseContextualMetricParams(api *api.API) func(c *gin.Context) {
 		_, err3 := strconv.ParseInt(ctxRawId, 10, 32)
 
 		if (err1 != nil) != (err2 != nil) || (err1 != nil) != (err3 != nil) {
-			c.AbortWithStatusJSON(http.StatusBadRequest, tools.JSONMSG(tools.MsgParamsNotSameType))
+			c.AbortWithStatusJSON(http.StatusBadRequest, tools.MsgRes(tools.MsgParamsNotSameType))
 			return
 		}
 		if err1 == nil {
@@ -93,7 +93,7 @@ func ParseContextualMetricParams(api *api.API) func(c *gin.Context) {
 			return
 		}
 		if !r.Exists {
-			c.AbortWithStatusJSON(http.StatusNotFound, tools.JSONMSG(tools.MsgContextualMetricNotFound))
+			c.AbortWithStatusJSON(http.StatusNotFound, tools.MsgRes(tools.MsgContextualMetricNotFound))
 			return
 		}
 
