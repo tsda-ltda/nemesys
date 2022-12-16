@@ -124,8 +124,8 @@ var (
 	// DHSFlexLegacyDatalogWorkers is the number of flex-legacy datalog workers. Default is "3".
 	DHSFlexLegacyDatalogWorkers = "3"
 
-	// DHSFlexLegacyDatlogRequestInterval is the interval in hours between each datalog request of a flex. Default is "6".
-	DHSFlexLegacyDatlogRequestInterval = "6"
+	// DHSFlexLegacyDatlogRequestInterval is the interval in minutes between each datalog request of a flex. Default is "60".
+	DHSFlexLegacyDatlogRequestInterval = "60"
 
 	// InicialDHSServices is the the number of inicial DHS services.
 	InicialDHSServices = "1"

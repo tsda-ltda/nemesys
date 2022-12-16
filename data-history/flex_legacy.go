@@ -22,14 +22,13 @@ type flexLegacyPulling struct {
 }
 
 func (d *DHS) newFlexLegacyPulling(containerId int32) {
-	interval, err := strconv.ParseInt(env.DHSFlexLegacyDatlogRequestInterval, 0, 64)
+	interval, err := strconv.Atoi(env.DHSFlexLegacyDatlogRequestInterval)
 	if err != nil {
 		d.log.Fatal("Fail to parse env.DHSFlexLegacyDatlogRequestInterval", logger.ErrField(err))
-		return
 	}
 
 	f := &flexLegacyPulling{
-		ticker: time.NewTicker(time.Minute * (time.Duration(interval) / 2)),
+		ticker: time.NewTicker(time.Minute * time.Duration(interval)),
 		id:     containerId,
 		closed: make(chan any),
 		onPull: d.getFlexLegacyDatalog,

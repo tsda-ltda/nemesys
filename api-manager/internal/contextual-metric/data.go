@@ -179,20 +179,20 @@ func GetCustomQueryFlux(api *api.API, c *gin.Context) (flux string, err error) {
 		if err != nil {
 			cacheRes, err := api.Cache.GetCustomQueryByIdent(ctx, rawCustomQuery)
 			if err != nil {
-				return flux, ErrFailToGetCustomQueryOnCache
+				return flux, err
 			}
 			if !cacheRes.Exists {
 				exists, cq, err := api.PG.GetCustomQueryByIdent(ctx, rawCustomQuery)
 				if err != nil {
-					return flux, ErrFailToGetCustomQueryOnDatabase
+					return flux, err
 				}
 				if !exists {
-					return flux, ErrCustomQueryNotFound
+					return flux, err
 				}
 				flux = cq.Flux
 				err = api.Cache.SetCustomQueryByIdent(ctx, cq.Flux, rawCustomQuery)
 				if err != nil {
-					return flux, ErrFailToSetCustomQueryOnCache
+					return flux, err
 				}
 			} else {
 				flux = cacheRes.Flux
@@ -200,21 +200,21 @@ func GetCustomQueryFlux(api *api.API, c *gin.Context) (flux string, err error) {
 		} else {
 			cacheRes, err := api.Cache.GetCustomQuery(ctx, int32(id))
 			if err != nil {
-				return flux, ErrFailToGetCustomQueryOnCache
+				return flux, err
 			}
 
 			if !cacheRes.Exists {
 				exists, cq, err := api.PG.GetCustomQuery(ctx, int32(id))
 				if err != nil {
-					return flux, ErrFailToGetCustomQueryOnDatabase
+					return flux, err
 				}
 				if !exists {
-					return flux, ErrCustomQueryNotFound
+					return flux, err
 				}
 				flux = cq.Flux
 				err = api.Cache.SetCustomQuery(ctx, cq.Flux, int32(id))
 				if err != nil {
-					return flux, ErrFailToSetCustomQueryOnCache
+					return flux, err
 				}
 			} else {
 				flux = cacheRes.Flux
