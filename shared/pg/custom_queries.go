@@ -2,9 +2,9 @@ package pg
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/fernandotsda/nemesys/shared/models"
-	"github.com/jackc/pgx/v5"
 )
 
 const (
@@ -71,7 +71,7 @@ func (pg *PG) GetCustomQuery(ctx context.Context, id int32) (exists bool, cq mod
 		&cq.Flux,
 	)
 	if err != nil {
-		if err != pgx.ErrNoRows {
+		if err != sql.ErrNoRows {
 			return false, cq, err
 		}
 		return false, cq, nil
@@ -87,7 +87,7 @@ func (pg *PG) GetCustomQueryByIdent(ctx context.Context, ident string) (exists b
 		&cq.Flux,
 	)
 	if err != nil {
-		if err != pgx.ErrNoRows {
+		if err != sql.ErrNoRows {
 			return false, cq, err
 		}
 		return false, cq, nil
