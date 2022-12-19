@@ -61,12 +61,7 @@ func Start() {
 	}
 	log.Info("Connected to influxdb")
 
-	logsRetention, err := strconv.ParseInt(env.DefaultLogsBucketRetention, 0, 64)
-	if err != nil {
-		log.Fatal("Fail to parse env.DefaultLogsBucketRetention", logger.ErrField(err))
-		return
-	}
-	created, err := influxClient.CreateLogsBucket(logsRetention)
+	created, err := influxClient.CreateLogsBucket()
 	if err != nil {
 		log.Fatal("Fail to create logs bucket", logger.ErrField(err))
 		return
@@ -82,6 +77,15 @@ func Start() {
 	}
 	if created {
 		log.Info("Requests count bucket created with success")
+	}
+
+	created, err = influxClient.CreateAlarmHistoryBucket()
+	if err != nil {
+		log.Fatal("Fail to create alarm history bucket", logger.ErrField(err))
+		return
+	}
+	if created {
+		log.Info("ALarm history bucket created with success")
 	}
 
 	amqph := amqph.New(amqph.Config{

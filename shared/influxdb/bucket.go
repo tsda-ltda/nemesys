@@ -24,33 +24,29 @@ func (c *Client) getBucket(name string) (*domain.Bucket, error) {
 		}
 		c.saveBucketLocal(bucket)
 	}
+
 	return bucket, nil
 }
 
-func (c *Client) createBucket(ctx context.Context, name string, description string, retentionSeconds int64) (err error) {
+func (c *Client) createBucket(ctx context.Context, name string, retentionSeconds int64) (err error) {
 	api := c.BucketsAPI()
 
 	rules := []domain.RetentionRule{{
 		EverySeconds: retentionSeconds,
 	}}
 
-	// create bucket
 	bucket, err := api.CreateBucketWithName(ctx, c.DefaultOrg, name, rules...)
 	if err != nil {
 		return err
 	}
 
-	// update description
-	bucket.Description = fmtBucketDescription(description)
-	bucket, err = api.UpdateBucket(ctx, bucket)
 	c.saveBucketLocal(bucket)
 	return err
 }
 
-func (c *Client) updateBucket(ctx context.Context, name string, description string, retentionSeconds int64) (err error) {
+func (c *Client) updateBucket(ctx context.Context, name string, retentionSeconds int64) (err error) {
 	api := c.BucketsAPI()
 
-	// find bucket
 	bucket, err := api.FindBucketByName(ctx, name)
 	if err != nil {
 		return err
@@ -69,12 +65,8 @@ func (c *Client) updateBucket(ctx context.Context, name string, description stri
 		EverySeconds:              retentionSeconds,
 		ShardGroupDurationSeconds: &shardGroupDuration,
 	}}
-
-	// update params
 	bucket.RetentionRules = rules
-	bucket.Description = &description
 
-	// update bucket
 	bucket, err = api.UpdateBucket(ctx, bucket)
 	c.saveBucketLocal(bucket)
 	return err
@@ -83,13 +75,11 @@ func (c *Client) updateBucket(ctx context.Context, name string, description stri
 func (c *Client) deleteBucket(ctx context.Context, name string) (err error) {
 	api := c.BucketsAPI()
 
-	// find bucket
 	bucket, err := api.FindBucketByName(ctx, name)
 	if err != nil {
 		return err
 	}
 	c.deleteBucketLocal(name)
 
-	// delete bucket
 	return c.BucketsAPI().DeleteBucket(ctx, bucket)
 }

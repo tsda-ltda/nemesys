@@ -2,35 +2,34 @@ package influxdb
 
 import (
 	"context"
+	"strconv"
 	"time"
 
+	"github.com/fernandotsda/nemesys/shared/env"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/domain"
 )
 
+const (
+	logsBucketName = "logs"
+)
+
 // CreateLogsBucket creates the logs bucket if not exists.
-func (c *Client) CreateLogsBucket(retentionHours int64) (created bool, err error) {
+func (c *Client) CreateLogsBucket() (created bool, err error) {
 	ctx := context.Background()
 	api := c.BucketsAPI()
-	var bucket *domain.Bucket
-	defer func() {
-		if err == nil {
-			c.saveBucketLocal(bucket)
-		}
-	}()
 
-	bucket, err = api.FindBucketByName(ctx, "logs")
+	bucket, _ := api.FindBucketByName(ctx, logsBucketName)
 	if bucket != nil {
 		return false, nil
 	}
 
-	bucket, err = api.CreateBucket(ctx, &domain.Bucket{
-		Name: "logs",
-		RetentionRules: domain.RetentionRules{{
-			EverySeconds: retentionHours * 3600,
-		}},
-		OrgID: c.DefaultOrg.Id,
-	})
+	hours, err := strconv.Atoi(env.LogsBucketRetention)
+	if err != nil {
+		return false, err
+	}
+
+	err = c.createBucket(ctx, logsBucketName, int64(hours*3600))
 	return err == nil, err
 }
 
@@ -44,7 +43,7 @@ func (c *Client) UpdateLogsBucket(retentionHours int64) (err error) {
 		}
 	}()
 
-	bucket, err = api.FindBucketByName(ctx, "logs")
+	bucket, err = api.FindBucketByName(ctx, logsBucketName)
 	if err != nil {
 		return err
 	}
@@ -66,7 +65,7 @@ func (c *Client) WriteLog(ctx context.Context, log map[string]any) error {
 		return ErrLogIsNil
 	}
 
-	bucket, err := c.getBucket("logs")
+	bucket, err := c.getBucket(logsBucketName)
 	if err != nil {
 		return err
 	}
@@ -81,7 +80,7 @@ func (c *Client) WriteLog(ctx context.Context, log map[string]any) error {
 		return ErrInvalidLog
 	}
 
-	p := influxdb2.NewPointWithMeasurement("logs")
+	p := influxdb2.NewPointWithMeasurement(logsBucketName)
 	p.AddTag("level", level)
 	p.AddTag("serv", serv)
 	p.SetTime(timestamp)

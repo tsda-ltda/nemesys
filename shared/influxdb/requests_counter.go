@@ -3,9 +3,10 @@ package influxdb
 import (
 	"context"
 	"fmt"
+	"strconv"
 
+	"github.com/fernandotsda/nemesys/shared/env"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
-	"github.com/influxdata/influxdb-client-go/v2/domain"
 )
 
 const (
@@ -13,32 +14,23 @@ const (
 	requestsCountMeasurement         = "requests"
 	requestsRealtimeCountMeasurement = "requests-realtime-data"
 	requestsHistoryCountMeasurement  = "requests-history-data"
-
-	requestCountRetention = 30 * 24 * 3600 // 30d
 )
 
 func (c *Client) CreateRequestsCountBucket() (created bool, err error) {
 	ctx := context.Background()
 	api := c.BucketsAPI()
-	var bucket *domain.Bucket
-	defer func() {
-		if err == nil {
-			c.saveBucketLocal(bucket)
-		}
-	}()
 
-	bucket, err = api.FindBucketByName(ctx, requestsCountBucketName)
+	bucket, _ := api.FindBucketByName(ctx, requestsCountBucketName)
 	if bucket != nil {
 		return false, nil
 	}
 
-	bucket, err = api.CreateBucket(ctx, &domain.Bucket{
-		Name: requestsCountBucketName,
-		RetentionRules: domain.RetentionRules{{
-			EverySeconds: requestCountRetention,
-		}},
-		OrgID: c.DefaultOrg.Id,
-	})
+	hours, err := strconv.Atoi(env.RequestsCountBucketRetention)
+	if err != nil {
+		return false, err
+	}
+
+	err = c.createBucket(ctx, requestsCountBucketName, int64(hours*3600))
 	return err == nil, err
 }
 
@@ -59,20 +51,30 @@ func (c *Client) writeRequestsCount(count int64, measurement string) {
 	c.WriteAPI(*c.DefaultOrg.Id, requestsCountBucketName).WritePoint(p)
 }
 
-func (c *Client) GetTotalRequests() (total int64, err error) {
-	return c.getTotalRequests(requestsCountMeasurement)
+func (c *Client) GetTotalRequests(ctx context.Context) (total int64, err error) {
+	return c.getTotalRequests(ctx, requestsCountMeasurement)
 }
 
-func (c *Client) GetTotalRealtimeDataRequests() (total int64, err error) {
-	return c.getTotalRequests(requestsRealtimeCountMeasurement)
+func (c *Client) GetTotalRealtimeDataRequests(ctx context.Context) (total int64, err error) {
+	return c.getTotalRequests(ctx, requestsRealtimeCountMeasurement)
 }
 
-func (c *Client) GetTotalDataHistoryRequests() (total int64, err error) {
-	return c.getTotalRequests(requestsHistoryCountMeasurement)
+func (c *Client) GetTotalDataHistoryRequests(ctx context.Context) (total int64, err error) {
+	return c.getTotalRequests(ctx, requestsHistoryCountMeasurement)
 }
 
-func (c *Client) getTotalRequests(measurement string) (total int64, err error) {
-	table, err := c.QueryAPI(*c.DefaultOrg.Id).Query(context.Background(), getTotalRequestsFlux(measurement))
+func (c *Client) getTotalRequests(ctx context.Context, measurement string) (total int64, err error) {
+	bucket, err := c.BucketsAPI().FindBucketByName(ctx, requestsCountBucketName)
+	if err != nil {
+		return total, err
+	}
+
+	if len(bucket.RetentionRules) < 1 {
+		return total, ErrInvalidRetentionRulesLength
+	}
+	retention := bucket.RetentionRules[0].EverySeconds
+
+	table, err := c.QueryAPI(*c.DefaultOrg.Id).Query(context.Background(), getTotalRequestsFlux(measurement, retention))
 	if err != nil {
 		return total, err
 	}
@@ -86,12 +88,12 @@ func (c *Client) getTotalRequests(measurement string) (total int64, err error) {
 	return total, nil
 }
 
-func getTotalRequestsFlux(measurement string) string {
+func getTotalRequestsFlux(measurement string, retention int64) string {
 	return fmt.Sprintf(`
 		from(bucket: "%s")
 			|> range(start: -%ds)
 			|> filter(fn: (r) => r["_measurement"] == "%s")
 			|> filter(fn: (r) => r["_field"] == "count")
 			|> sum()
-	`, requestsCountBucketName, requestCountRetention, measurement)
+	`, requestsCountBucketName, retention, measurement)
 }

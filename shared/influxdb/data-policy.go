@@ -17,22 +17,15 @@ func GetBucketName(dataPolicyId int16, aggr bool) string {
 	return fmt.Sprintf("%d-%s", dataPolicyId, suffix)
 }
 
-func fmtBucketDescription(descr string) *string {
-	d := fmt.Sprintf("Data policy description: (%s)", descr)
-	return &d
-}
-
 // CreateDataPolicy creates two buckets on database to represent a data policy.
 func (c *Client) CreateDataPolicy(ctx context.Context, dp models.DataPolicy) (err error) {
-	// create raw bucket
-	err = c.createBucket(ctx, GetBucketName(dp.Id, false), dp.Descr, int64(dp.Retention*3600))
+	err = c.createBucket(ctx, GetBucketName(dp.Id, false), int64(dp.Retention*3600))
 	if err != nil {
 		return err
 	}
 
-	// create aggregation bucket
 	if dp.UseAggr {
-		err = c.createBucket(ctx, GetBucketName(dp.Id, true), dp.Descr, int64(dp.AggrRetention*3600+dp.Retention*3600))
+		err = c.createBucket(ctx, GetBucketName(dp.Id, true), int64(dp.AggrRetention*3600+dp.Retention*3600))
 		if err != nil {
 			return err
 		}
@@ -46,8 +39,7 @@ func (c *Client) CreateDataPolicy(ctx context.Context, dp models.DataPolicy) (er
 func (c *Client) UpdateDataPolicy(ctx context.Context, dp models.DataPolicy) (err error) {
 	api := c.BucketsAPI()
 
-	// update raw bucket
-	err = c.updateBucket(ctx, GetBucketName(dp.Id, false), dp.Descr, int64(dp.Retention*3600))
+	err = c.updateBucket(ctx, GetBucketName(dp.Id, false), int64(dp.Retention*3600))
 	if err != nil {
 		return err
 	}
@@ -55,11 +47,10 @@ func (c *Client) UpdateDataPolicy(ctx context.Context, dp models.DataPolicy) (er
 	aggrName := GetBucketName(dp.Id, true)
 	aggrRetention := int64(dp.AggrRetention*3600 + dp.Retention*3600)
 
-	// find aggregation bucket
 	_, err = api.FindBucketByName(ctx, aggrName)
 	if dp.UseAggr {
 		if err != nil {
-			err = c.createBucket(ctx, aggrName, dp.Descr, aggrRetention)
+			err = c.createBucket(ctx, aggrName, aggrRetention)
 			if err != nil {
 				return err
 			}
@@ -68,7 +59,7 @@ func (c *Client) UpdateDataPolicy(ctx context.Context, dp models.DataPolicy) (er
 				return err
 			}
 		} else {
-			err = c.updateBucket(ctx, aggrName, dp.Descr, aggrRetention)
+			err = c.updateBucket(ctx, aggrName, aggrRetention)
 			if err != nil {
 				return err
 			}

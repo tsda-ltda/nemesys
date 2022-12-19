@@ -84,9 +84,6 @@ var (
 	// InfluxTLSKeyFilePath is the path for the TLS key file. Default is "".
 	InfluxTLSKeyFilePath = ""
 
-	// DefaultLogsBucketRetention is the default retention in hours of the logs bucket. Default is "72".
-	DefaultLogsBucketRetention = "72"
-
 	// RDBAuthHost is redis for auth host. Default is "localhost".
 	RDBAuthHost = "localhost"
 	// RDBAuthPort is the redis for auth port. Default is "6379".
@@ -138,6 +135,13 @@ var (
 	MetricAlarmEmailSenderHost = ""
 	// MetricAlarmEmailSenderHostPort is the host port of the sender. Default is "";
 	MetricAlarmEmailSenderHostPort = ""
+
+	// RequestsCountBucketRetention is the retention in hours of the requests-count bucket. Default is
+	RequestsCountBucketRetention = "720" // 30 days
+	// AlarmHistoryBucketRetention is the retention in hours of the alarm-history bucket. Default is "168".
+	AlarmHistoryBucketRetention = "168" // 7 days
+	// LogsBucketRetention is the retention in houts of the logs bucket. Default is "168".
+	LogsBucketRetention = "168" // 7 days
 
 	// AlarmServiceAMQPPublishers is the number of amqp publishers, which means number
 	// of socket channels openned. Default is "1".

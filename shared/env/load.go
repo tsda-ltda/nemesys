@@ -108,6 +108,10 @@ func Init() {
 	set("METRIC_ALARM_EMAIL_SENDER_HOST", &MetricAlarmEmailSenderHost)
 	set("METRIC_ALARM_EMAIL_SENDER_HOST_PORT", &MetricAlarmEmailSenderHostPort)
 
+	set("ALARM_HISTORY_BUCKET_RETENTION", &AlarmHistoryBucketRetention)
+	set("REQUESTS_COUNT_BUCKET_RETENTION", &RequestsCountBucketRetention)
+	set("LOGS_BUCKET_RETENTION", &LogsBucketRetention)
+
 	set("ALARM_SERVICE_AMQP_PUBLISHERS", &AlarmServiceAMQPPublishers)
 	set("API_MANAGER_AMQP_PUBLISHERS", &APIManagerAMQPPublishers)
 	set("DHS_SERVICE_AMQP_PUBLISHERS", &DHSAMQPPublishers)
