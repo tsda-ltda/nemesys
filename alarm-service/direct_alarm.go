@@ -3,7 +3,6 @@ package alarm
 import (
 	"context"
 	"strconv"
-	"time"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/logger"
@@ -30,12 +29,14 @@ func (a *Alarm) handleDirectMetricAlarm(d amqp091.Delivery) {
 		return
 	}
 
-	a.processAlarm(MetricAlarmed{
+	a.processAlarm(models.AlarmOccurency{
 		MetricId:    alarm.MetricId,
 		ContainerId: alarm.ContainerId,
 		Category:    category,
 		Value:       alarm.Value,
-	}, types.ATDirect, time.Now())
+		Type:        types.ATDirect,
+		Time:        d.Timestamp,
+	})
 }
 
 func (a *Alarm) handleDirectMetricsAlarm(d amqp091.Delivery) {
@@ -63,12 +64,14 @@ func (a *Alarm) handleDirectMetricsAlarm(d amqp091.Delivery) {
 				return
 			}
 
-			go a.processAlarm(MetricAlarmed{
+			go a.processAlarm(models.AlarmOccurency{
 				MetricId:    alarm.MetricId,
 				ContainerId: alarm.ContainerId,
 				Category:    c,
 				Value:       alarm.Value,
-			}, types.ATDirect, time.Now())
+				Type:        types.ATDirect,
+				Time:        d.Timestamp,
+			})
 		}
 	}
 }

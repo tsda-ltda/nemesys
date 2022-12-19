@@ -15,7 +15,7 @@ func (a *Alarm) checkMetricAlarm(data models.MetricDataResponse) {
 	metricIdString := strconv.FormatInt(data.Id, 10)
 	a.log.Debug("Checking metric alarm, metric id: " + metricIdString)
 	defer func() {
-		a.log.Debug("Metric alarm check process finished, metric id:" + metricIdString)
+		a.log.Debug("Metric alarm check process finished, metric id: " + metricIdString)
 	}()
 
 	ctx := context.Background()
@@ -67,7 +67,7 @@ func (a *Alarm) checkMetricAlarm(data models.MetricDataResponse) {
 		return
 	}
 
-	var metricAlarmed MetricAlarmed
+	var occurency models.AlarmOccurency
 	var alarmed bool
 	for _, c := range categories {
 		for _, e := range alarmExpressions {
@@ -79,12 +79,14 @@ func (a *Alarm) checkMetricAlarm(data models.MetricDataResponse) {
 				if !alarmed {
 					continue
 				}
-				metricAlarmed = MetricAlarmed{
-					MetricId:              data.Id,
-					ContainerId:           data.ContainerId,
-					Category:              c,
-					ExpressionsSimplified: e,
-					Value:                 data.Value,
+				occurency = models.AlarmOccurency{
+					MetricId:             data.Id,
+					ContainerId:          data.ContainerId,
+					Category:             c,
+					ExpressionSimplified: e,
+					Value:                data.Value,
+					Type:                 types.ATChecked,
+					Time:                 time.Now(),
 				}
 				break
 			}
@@ -95,7 +97,7 @@ func (a *Alarm) checkMetricAlarm(data models.MetricDataResponse) {
 	}
 
 	if alarmed {
-		go a.processAlarm(metricAlarmed, types.ATChecked, time.Now())
+		a.processAlarm(occurency)
 	}
 }
 
@@ -189,13 +191,15 @@ func (a *Alarm) checkMetricsAlarm(data models.MetricsDataResponse) {
 					continue
 				}
 
-				go a.processAlarm(MetricAlarmed{
-					MetricId:              metricIds[i],
-					ContainerId:           data.ContainerId,
-					Category:              c,
-					ExpressionsSimplified: e,
-					Value:                 data.Metrics[i].Value,
-				}, types.ATChecked, time.Now())
+				go a.processAlarm(models.AlarmOccurency{
+					MetricId:             metricIds[i],
+					ContainerId:          data.ContainerId,
+					Category:             c,
+					ExpressionSimplified: e,
+					Value:                data.Metrics[i].Value,
+					Type:                 types.ATChecked,
+					Time:                 time.Now(),
+				})
 			}
 		}
 	}

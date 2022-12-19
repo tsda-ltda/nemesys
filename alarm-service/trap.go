@@ -57,10 +57,13 @@ func (a *Alarm) handleFlexLegacyTrapAlarm(d amqp091.Delivery) {
 		return
 	}
 
-	go a.processAlarm(MetricAlarmed{
+	go a.processAlarm(models.AlarmOccurency{
+		Type:        types.ATTrapFlexLegacy,
 		MetricId:    metricId,
 		ContainerId: containerId,
 		Category:    category,
 		Value:       trapAlarm.Value,
-	}, types.ATTrapFlexLegacy, trapAlarm.Timestamp)
+		TrapDescr:   trapAlarm.Description,
+		Time:        trapAlarm.Timestamp,
+	})
 }

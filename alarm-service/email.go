@@ -12,7 +12,7 @@ import (
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
-func getEmailMessage(info models.AlarmNotificationInfo, value any) string {
+func getEmailMessage(info models.AlarmNotificationInfo) string {
 	return fmt.Sprintf(`METRIC '%s' ALARM!
 	
 Occurency date:	%s
@@ -39,7 +39,7 @@ Alarm Expression: %s`,
 		info.Category.Level,
 		info.MetricId,
 		info.MetricName,
-		value,
+		info.Value,
 		info.ContainerId,
 		info.ContainerName,
 		types.StringfyContainerType(info.ContainerType),
@@ -49,7 +49,7 @@ Alarm Expression: %s`,
 	)
 }
 
-func (a *Alarm) notifyEmail(info models.AlarmNotificationInfo, profiles []models.AlarmProfileSimplified, value any, alarmType types.AlarmType) {
+func (a *Alarm) notifyEmail(info models.AlarmNotificationInfo, profiles []models.AlarmProfileSimplified) {
 	ids := make([]int32, len(profiles))
 	for i, p := range profiles {
 		ids[i] = p.Id
@@ -63,7 +63,7 @@ func (a *Alarm) notifyEmail(info models.AlarmNotificationInfo, profiles []models
 		return
 	}
 
-	bytes := []byte(getEmailMessage(info, value))
+	bytes := []byte(getEmailMessage(info))
 
 	err = smtp.SendMail(
 		env.MetricAlarmEmailSenderHost+":"+env.MetricAlarmEmailSenderHostPort,

@@ -95,6 +95,8 @@ type AlarmNotificationInfo struct {
 	Expression AlarmExpression
 	// OccurrencyDate is the date of occurency in seconds.
 	OccurencyDate int64
+	// Value is the alarmed value.
+	Value any
 }
 
 type DirectAlarm struct {
@@ -137,4 +139,27 @@ type AlarmProfileEmail struct {
 	Id int32 `json:"id" validate:"-"`
 	// Email is the email.
 	Email string `json:"email" validate:"required"`
+}
+
+type AlarmOccurency struct {
+	// Type is the alarm type.
+	Type types.AlarmType
+	// MetricId is the metric identifier.
+	MetricId int64
+	// Time is when the alarm occurency timestamp.
+	Time time.Time
+	// ContainerId is the container identifier.
+	ContainerId int32
+	// Category is the alarm category simplified.
+	Category AlarmCategorySimplified
+	// ExpressionSimplifed is the expression simplified
+	// that was used to check the alarm, should only
+	// be used if alarm occurency is a producut of
+	// a alarm check, not from direct alarms or snmp traps.
+	ExpressionSimplified AlarmExpressionSimplified
+	// Value is the alarmed value.
+	Value any
+	// TrapDescr is the trap description, should not be used
+	// if alarm occurency was not originated from an snmp trap.
+	TrapDescr string
 }

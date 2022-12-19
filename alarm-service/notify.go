@@ -8,8 +8,8 @@ import (
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
-func (a *Alarm) notifyAlarm(ctx context.Context, metricAlarmed MetricAlarmed, occurencyDateSeconds int64, alarmType types.AlarmType) {
-	profiles, err := a.pg.GetCategoryAlarmProfilesSimplified(ctx, metricAlarmed.Category.Id)
+func (a *Alarm) notifyAlarm(ctx context.Context, occurency models.AlarmOccurency) {
+	profiles, err := a.pg.GetCategoryAlarmProfilesSimplified(ctx, occurency.Category.Id)
 	if err != nil {
 		a.log.Error("Fail to get category alarm profiles simplified", logger.ErrField(err))
 		return
@@ -20,20 +20,21 @@ func (a *Alarm) notifyAlarm(ctx context.Context, metricAlarmed MetricAlarmed, oc
 	}
 
 	var info models.AlarmNotificationInfo
-	if alarmType == types.ATChecked {
+
+	if occurency.Type == types.ATChecked {
 		info, err = a.pg.GetAlarmNotificationInfo(context.Background(),
-			metricAlarmed.MetricId,
-			metricAlarmed.ContainerId,
-			metricAlarmed.Category.Id,
-			metricAlarmed.ExpressionsSimplified.Id,
+			occurency.MetricId,
+			occurency.ContainerId,
+			occurency.Category.Id,
+			occurency.ExpressionSimplified.Id,
 		)
-		info.Expression.Expression = metricAlarmed.ExpressionsSimplified.Expression
-		info.Expression.AlarmCategoryId = metricAlarmed.Category.Id
+		info.Expression.Expression = occurency.ExpressionSimplified.Expression
+		info.Expression.AlarmCategoryId = occurency.Category.Id
 	} else {
 		info, err = a.pg.GetAlarmNotificationInfoWitoutExpressions(context.Background(),
-			metricAlarmed.MetricId,
-			metricAlarmed.ContainerId,
-			metricAlarmed.Category.Id,
+			occurency.MetricId,
+			occurency.ContainerId,
+			occurency.Category.Id,
 		)
 	}
 	if err != nil {
@@ -41,8 +42,8 @@ func (a *Alarm) notifyAlarm(ctx context.Context, metricAlarmed MetricAlarmed, oc
 		return
 	}
 
-	info.Category.Level = metricAlarmed.Category.Level
-	info.OccurencyDate = occurencyDateSeconds
+	info.Category.Level = occurency.Category.Level
+	info.OccurencyDate = occurency.Time.Unix()
 
-	go a.notifyEmail(info, profiles, metricAlarmed.Value, alarmType)
+	go a.notifyEmail(info, profiles)
 }
