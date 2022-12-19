@@ -3,38 +3,30 @@ package alarm
 import (
 	"context"
 	"strconv"
-	"time"
 
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
-type MetricAlarmed struct {
-	MetricId              int64
-	ContainerId           int32
-	Category              models.AlarmCategorySimplified
-	ExpressionsSimplified models.AlarmExpressionSimplified
-	Value                 any
-}
-
-func (a *Alarm) processAlarm(metricAlarmed MetricAlarmed, alarmType types.AlarmType, timestamp time.Time) {
+func (a *Alarm) processAlarm(occurency models.AlarmOccurency) {
 	ctx := context.Background()
+	idString := strconv.FormatInt(occurency.MetricId, 10)
 
-	exists, state, err := a.pg.GetAlarmState(ctx, metricAlarmed.MetricId)
+	exists, state, err := a.pg.GetAlarmState(ctx, occurency.MetricId)
 	if err != nil {
 		a.log.Error("Fail to get alarm state", logger.ErrField(err))
 		return
 	}
-	state.LastUpdate = timestamp.Unix()
 
 	// notify as soon as possible
 	if (exists && state.State == types.ASNotAlarmed) || (!exists) {
-		a.notifyAlarm(ctx, metricAlarmed, state.LastUpdate, alarmType)
+		a.notifyAlarm(ctx, occurency)
 	}
 
+	state.LastUpdate = occurency.Time.Unix()
 	if !exists {
-		state.MetricId = metricAlarmed.MetricId
+		state.MetricId = occurency.MetricId
 		state.State = types.ASAlarmed
 
 		err = a.pg.CreateAlarmState(ctx, state)
@@ -49,13 +41,14 @@ func (a *Alarm) processAlarm(metricAlarmed MetricAlarmed, alarmType types.AlarmT
 			a.log.Error("Fail to update alarm state", logger.ErrField(err))
 			return
 		}
-		a.log.Debug("Alarm state updated, metric id: " + strconv.FormatInt(state.MetricId, 10))
+		a.log.Debug("Alarm state updated, metric id: " + idString)
 	}
 
-	a.saveAlarmOccurency(metricAlarmed)
-	a.log.Debug("Alarm process finished")
+	a.saveAlarmOccurency(occurency)
+	a.log.Debug("Alarm process finished, metric id: " + idString)
 }
 
-func (a *Alarm) saveAlarmOccurency(metricAlarmed MetricAlarmed) {
-	a.log.Debug("save alarm occurency handler is not implemented yet")
+func (a *Alarm) saveAlarmOccurency(occurency models.AlarmOccurency) {
+	a.influxdb.WriteAlarmOccurency(occurency)
+	a.log.Debug("Alarm occurency saved on influxdb, metric id: " + strconv.FormatInt(occurency.MetricId, 10))
 }

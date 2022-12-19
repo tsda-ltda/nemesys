@@ -119,6 +119,7 @@ func Set(s service.Service) {
 		{
 			ctxMetrics.GET("/", middleware.ParseContextParams(api), ctxmetric.MGet(api))
 			ctxMetrics.GET("/:ctxMetricId", middleware.ParseContextualMetricParams(api), ctxmetric.Get(api))
+			ctxMetrics.GET("/:ctxMetricId/alarm-history", middleware.ParseContextualMetricParams(api), middleware.MetricRequest(api), ctxmetric.AlarmHistoryHandler(api))
 			ctxMetrics.GET("/:ctxMetricId/alarm-state", middleware.ParseContextualMetricParams(api), ctxmetric.GetAlarmStateHandler(api))
 			ctxMetrics.POST("/:ctxMetricId/alarm-state/recognize", middleware.ParseContextualMetricParams(api), ctxmetric.RecognizeAlarmStateHandler(api))
 			ctxMetrics.POST("/:ctxMetricId/alarm-state/resolve", middleware.ParseContextualMetricParams(api), ctxmetric.ResolveAlarmStateHandler(api))

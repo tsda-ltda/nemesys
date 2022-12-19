@@ -1,21 +1,19 @@
 package alarm
 
 import (
-	"crypto/tls"
 	stdlog "log"
 	"net/smtp"
 	"strconv"
-	"time"
 
 	"github.com/fernandotsda/nemesys/shared/amqp"
 	"github.com/fernandotsda/nemesys/shared/amqph"
 	t "github.com/fernandotsda/nemesys/shared/amqph/tools"
 	"github.com/fernandotsda/nemesys/shared/cache"
 	"github.com/fernandotsda/nemesys/shared/env"
+	"github.com/fernandotsda/nemesys/shared/influxdb"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/fernandotsda/nemesys/shared/service"
-	"github.com/fernandotsda/nemesys/shared/tlspool"
 	"github.com/rabbitmq/amqp091-go"
 )
 
@@ -32,10 +30,10 @@ type Alarm struct {
 	log *logger.Logger
 	// amqph is the amqp handler.
 	amqph *amqph.Amqph
-	// smtpConnPool is the tls connection pool for smtp.
-	smtpConnPool *tlspool.TLSConnPool
 	// smtpAuth is the smtp plain auth.
 	smtpAuth smtp.Auth
+	// influxdb is the influxdb client.
+	influxdb *influxdb.Client
 }
 
 func New(serviceNumber int) service.Service {
@@ -56,13 +54,14 @@ func New(serviceNumber int) service.Service {
 	}
 	log.Info("Connected to amqp server")
 
-	tools := service.NewTools(service.Alarm, serviceNumber)
-
-	smtpPort, err := strconv.Atoi(env.MetricAlarmEmailSenderHostPort)
+	influxdb, err := influxdb.Connect()
 	if err != nil {
-		log.Fatal("Fail to parse env.MetricAlarmEmailSenderHostPort", logger.ErrField(err))
+		log.Fatal("Fail to connect to influxdb", logger.ErrField(err))
 		return nil
 	}
+	log.Info("Connected to influxdb")
+
+	tools := service.NewTools(service.Alarm, serviceNumber)
 
 	publishers, err := strconv.Atoi(env.AlarmServiceAMQPPublishers)
 	if err != nil {
@@ -90,19 +89,8 @@ func New(serviceNumber int) service.Service {
 		log:      log,
 		amqph:    amqph,
 		Tools:    tools,
+		influxdb: &influxdb,
 		smtpAuth: smtp.PlainAuth("", env.MetricAlarmEmailSender, env.MetricAlarmEmailSenderPassword, env.MetricAlarmEmailSenderHost),
-		smtpConnPool: tlspool.New(tlspool.Config{
-			Network:             "tcp",
-			Timeout:             time.Second * 3,
-			MaxIdleConnLifetime: time.Minute,
-			MaxIdleConn:         3,
-			MaxOpenConn:         5,
-			Host:                env.MetricAlarmEmailSenderHost,
-			Port:                smtpPort,
-			TLSConfig: tls.Config{
-				InsecureSkipVerify: true,
-			},
-		}),
 	}
 }
 
@@ -119,11 +107,13 @@ func (a *Alarm) Run() {
 
 func (a *Alarm) Close() error {
 	a.DispatchDone(nil)
+
 	a.amqpConn.Close()
 	a.amqph.Close()
 	a.cache.Close()
 	a.log.Close()
 	a.pg.Close()
-	a.smtpConnPool.Close()
+	a.influxdb.Close()
+
 	return nil
 }
