@@ -109,8 +109,8 @@ func (pg *PG) GetContextualMetrics(ctx context.Context, ctxId int32, limit int, 
 		return nil, err
 	}
 	defer rows.Close()
+	var m models.ContextualMetric
 	for rows.Next() {
-		var m models.ContextualMetric
 		err = rows.Scan(
 			&m.Id,
 			&m.MetricId,

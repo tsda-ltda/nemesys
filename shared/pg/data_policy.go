@@ -101,8 +101,8 @@ func (pg *PG) GetDataPolicies(ctx context.Context) (dps []models.DataPolicy, err
 		return nil, err
 	}
 	defer rows.Close()
+	var dp models.DataPolicy
 	for rows.Next() {
-		var dp models.DataPolicy
 		err = rows.Scan(
 			&dp.Id,
 			&dp.Descr,

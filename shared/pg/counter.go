@@ -21,8 +21,8 @@ func (pg *PG) GetCounterWhitelist(ctx context.Context, limit int, offset int) (u
 	}
 	defer rows.Close()
 	userIds = []int32{}
+	var id int32
 	for rows.Next() {
-		var id int32
 		err = rows.Scan(&id)
 		if err != nil {
 			return nil, err
@@ -48,8 +48,8 @@ func (pg *PG) GetAllCounterWhitelist(ctx context.Context) (userIds []int32, err 
 	}
 	defer rows.Close()
 	userIds = []int32{}
+	var id int32
 	for rows.Next() {
-		var id int32
 		err = rows.Scan(&id)
 		if err != nil {
 			return nil, err

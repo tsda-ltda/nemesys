@@ -81,8 +81,8 @@ func (pg *PG) GetAlarmProfiles(ctx context.Context, limit int, offset int) (prof
 	}
 	defer rows.Close()
 	profiles = make([]models.AlarmProfile, 0, limit)
+	var profile models.AlarmProfile
 	for rows.Next() {
-		var profile models.AlarmProfile
 		err = rows.Scan(
 			&profile.Id,
 			&profile.Name,
@@ -130,8 +130,8 @@ func (pg *PG) GetAlarmProfileCategories(ctx context.Context, profileId int32, li
 	}
 	defer rows.Close()
 	categories = make([]models.AlarmCategory, 0)
+	var category models.AlarmCategory
 	for rows.Next() {
-		var category models.AlarmCategory
 		err = rows.Scan(
 			&category.Id,
 			&category.Name,
@@ -161,8 +161,8 @@ func (pg *PG) GetAllAlarmProfileEmails(ctx context.Context, id int32) (emails []
 	}
 	defer rows.Close()
 	emails = []models.AlarmProfileEmailWithoutProfileId{}
+	var e models.AlarmProfileEmailWithoutProfileId
 	for rows.Next() {
-		var e models.AlarmProfileEmailWithoutProfileId
 		err = rows.Scan(&e.Id, &e.Email)
 		if err != nil {
 			return nil, err
@@ -179,8 +179,8 @@ func (pg *PG) GetAlarmProfileEmails(ctx context.Context, id int32, limit int, of
 	}
 	defer rows.Close()
 	emails = []models.AlarmProfileEmailWithoutProfileId{}
+	var e models.AlarmProfileEmailWithoutProfileId
 	for rows.Next() {
-		var e models.AlarmProfileEmailWithoutProfileId
 		err = rows.Scan(&e.Id, &e.Email)
 		if err != nil {
 			return nil, err
@@ -197,8 +197,8 @@ func (pg *PG) GetAlarmProfilesEmails(ctx context.Context, ids []int32) (emails [
 	}
 	defer rows.Close()
 	emails = []string{}
+	var e string
 	for rows.Next() {
-		var e string
 		err = rows.Scan(&e)
 		if err != nil {
 			return nil, err

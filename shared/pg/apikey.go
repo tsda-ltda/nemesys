@@ -54,8 +54,8 @@ func (pg *PG) GetAPIKeys(ctx context.Context, userId int32) (keys []models.APIKe
 	}
 	defer rows.Close()
 	keys = []models.APIKeyInfo{}
+	var key models.APIKeyInfo
 	for rows.Next() {
-		var key models.APIKeyInfo
 		err = rows.Scan(&key.Id, &key.TTL, &key.CreatedAt, &key.Descr)
 		if err != nil {
 			return nil, err

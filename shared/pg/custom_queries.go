@@ -48,8 +48,8 @@ func (pg *PG) GetCustomQueries(ctx context.Context, limit int, offset int) (cqs 
 		return nil, err
 	}
 	defer rows.Close()
+	var cq models.CustomQuery
 	for rows.Next() {
-		var cq models.CustomQuery
 		err = rows.Scan(
 			&cq.Id,
 			&cq.Ident,

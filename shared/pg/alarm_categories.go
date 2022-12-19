@@ -71,8 +71,8 @@ func (pg *PG) GetAlarmCategories(ctx context.Context, limit int, offset int) (ca
 	}
 	defer rows.Close()
 	categories = make([]models.AlarmCategory, 0, limit)
+	var category models.AlarmCategory
 	for rows.Next() {
-		var category models.AlarmCategory
 		err = rows.Scan(
 			&category.Id,
 			&category.Name,
@@ -102,8 +102,8 @@ func (pg *PG) GetAlarmCategoriesSimplifiedByIds(ctx context.Context, ids []int32
 	}
 	defer rows.Close()
 	categories = make([]models.AlarmCategorySimplified, 0, len(ids))
+	var c models.AlarmCategorySimplified
 	for rows.Next() {
-		var c models.AlarmCategorySimplified
 		err = rows.Scan(&c.Id, &c.Level)
 		if err != nil {
 			return nil, err
@@ -120,8 +120,8 @@ func (pg *PG) GetCategoryAlarmProfilesSimplified(ctx context.Context, id int32) 
 	}
 	defer rows.Close()
 	profiles = make([]models.AlarmProfileSimplified, 0)
+	var p models.AlarmProfileSimplified
 	for rows.Next() {
-		var p models.AlarmProfileSimplified
 		err = rows.Scan(&p.Id, &p.Name)
 		if err != nil {
 			return nil, err
@@ -156,8 +156,8 @@ func (pg *PG) GetTrapCategoryRelations(ctx context.Context) (rels []models.TrapC
 	}
 	defer rows.Close()
 	rels = []models.TrapCategoryRelation{}
+	var rel models.TrapCategoryRelation
 	for rows.Next() {
-		var rel models.TrapCategoryRelation
 		err = rows.Scan(&rel.TrapCategoryId, &rel.AlarmCategoryId)
 		if err != nil {
 			return nil, err
@@ -197,8 +197,8 @@ func (pg *PG) GetTrapCategoriesRelationsByIds(ctx context.Context, trapIds []int
 	}
 	defer rows.Close()
 	rels = make([]models.TrapCategoryRelation, 0, len(trapIds))
+	var rel models.TrapCategoryRelation
 	for rows.Next() {
-		var rel models.TrapCategoryRelation
 		err = rows.Scan(
 			&rel.TrapCategoryId,
 			&rel.AlarmCategoryId,
@@ -218,8 +218,8 @@ func (pg *PG) GetTrapCategoriesRelations(ctx context.Context, limit int, offset 
 	}
 	defer rows.Close()
 	rels = make([]models.TrapCategoryRelation, 0, limit)
+	var rel models.TrapCategoryRelation
 	for rows.Next() {
-		var rel models.TrapCategoryRelation
 		err = rows.Scan(
 			&rel.TrapCategoryId,
 			&rel.AlarmCategoryId,

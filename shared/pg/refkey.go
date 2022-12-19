@@ -63,8 +63,8 @@ func (pg *PG) GetMetricRefkeys(ctx context.Context, metricId int64) (rks []model
 		return nil, err
 	}
 	defer rows.Close()
+	var rk models.MetricRefkey
 	for rows.Next() {
-		var rk models.MetricRefkey
 		err = rows.Scan(&rk.Id, &rk.Refkey)
 		if err != nil {
 			return nil, err

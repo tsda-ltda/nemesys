@@ -138,8 +138,8 @@ func (pg *PG) FlexLegacyMetricsByIdsAsSNMPMetric(ctx context.Context, ids []int6
 		return nil, err
 	}
 	defer rows.Close()
+	var m models.SNMPMetric
 	for rows.Next() {
-		var m models.SNMPMetric
 		err = rows.Scan(
 			&m.Id,
 			&m.OID,
@@ -159,8 +159,8 @@ func (pg *PG) GetFlexLegacyMetricsRequests(ctx context.Context, containerId int3
 	}
 	defer rows.Close()
 	metrics = []models.FlexLegacyDatalogMetricRequest{}
+	var m models.FlexLegacyDatalogMetricRequest
 	for rows.Next() {
-		var m models.FlexLegacyDatalogMetricRequest
 		err = rows.Scan(&m.Id, &m.Type, &m.DataPolicyId, &m.Port, &m.PortType)
 		if err != nil {
 			return nil, err

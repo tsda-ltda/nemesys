@@ -96,8 +96,8 @@ func (pg *PG) GetSNMPv2cMetricsByIds(ctx context.Context, ids []int64) (metrics 
 	}
 	defer rows.Close()
 	metrics = []models.SNMPMetric{}
+	var m models.SNMPMetric
 	for rows.Next() {
-		var m models.SNMPMetric
 		err = rows.Scan(&m.Id, &m.OID)
 		if err != nil {
 			return metrics, err

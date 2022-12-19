@@ -146,8 +146,8 @@ func (pg *PG) GetContainers(ctx context.Context, t types.ContainerType, limit in
 		return containers, err
 	}
 	defer rows.Close()
+	var container models.BaseContainer
 	for rows.Next() {
-		var container models.BaseContainer
 		err := rows.Scan(
 			&container.Id,
 			&container.Name,

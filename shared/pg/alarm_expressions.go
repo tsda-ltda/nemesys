@@ -58,8 +58,8 @@ func (pg *PG) GetAlarmExpressions(ctx context.Context, limit int, offset int) (e
 	}
 	defer rows.Close()
 	expressions = make([]models.AlarmExpression, 0, limit)
+	var exp models.AlarmExpression
 	for rows.Next() {
-		var exp models.AlarmExpression
 		err = rows.Scan(&exp.Id, &exp.Name, &exp.Expression, &exp.AlarmCategoryId)
 		if err != nil {
 			return nil, err

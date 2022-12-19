@@ -88,8 +88,8 @@ func (pg *PG) GetContexts(ctx context.Context, teamId int32, limit int, offset i
 		return nil, err
 	}
 	defer rows.Close()
+	var c models.Context
 	for rows.Next() {
-		var c models.Context
 		err = rows.Scan(&c.Id, &c.Ident, &c.Descr, &c.Name)
 		if err != nil {
 			return nil, err

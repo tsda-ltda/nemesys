@@ -145,8 +145,8 @@ func (pg *PG) GetMetricsSimplified(ctx context.Context, containerType types.Cont
 		return nil, err
 	}
 	defer rows.Close()
+	var m models.BaseMetricSimplified
 	for rows.Next() {
-		var m models.BaseMetricSimplified
 		err = rows.Scan(
 			&m.Id,
 			&m.ContainerId,
@@ -183,7 +183,7 @@ func (pg *PG) GetMetricRequest(ctx context.Context, id int64) (r GetMetricReques
 }
 
 func (pg *PG) GetMetricDHSEnabled(ctx context.Context, id int64) (exists bool, enabled bool, err error) {
-	err = pg.db.QueryRowContext(ctx, sqlMetricsDHSEnabled, id).Scan(enabled)
+	err = pg.db.QueryRowContext(ctx, sqlMetricsDHSEnabled, id).Scan(&enabled)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, false, nil
@@ -303,8 +303,8 @@ func (pg *PG) GetMetricsEvaluableExpressions(ctx context.Context, ids []int64) (
 	}
 	defer rows.Close()
 	expressions = make([]models.MetricEvaluableExpression, 0, len(ids))
+	var e models.MetricEvaluableExpression
 	for rows.Next() {
-		var e models.MetricEvaluableExpression
 		var err = rows.Scan(&e.Id, &e.Expression)
 		if err != nil {
 			return nil, err
@@ -374,8 +374,8 @@ func (pg *PG) GetMetricsRequestsAndIntervals(ctx context.Context, limit int, off
 	}
 	defer rows.Close()
 	r = make([]GetMetricRequestAndIntervalResult, 0, limit)
+	var result GetMetricRequestAndIntervalResult
 	for rows.Next() {
-		var result GetMetricRequestAndIntervalResult
 		err = rows.Scan(
 			&result.MetricRequest.MetricId,
 			&result.MetricRequest.MetricType,
@@ -403,8 +403,8 @@ func (pg *PG) GetMetricAlarmExpressions(ctx context.Context, id int64) (expressi
 	}
 	defer rows.Close()
 	expressions = []models.AlarmExpressionSimplified{}
+	var exp models.AlarmExpressionSimplified
 	for rows.Next() {
-		var exp models.AlarmExpressionSimplified
 		err = rows.Scan(
 			&exp.Id,
 			&exp.Expression,
@@ -425,9 +425,9 @@ func (pg *PG) GetMetricsAlarmExpressions(ctx context.Context, ids []int64) (expr
 	}
 	defer rows.Close()
 	expressions = make([][]models.AlarmExpressionSimplified, len(ids))
+	var exp models.AlarmExpressionSimplified
+	var metricId int64
 	for rows.Next() {
-		var exp models.AlarmExpressionSimplified
-		var metricId int64
 		err = rows.Scan(
 			&metricId,
 			&exp.Id,

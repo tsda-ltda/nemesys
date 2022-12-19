@@ -51,17 +51,17 @@ func calculate(ctx context.Context, api *api.API) (result models.ServerCostResul
 	}
 	elements.InfluxDataPoints = points
 
-	requests, err := api.Influx.GetTotalRequests()
+	requests, err := api.Influx.GetTotalRequests(ctx)
 	if err != nil {
 		return result, err
 	}
 
-	realtimeRequest, err := api.Influx.GetTotalRealtimeDataRequests()
+	realtimeRequest, err := api.Influx.GetTotalRealtimeDataRequests(ctx)
 	if err != nil {
 		return result, err
 	}
 
-	dataHistoryRequests, err := api.Influx.GetTotalDataHistoryRequests()
+	dataHistoryRequests, err := api.Influx.GetTotalDataHistoryRequests(ctx)
 	if err != nil {
 		return result, err
 	}
