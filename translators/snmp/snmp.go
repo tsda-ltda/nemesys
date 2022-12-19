@@ -91,8 +91,8 @@ func New(serviceNumber int) service.Service {
 
 func (s *SNMP) Run() {
 	s.log.Info("Starting listeners...")
-	go s.getMetricListener()  // listen to metric data requests
-	go s.getMetricsListener() // listen to metrics data requests
+	go s.getMetricDataListener()  // listen to metric data requests
+	go s.getMetricsDataListener() // listen to metrics data requests
 
 	s.log.Info("Service is ready!")
 	err := <-s.Done()
