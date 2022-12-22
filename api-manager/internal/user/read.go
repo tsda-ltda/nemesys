@@ -64,7 +64,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		users, err := api.PG.GetUsersSimplified(ctx, limit, offset)
+		users, err := api.PG.GetUsers(ctx, limit, offset)
 		if err != nil {
 			if ctx.Err() != nil {
 				return

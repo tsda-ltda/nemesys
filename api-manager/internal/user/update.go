@@ -75,14 +75,9 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		exists, err := api.PG.UpdateUser(ctx, models.User{
-			Id:       int32(id),
-			Role:     user.Role,
-			Name:     user.Name,
-			Username: user.Username,
-			Password: pwHashed,
-			Email:    user.Email,
-		})
+		user.Id = int32(id)
+		user.Password = pwHashed
+		exists, err := api.PG.UpdateUser(ctx, user)
 		if err != nil {
 			if ctx.Err() != nil {
 				return

@@ -25,11 +25,11 @@ const (
 		EXISTS (SELECT 1 FROM users WHERE email = $3 AND id != $1);`
 	sqlUsersExistsUsername = `SELECT EXISTS(SELECT 1 FROM users WHERE username = $1);`
 	sqlUsersExists         = `SELECT EXISTS(SELECT 1 FROM users WHERE id = $1);`
-	sqlUsersCreate         = `INSERT INTO users (role, name, username, password, email) VALUES($1, $2, $3, $4, $5) RETURNING id;`
-	sqlUsersUpdate         = `UPDATE users SET (role, name, username, password, email) = ($1, $2, $3, $4, $5) WHERE id = $6`
+	sqlUsersCreate         = `INSERT INTO users (role, first_name, last_name, username, password, email) VALUES($1, $2, $3, $4, $5, $6) RETURNING id;`
+	sqlUsersUpdate         = `UPDATE users SET (role, first_name, last_name, username, password, email) = ($1, $2, $3, $4, $5, $6) WHERE id = $6`
 	sqlUsersDelete         = `DELETE FROM users WHERE id=$1;`
-	sqlUsersMGetSimplified = `SELECT id, username, name FROM users LIMIT $1 OFFSET $2;`
-	sqlUsersGetWithoutPW   = `SELECT username, name, email, role FROM users WHERE id = $1;`
+	sqlUsersMGet           = `SELECT id, username, first_name, last_name, role, email FROM users LIMIT $1 OFFSET $2;`
+	sqlUsersGetWithoutPW   = `SELECT username, first_name, last_name, email, role FROM users WHERE id = $1;`
 	sqlUsersLoginInfo      = `SELECT id, role, password FROM users WHERE username = $1;`
 	sqlUsersGetRole        = `SELECT role FROM users WHERE id = $1;`
 	sqlUsersTeams          = `SELECT id, name, ident, descr FROM teams t 
@@ -57,7 +57,7 @@ func (pg *PG) UsernameAndEmailExists(ctx context.Context, username string, email
 }
 
 func (pg *PG) CreateUser(ctx context.Context, user models.User) (id int32, err error) {
-	return id, pg.db.QueryRowContext(ctx, sqlUsersCreate, user.Role, user.Name, user.Username, user.Password, user.Email).Scan(&id)
+	return id, pg.db.QueryRowContext(ctx, sqlUsersCreate, user.Role, user.FirstName, user.LastName, user.Username, user.Password, user.Email).Scan(&id)
 }
 
 func (pg *PG) DeleteUser(ctx context.Context, id int32) (e bool, err error) {
@@ -69,16 +69,23 @@ func (pg *PG) DeleteUser(ctx context.Context, id int32) (e bool, err error) {
 	return rowsAffected != 0, err
 }
 
-func (pg *PG) GetUsersSimplified(ctx context.Context, limit int, offset int) (users []models.UserSimplified, err error) {
-	users = []models.UserSimplified{}
-	rows, err := pg.db.QueryContext(ctx, sqlUsersMGetSimplified, limit, offset)
+func (pg *PG) GetUsers(ctx context.Context, limit int, offset int) (users []models.User, err error) {
+	rows, err := pg.db.QueryContext(ctx, sqlUsersMGet, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+	users = make([]models.User, 0, limit)
+	var u models.User
 	for rows.Next() {
-		var u models.UserSimplified
-		err = rows.Scan(&u.Id, &u.Username, &u.Name)
+		err = rows.Scan(
+			&u.Id,
+			&u.Username,
+			&u.FirstName,
+			&u.LastName,
+			&u.Role,
+			&u.Email,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +103,8 @@ func (pg *PG) GetUserWithoutPW(ctx context.Context, id int32) (exists bool, user
 	for rows.Next() {
 		err = rows.Scan(
 			&user.Username,
-			&user.Name,
+			&user.FirstName,
+			&user.LastName,
 			&user.Email,
 			&user.Role,
 		)
@@ -112,7 +120,8 @@ func (pg *PG) GetUserWithoutPW(ctx context.Context, id int32) (exists bool, user
 func (pg *PG) UpdateUser(ctx context.Context, user models.User) (exists bool, err error) {
 	t, err := pg.db.ExecContext(ctx, sqlUsersUpdate,
 		user.Role,
-		user.Name,
+		user.FirstName,
+		user.LastName,
 		user.Username,
 		user.Password,
 		user.Email,
@@ -162,15 +171,20 @@ func (pg *PG) GetUserRole(ctx context.Context, id int32) (exists bool, role int1
 }
 
 func (pg *PG) GetUserTeams(ctx context.Context, userId int32, limit int, offset int) (teams []models.Team, err error) {
-	teams = []models.Team{}
 	rows, err := pg.db.QueryContext(ctx, sqlUsersTeams, userId, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+	teams = make([]models.Team, 0, limit)
+	var t models.Team
 	for rows.Next() {
-		var t models.Team
-		err = rows.Scan(&t.Id, &t.Name, &t.Ident, &t.Descr)
+		err = rows.Scan(
+			&t.Id,
+			&t.Name,
+			&t.Ident,
+			&t.Descr,
+		)
 		if err != nil {
 			return nil, err
 		}

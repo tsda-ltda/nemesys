@@ -26,7 +26,7 @@ const (
 	sqlTeamsUpdate      = `UPDATE teams SET (name, ident, descr) = ($1, $2, $3) WHERE id = $4;`
 	sqlTeamsAddMember   = `INSERT INTO users_teams (user_id, team_id) VALUES ($1, $2);`
 	sqlTeamsRemMember   = `DELETE FROM users_teams WHERE user_id = $1 AND team_id = $2;`
-	sqlTeamsMGetMembers = `SELECT u.id, u.name, u.username 
+	sqlTeamsMGetMembers = `SELECT u.id, u.first_name, u.last_name, u.username, u.role, u.email 
 		FROM users u 
 		LEFT JOIN users_teams ut ON ut.user_id = u.id WHERE ut.team_id = $1
 		LIMIT $2 OFFSET $3;`
@@ -86,8 +86,8 @@ func (pg *PG) GetTeams(ctx context.Context, limit int, offset int) (teams []mode
 		return nil, err
 	}
 	defer rows.Close()
+	var t models.Team
 	for rows.Next() {
-		var t models.Team
 		err = rows.Scan(
 			&t.Id,
 			&t.Name,
@@ -138,16 +138,23 @@ func (pg *PG) RemoveTeamMember(ctx context.Context, userId int32, teamId int32) 
 	return rowsAffected != 0, err
 }
 
-func (pg *PG) GetTeamMembers(ctx context.Context, teamId int32, limit int, offset int) (users []models.UserSimplified, err error) {
-	users = []models.UserSimplified{}
+func (pg *PG) GetTeamMembers(ctx context.Context, teamId int32, limit int, offset int) (users []models.User, err error) {
 	rows, err := pg.db.QueryContext(ctx, sqlTeamsMGetMembers, teamId, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+	users = make([]models.User, 0, limit)
+	var u models.User
 	for rows.Next() {
-		var u models.UserSimplified
-		err = rows.Scan(&u.Id, &u.Name, &u.Username)
+		err = rows.Scan(
+			&u.Id,
+			&u.FirstName,
+			&u.LastName,
+			&u.Username,
+			&u.Role,
+			&u.Email,
+		)
 		if err != nil {
 			return nil, err
 		}

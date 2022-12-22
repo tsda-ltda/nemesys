@@ -66,13 +66,8 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		id, err := api.PG.CreateUser(ctx, models.User{
-			Role:     user.Role,
-			Name:     user.Name,
-			Username: user.Username,
-			Password: pwHashed,
-			Email:    user.Email,
-		})
+		user.Password = pwHashed
+		id, err := api.PG.CreateUser(ctx, user)
 		if err != nil {
 			if ctx.Err() != nil {
 				return

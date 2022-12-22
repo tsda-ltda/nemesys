@@ -24,11 +24,12 @@ func (api *API) createDefaultUser(ctx context.Context) error {
 	}
 
 	_, err = api.PG.CreateUser(ctx, models.User{
-		Role:     roles.Master,
-		Name:     "Default Master",
-		Username: env.DefaultUsername,
-		Password: pwHashed,
-		Email:    "master@master.com",
+		Role:      roles.Master,
+		FirstName: "Default",
+		LastName:  "Master",
+		Username:  env.DefaultUsername,
+		Password:  pwHashed,
+		Email:     "master@master.com",
 	})
 	if err != nil {
 		return err
