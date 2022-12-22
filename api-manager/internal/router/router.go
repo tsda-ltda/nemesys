@@ -1,6 +1,7 @@
 package router
 
 import (
+	"strings"
 	"time"
 
 	category "github.com/fernandotsda/nemesys/api-manager/internal/alarm-category"
@@ -23,18 +24,34 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/trap"
 	"github.com/fernandotsda/nemesys/api-manager/internal/uauth"
 	"github.com/fernandotsda/nemesys/api-manager/internal/user"
+	"github.com/gin-contrib/cors"
 
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/service"
 	"github.com/fernandotsda/nemesys/shared/types"
+	"github.com/gin-gonic/gin"
 )
 
 // Set all api routes
 func Set(s service.Service) {
 	api := s.(*api.API)
 
-	r := api.Router.Group(env.APIManagerRoutesPrefix)
+	gin.SetMode(gin.ReleaseMode)
+	api.Log.Info("Gin mode setted to 'release'")
 
+	router := gin.New()
+	api.Router = router
+
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     strings.Split(env.APIManagerAllowOrigins, ";"),
+		AllowMethods:     []string{"POST", "GET", "DELETE", "PATCH"},
+		AllowHeaders:     []string{"Origin", "content-type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
+	r := router.Group(env.APIManagerRoutesPrefix)
 	r.POST("/login", middleware.Limiter(api, time.Second/2), uauth.LoginHandler(api))
 
 	viewer := r.Group("/", middleware.Protect(api, roles.Viewer), middleware.RequestsCounter(api))

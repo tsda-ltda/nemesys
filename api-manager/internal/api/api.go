@@ -111,10 +111,6 @@ func New(serviceNumber int) service.Service {
 		return nil
 	}
 
-	gin.SetMode(gin.ReleaseMode)
-	log.Info("Gin mode setted to 'release'")
-	r := gin.New()
-
 	validate := validator.New()
 	pg := pg.New()
 
@@ -142,7 +138,6 @@ func New(serviceNumber int) service.Service {
 		Tools:            tools,
 		PG:               pg,
 		Influx:           &influxClient,
-		Router:           r,
 		Auth:             auth,
 		Validate:         validate,
 		Log:              log,

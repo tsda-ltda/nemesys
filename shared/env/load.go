@@ -70,9 +70,6 @@ func Init() {
 	set("PG_USERNAME", &PGUsername)
 	set("PG_PASSWORD", &PGPassword)
 	set("PG_DB_NAME", &PGDBName)
-	set("PG_MAX_CONN_LIFETIME", &PGConnMaxLifetime)
-	set("PG_MAX_CONNS", &PGMaxConns)
-	set("PG_MAX_IDLE_CONNS", &PGMaxIdleConns)
 
 	set("INFLUX_HOST", &InfluxHost)
 	set("INFLUX_PORT", &InfluxPort)
@@ -94,6 +91,7 @@ func Init() {
 	set("API_MANAGER_HOST", &APIManagerHost)
 	set("API_MANAGER_PORT", &APIManagerPort)
 	set("API_MANAGER_ROUTES_PREFIX", &APIManagerRoutesPrefix)
+	set("API_COOKIE_DOMAIN", &APIManagerCookieDomain)
 
 	set("USER_SESSION_TTL", &UserSessionTTL)
 	set("USER_SESSION_TOKEN_SIZE", &UserSessionTokenSize)

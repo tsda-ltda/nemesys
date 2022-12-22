@@ -64,12 +64,6 @@ var (
 	PGPassword = "postgres"
 	// PGDBName is the database name. Default is "namesys".
 	PGDBName = "namesys"
-	// PGMaxConns is the postgres maximum number of connections open. Default is "20".
-	PGMaxConns = "20"
-	// PGMaxIdleConns is the postgres maximum number of idle connections. Default is "20".
-	PGMaxIdleConns = "20"
-	// PGConnMaxLifetime is the postgres maximum connection life time in minutes. Default is "10".
-	PGConnMaxLifetime = "10"
 
 	// InfluxHost is the influxdb host. Default is "localhost".
 	InfluxHost = "localhost"
@@ -108,6 +102,10 @@ var (
 	APIManagerPort = "9000"
 	// APIManagerRoutesPrefix is the api manager routes prefix. Default is "api/v1".
 	APIManagerRoutesPrefix = "api/v1"
+	// APIManagerCookieDomain is the the set-cookie domain for session cookies. Default is "localhost".
+	APIManagerCookieDomain = "localhost"
+	// APIManagerAllowOrigins is the allowed origins for CORS. Default is "http://localhost:5173;https://nemesys.cloud".
+	APIManagerAllowOrigins = "http://localhost:5173;https://nemesys.cloud"
 
 	// UserSessionTTL is the user session TTL (time to live) in secods. Default is "604900" (one week).
 	UserSessionTTL = "604800"
