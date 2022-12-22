@@ -9,13 +9,9 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/env"
 	"github.com/fernandotsda/nemesys/shared/logger"
+	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/gin-gonic/gin"
 )
-
-type loginReq struct {
-	Username string `json:"username" validate:"required,min=2,max=50"`
-	Password string `json:"password" validate:"required,min=5,max=50"`
-}
 
 // Login into a user account.
 // Responses:
@@ -26,7 +22,7 @@ type loginReq struct {
 func LoginHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
-		var form loginReq
+		var form models.Login
 
 		err := c.ShouldBind(&form)
 		if err != nil {
@@ -72,7 +68,8 @@ func LoginHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		ttl, _ := strconv.Atoi(env.UserSessionTTL)
-		c.SetCookie(auth.SessionCookieName, token, ttl, "/", env.APIManagerHost, false, true)
+
+		c.SetCookie(auth.SessionCookieName, token, ttl, "/", env.APIManagerCookieDomain, false, true)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
