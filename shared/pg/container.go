@@ -3,10 +3,36 @@ package pg
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/fernandotsda/nemesys/shared/models"
 	"github.com/fernandotsda/nemesys/shared/types"
 )
+
+var BasicContainerValidOrderByColumns = []string{"name", "descr"}
+
+type BasicContainersQueryFilters struct {
+	t              types.ContainerType `type:"=" column:"type"`
+	Name           string              `type:"ilike" column:"name"`
+	Descr          string              `type:"ilike" column:"descr"`
+	CreatedAtStart int64               `type:">=" column:"created_at"`
+	CreatedAtStop  int64               `type:"<=" column:"created_at"`
+	Enabled        *bool               `type:"=" column:"enabled"`
+	OrderBy        string
+	OrderByFn      string
+}
+
+func (f BasicContainersQueryFilters) GetOrderBy() string {
+	return f.OrderBy
+}
+
+func (f BasicContainersQueryFilters) GetOrderByFn() string {
+	return f.OrderByFn
+}
+
+func (f BasicContainersQueryFilters) ContainerType() types.ContainerType {
+	return types.CTBasic
+}
 
 type BaseContainerGetRTSConfigResponse struct {
 	// Exists is the existence of the base container.
@@ -23,15 +49,17 @@ type BaseContainerEnabledResponse struct {
 }
 
 const (
-	sqlContainersCreate        = `INSERT INTO containers (name, descr, type, enabled, rts_pulling_interval) VALUES ($1, $2, $3, $4, $5)RETURNING id;`
-	sqlContainersGet           = `SELECT name, descr, type, enabled, rts_pulling_interval FROM containers WHERE id = $1 AND type = $2;`
+	sqlContainersCreate        = `INSERT INTO containers (name, descr, type, enabled, rts_pulling_interval, created_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;`
+	sqlContainersGet           = `SELECT name, descr, enabled, rts_pulling_interval, created_at FROM containers WHERE id = $1 AND type = $2;`
 	sqlContainersUpdate        = `UPDATE containers SET (name, descr, enabled, rts_pulling_interval) = ($1, $2, $3, $4) WHERE id = $5;`
 	sqlContainersDelete        = `DELETE FROM containers WHERE id = $1;`
-	sqlContainersMGet          = `SELECT id, name, descr, enabled, rts_pulling_interval FROM containers WHERE type = $1 LIMIT $2 OFFSET $3;`
+	sqlContainersMGet          = `SELECT id, name, descr, enabled, rts_pulling_interval, created_at FROM containers WHERE type = $1 LIMIT $2 OFFSET $3;`
 	sqlContainersGetRTSInfo    = `SELECT rts_pulling_interval FROM containers WHERE id = $1;`
 	sqlContainersExists        = `SELECT EXISTS (SELECT 1 FROM containers WHERE id = $1);`
 	sqlContainersEnabled       = `SELECT enabled FROM containers WHERE id = $1;`
 	sqlContainersMGetIdEnabled = `SELECT id FROM containers WHERE enabled = true AND type = $1 LIMIT $2 OFFSET $3;`
+
+	customSqlContainersMGet = `SELECT b.id, b.name, b.descr, b.enabled, b.rts_pulling_interval, b.created_at FROM containers b %s LIMIT $1 OFFSET $2`
 )
 
 func (pg *PG) CreateBasicContainer(ctx context.Context, container models.Container[struct{}]) (id int32, err error) {
@@ -41,6 +69,7 @@ func (pg *PG) CreateBasicContainer(ctx context.Context, container models.Contain
 		container.Base.Type,
 		container.Base.Enabled,
 		container.Base.RTSPullingInterval,
+		time.Now().Unix(),
 	).Scan(&id)
 }
 
@@ -51,6 +80,7 @@ func (pg *PG) createContainer(ctx context.Context, tx *sql.Tx, container models.
 		container.Type,
 		container.Enabled,
 		container.RTSPullingInterval,
+		time.Now().Unix(),
 	).Scan(&id)
 }
 
@@ -94,26 +124,9 @@ func (pg *PG) DeleteContainer(ctx context.Context, id int32) (exists bool, err e
 }
 
 func (pg *PG) GetBasicContainer(ctx context.Context, id int32) (exists bool, container models.Container[struct{}], err error) {
-	rows, err := pg.db.QueryContext(ctx, sqlContainersGet, id, types.CTBasic)
-	if err != nil {
-		return false, container, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		err = rows.Scan(
-			&container.Base.Name,
-			&container.Base.Descr,
-			&container.Base.Type,
-			&container.Base.Enabled,
-			&container.Base.RTSPullingInterval,
-		)
-		if err != nil {
-			return false, container, err
-		}
-		container.Base.Id = id
-		exists = true
-	}
-	return exists, container, nil
+	exists, c, err := pg.GetContainer(ctx, id, types.CTBasic)
+	container.Base = c
+	return exists, container, err
 }
 
 func (pg *PG) GetContainer(ctx context.Context, id int32, t types.ContainerType) (exists bool, container models.BaseContainer, err error) {
@@ -126,17 +139,49 @@ func (pg *PG) GetContainer(ctx context.Context, id int32, t types.ContainerType)
 		err = rows.Scan(
 			&container.Name,
 			&container.Descr,
-			&container.Type,
 			&container.Enabled,
 			&container.RTSPullingInterval,
+			&container.CreatedAt,
 		)
 		if err != nil {
 			return false, container, err
 		}
 		container.Id = id
+		container.Type = t
 		exists = true
 	}
 	return exists, container, nil
+}
+
+func (pg *PG) GetBasicContainers(ctx context.Context, filter BasicContainersQueryFilters, limit int, offset int) (containers []models.Container[struct{}], err error) {
+	filter.t = types.CTBasic
+	sql, err := applyFilters(filter, customSqlContainersMGet, BasicContainerValidOrderByColumns)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	containers = make([]models.Container[struct{}], 0, limit)
+	container := models.Container[struct{}]{}
+	container.Base.Type = types.CTBasic
+	for rows.Next() {
+		err = rows.Scan(
+			&container.Base.Id,
+			&container.Base.Name,
+			&container.Base.Descr,
+			&container.Base.Enabled,
+			&container.Base.RTSPullingInterval,
+			&container.Base.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		containers = append(containers, container)
+	}
+	return containers, nil
 }
 
 func (pg *PG) GetContainers(ctx context.Context, t types.ContainerType, limit int, offset int) (containers []models.BaseContainer, err error) {
@@ -154,7 +199,9 @@ func (pg *PG) GetContainers(ctx context.Context, t types.ContainerType, limit in
 			&container.Descr,
 			&container.Enabled,
 			&container.RTSPullingInterval,
+			&container.CreatedAt,
 		)
+
 		if err != nil {
 			return containers, err
 		}

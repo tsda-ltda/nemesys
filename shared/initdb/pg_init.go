@@ -30,7 +30,7 @@ func PG() (initialized bool, err error) {
 		return false, nil
 	}
 	// create database
-	sql = fmt.Sprintf("CREATE DATABASE %s", env.PGDBName)
+	sql = fmt.Sprintf("CREATE DATABASE %s WITH ENCODING 'UTF8'", env.PGDBName)
 	_, err = conn.Exec(ctx, sql)
 	if err != nil {
 		return false, fmt.Errorf("fail to create database, err: %s", err)

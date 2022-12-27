@@ -20,6 +20,9 @@ func New() *PG {
 		panic("fail to open sql driver, err: " + err.Error())
 	}
 
+	db.SetConnMaxIdleTime(0)
+	db.SetConnMaxLifetime(0)
+
 	return &PG{db: db}
 }
 

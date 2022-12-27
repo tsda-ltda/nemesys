@@ -67,6 +67,7 @@ var sqlCommands []string = []string{
 		descr VARCHAR (255) NOT NULL,
 		type INT2 NOT NULL,
 		enabled BOOLEAN NOT NULL,
+		created_at INT8 NOT NULL,
 		rts_pulling_interval INT4 NOT NULL
 	);`,
 

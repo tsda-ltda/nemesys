@@ -22,4 +22,6 @@ type BaseContainer struct {
 	Enabled bool `json:"enabled" validate:"-"`
 	// RTSPullingInterval is the interval in miliseconds between each metric data pull. Max is one hour.
 	RTSPullingInterval int32 `json:"rts-pulling-interval" validate:"required,min=100,max=3600000"`
+	// CreatedAt is the time in UNIX format of creation of the container.
+	CreatedAt int64 `json:"created-at" validate:"-"`
 }

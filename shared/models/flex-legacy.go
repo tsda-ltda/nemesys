@@ -28,7 +28,7 @@ type FlexLegacyContainer struct {
 	// Region is whitch region the flex is located.
 	Region string `json:"region" validate:"max=50"`
 	// Country is whitch country the flex is located.
-	Coutry string `json:"country" validate:"max=50"`
+	Country string `json:"country" validate:"max=50"`
 }
 
 type FlexLegacyContainerSNMPConfig struct {

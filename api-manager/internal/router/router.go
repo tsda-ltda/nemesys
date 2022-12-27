@@ -154,7 +154,7 @@ func Set(s service.Service) {
 
 	basic := r.Group("/containers/basics", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))
 	{
-		basic.GET("/", container.MGet(api, types.CTBasic))
+		basic.GET("/", container.GetBasicContainersHandlers(api))
 		basic.GET("/:containerId", container.GetBasicHandler(api))
 		basic.POST("/", container.CreateBasicHandler(api))
 		basic.PATCH("/:containerId", container.UpdateBasicHandler(api))
@@ -180,7 +180,7 @@ func Set(s service.Service) {
 
 	SNMPv2c := r.Group("/containers/snmpv2c", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))
 	{
-		SNMPv2c.GET("/", container.MGet(api, types.CTSNMPv2c))
+		SNMPv2c.GET("/", container.GetSNMPv2cContainers(api))
 		SNMPv2c.GET("/:containerId", container.GetSNMPv2cHandler(api))
 		SNMPv2c.POST("/", container.CreateSNMPv2cHandler(api))
 		SNMPv2c.PATCH("/:containerId", container.UpdateSNMPv2cHandler(api))
@@ -198,7 +198,7 @@ func Set(s service.Service) {
 
 	flexLegacy := r.Group("/containers/flex-legacy", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))
 	{
-		flexLegacy.GET("/", container.MGet(api, types.CTFlexLegacy))
+		flexLegacy.GET("/", container.GetFlexLegacyContainersHandler(api))
 		flexLegacy.GET("/:containerId", container.GetFlexLegacyHandler(api))
 		flexLegacy.POST("/", container.CreateFlexLegacy(api))
 		flexLegacy.PATCH("/:containerId", container.UpdateFlexLegacy(api))

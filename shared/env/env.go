@@ -63,7 +63,7 @@ var (
 	// PGPassword is the postgres password. Default is "postgres".
 	PGPassword = "postgres"
 	// PGDBName is the database name. Default is "namesys".
-	PGDBName = "namesys"
+	PGDBName = "nemesys"
 
 	// InfluxHost is the influxdb host. Default is "localhost".
 	InfluxHost = "localhost"
