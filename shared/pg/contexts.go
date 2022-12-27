@@ -6,6 +6,25 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
+var ContextValidOrderByColumns = []string{"name", "descr", "ident"}
+
+type ContextQueryFilters struct {
+	TeamId    int32  `type:"=" column:"team_id"`
+	Name      string `type:"ilike" column:"name"`
+	Descr     string `type:"ilike" column:"descr"`
+	Ident     string `type:"ilike" column:"ident"`
+	OrderBy   string
+	OrderByFn string
+}
+
+func (f ContextQueryFilters) GetOrderBy() string {
+	return f.OrderBy
+}
+
+func (f ContextQueryFilters) GetOrderByFn() string {
+	return f.OrderByFn
+}
+
 // ContextsExistsTeamAndIdentResponse is the response for the Get handler.
 type ContextsGetResponse struct {
 	// Exists is the context existence.
@@ -33,9 +52,10 @@ const (
 	sqlCtxCreate = `INSERT INTO contexts (ident, descr, name, team_id) VALUES($1, $2, $3, $4) RETURNING id;`
 	sqlCtxUpdate = `UPDATE contexts SET (ident, descr, name) = ($1, $2, $3) WHERE id = $4;`
 	sqlCtxDelete = `DELETE FROM contexts WHERE id = $1;`
-	sqlCtxMGet   = `SELECT id, ident, descr, name FROM contexts WHERE team_id = $1 LIMIT $2 OFFSET $3;`
 	sqlCtxGet    = `SELECT ident, descr, name, team_id FROM contexts WHERE id = $1;`
 	sqlCtxExists = `SELECT EXISTS (SELECT 1 FROM contexts WHERE id = $1);`
+
+	customSqlCtxMGet = `SELECT id, ident, descr, name FROM contexts %s LIMIT $1 OFFSET $2`
 )
 
 func (pg *PG) ContextExists(ctx context.Context, id int32) (exists bool, err error) {
@@ -81,20 +101,21 @@ func (pg *PG) DeleteContext(ctx context.Context, id int32) (exists bool, err err
 	return rowsAffected != 0, err
 }
 
-func (pg *PG) GetContexts(ctx context.Context, teamId int32, limit int, offset int) (contexts []models.Context, err error) {
-	contexts = []models.Context{}
-	rows, err := pg.db.QueryContext(ctx, sqlCtxMGet, teamId, limit, offset)
+func (pg *PG) GetContexts(ctx context.Context, filters ContextQueryFilters, limit int, offset int) (contexts []models.Context, err error) {
+	sql, err := applyFilters(filters, customSqlCtxMGet, ContextValidOrderByColumns)
+	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+	contexts = make([]models.Context, 0, limit)
 	var c models.Context
 	for rows.Next() {
 		err = rows.Scan(&c.Id, &c.Ident, &c.Descr, &c.Name)
 		if err != nil {
 			return nil, err
 		}
-		c.TeamId = teamId
+		c.TeamId = filters.TeamId
 		contexts = append(contexts, c)
 	}
 	return contexts, nil

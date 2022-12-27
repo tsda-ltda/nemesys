@@ -6,6 +6,25 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
+var ContextualMetricValidOrderByColumns = []string{"name", "descr", "ident"}
+
+type ContextualMetricQueryFilters struct {
+	CtxId     int32  `type:"=" column:"ctx_id"`
+	Name      string `type:"ilike" column:"name"`
+	Descr     string `type:"ilike" column:"descr"`
+	Ident     string `type:"ilike" column:"ident"`
+	OrderBy   string
+	OrderByFn string
+}
+
+func (f ContextualMetricQueryFilters) GetOrderBy() string {
+	return f.OrderBy
+}
+
+func (f ContextualMetricQueryFilters) GetOrderByFn() string {
+	return f.OrderByFn
+}
+
 // ContextualMetricsGetIdsByIdentResponse is the response for GetIdsByIdent handler.
 type ContextualMetricsGetIdsByIdentResponse struct {
 	// Exists is the contextual metric existence.
@@ -58,8 +77,9 @@ const (
 	sqlCtxMetricsUpdate = `UPDATE contextual_metrics SET 
 		(ident, name, descr) = ($1, $2, $3) WHERE id = $4;`
 	sqlCtxMetricsDelete = `DELETE FROM contextual_metrics WHERE id = $1;`
-	sqlCtxMetricsMGet   = `SELECT id, metric_id, ident, name, descr FROM contextual_metrics WHERE ctx_id = $1 LIMIT $2 OFFSET $3;`
 	sqlCtxMetricsGet    = `SELECT ctx_id, metric_id, ident, name, descr FROM contextual_metrics WHERE id = $1;`
+
+	customSqlCtxMetricsMGet = `SELECT id, metric_id, ident, name, descr FROM contextual_metrics %s LIMIT $1 OFFSET $2`
 )
 
 func (pg *PG) GetContextualMetricTreeId(ctx context.Context, metricIdent string, ctxIdent string, teamIdent string) (r ContextualMetricsGetIdsByIdentResponse, err error) {
@@ -102,13 +122,17 @@ func (pg *PG) GetContextualMetric(ctx context.Context, id int64) (exists bool, m
 	return exists, metric, err
 }
 
-func (pg *PG) GetContextualMetrics(ctx context.Context, ctxId int32, limit int, offset int) (metrics []models.ContextualMetric, err error) {
-	metrics = []models.ContextualMetric{}
-	rows, err := pg.db.QueryContext(ctx, sqlCtxMetricsMGet, ctxId, limit, offset)
+func (pg *PG) GetContextualMetrics(ctx context.Context, filters ContextualMetricQueryFilters, limit int, offset int) (metrics []models.ContextualMetric, err error) {
+	sql, err := applyFilters(filters, customSqlCtxMetricsMGet, ContextualMetricValidOrderByColumns)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+	metrics = make([]models.ContextualMetric, 0, limit)
 	var m models.ContextualMetric
 	for rows.Next() {
 		err = rows.Scan(
@@ -121,7 +145,7 @@ func (pg *PG) GetContextualMetrics(ctx context.Context, ctxId int32, limit int, 
 		if err != nil {
 			return nil, err
 		}
-		m.ContextId = ctxId
+		m.ContextId = filters.CtxId
 		metrics = append(metrics, m)
 	}
 	return metrics, nil

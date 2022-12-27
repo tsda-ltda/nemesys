@@ -56,9 +56,9 @@ type FlexLegacyMetric struct {
 	// OID is the snmp object identifier.
 	OID string `json:"oid" validate:"required,max=128"`
 	// Port is the port flex port.
-	Port int16 `json:"port" validate:"-"`
+	Port int16 `json:"port" validate:"required"`
 	// PortType is the port type
-	PortType int16 `json:"port-type" validate:"-"`
+	PortType int16 `json:"port-type" validate:"required"`
 }
 
 type FlexLegacyDatalogDownloadRegistry struct {

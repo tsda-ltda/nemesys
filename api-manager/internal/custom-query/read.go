@@ -7,6 +7,7 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
+	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,8 +35,17 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		cqs, err := api.PG.GetCustomQueries(ctx, limit, offset)
+		cqs, err := api.PG.GetCustomQueries(ctx, pg.CustomQueryQueryFilters{
+			Ident:     c.Query("ident"),
+			Descr:     c.Query("descr"),
+			OrderBy:   c.Query("orderBy"),
+			OrderByFn: c.Query("orderByFn"),
+		}, limit, offset)
 		if err != nil {
+			if err == pg.ErrInvalidOrderByColumn || err == pg.ErrInvalidFilterValue || err == pg.ErrInvalidOrderByFn {
+				c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
+				return
+			}
 			if ctx.Err() != nil {
 				return
 			}

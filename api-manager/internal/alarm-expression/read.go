@@ -2,10 +2,12 @@ package alarmexp
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
+	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,8 +34,19 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		expressions, err := api.PG.GetAlarmExpressions(ctx, limit, offset)
+		categoryId, _ := strconv.ParseInt(c.Query("categoryId"), 0, 32)
+		expressions, err := api.PG.GetAlarmExpressions(ctx, pg.AlarmExpressionQueryFilters{
+			Name:       c.Query("name"),
+			Expression: c.Query("expression"),
+			CategoryId: int32(categoryId),
+			OrderBy:    c.Query("orderBy"),
+			OrderByFn:  c.Query("orderByFn"),
+		}, limit, offset)
 		if err != nil {
+			if err == pg.ErrInvalidOrderByColumn || err == pg.ErrInvalidFilterValue || err == pg.ErrInvalidOrderByFn {
+				c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
+				return
+			}
 			if ctx.Err() != nil {
 				return
 			}

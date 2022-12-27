@@ -6,6 +6,26 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
+var UserValidOrderByColumns = []string{"first_name", "last_name", "username", "role", "email"}
+
+type UserQueryFilters struct {
+	FirstName string `type:"ilike" column:"first_name"`
+	LastName  string `type:"ilike" column:"last_name"`
+	Username  string `type:"ilike" column:"username"`
+	Role      int16  `type:"=" column:"role"`
+	Email     string `type:"ilike" column:"email"`
+	OrderBy   string
+	OrderByFn string
+}
+
+func (f UserQueryFilters) GetOrderBy() string {
+	return f.OrderBy
+}
+
+func (f UserQueryFilters) GetOrderByFn() string {
+	return f.OrderByFn
+}
+
 // UsersLoginInfoResponse is the response for GetLoginInfo handler.
 type UsersLoginInfoResponse struct {
 	// Exists is the user existence.
@@ -28,13 +48,13 @@ const (
 	sqlUsersCreate         = `INSERT INTO users (role, first_name, last_name, username, password, email) VALUES($1, $2, $3, $4, $5, $6) RETURNING id;`
 	sqlUsersUpdate         = `UPDATE users SET (role, first_name, last_name, username, password, email) = ($1, $2, $3, $4, $5, $6) WHERE id = $6`
 	sqlUsersDelete         = `DELETE FROM users WHERE id=$1;`
-	sqlUsersMGet           = `SELECT id, username, first_name, last_name, role, email FROM users LIMIT $1 OFFSET $2;`
 	sqlUsersGetWithoutPW   = `SELECT username, first_name, last_name, email, role FROM users WHERE id = $1;`
 	sqlUsersLoginInfo      = `SELECT id, role, password FROM users WHERE username = $1;`
 	sqlUsersGetRole        = `SELECT role FROM users WHERE id = $1;`
 	sqlUsersTeams          = `SELECT id, name, ident, descr FROM teams t 
 		LEFT JOIN users_teams ut ON ut.team_id = t.id 
 		WHERE ut.user_id = $1 LIMIT $2 OFFSET $3;`
+	customSqlUsersMGet = `SELECT id, username, first_name, last_name, role, email FROM users %s LIMIT $1 OFFSET $2`
 )
 
 func (pg *PG) CountUsersWithLimit(ctx context.Context, limit int) (users int, err error) {
@@ -69,8 +89,12 @@ func (pg *PG) DeleteUser(ctx context.Context, id int32) (e bool, err error) {
 	return rowsAffected != 0, err
 }
 
-func (pg *PG) GetUsers(ctx context.Context, limit int, offset int) (users []models.User, err error) {
-	rows, err := pg.db.QueryContext(ctx, sqlUsersMGet, limit, offset)
+func (pg *PG) GetUsers(ctx context.Context, filters UserQueryFilters, limit int, offset int) (users []models.User, err error) {
+	sql, err := applyFilters(filters, customSqlUsersMGet, UserValidOrderByColumns)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
 	if err != nil {
 		return nil, err
 	}

@@ -11,7 +11,7 @@ import (
 var SNMPv2cContainerValidOrderByColumns = []string{"name", "descr", "created_at", "target"}
 
 type SNMPv2cContainerQueryFilters struct {
-	t              types.ContainerType `type:"=" column:"type"`
+	Type           types.ContainerType `type:"=" column:"type"`
 	Name           string              `type:"ilike" column:"name"`
 	Descr          string              `type:"ilike" column:"descr"`
 	CreatedAtStart int64               `type:">=" column:"created_at"`
@@ -28,10 +28,6 @@ func (f SNMPv2cContainerQueryFilters) GetOrderBy() string {
 
 func (f SNMPv2cContainerQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
-}
-
-func (f SNMPv2cContainerQueryFilters) ContainerType() types.ContainerType {
-	return types.CTSNMPv2c
 }
 
 const (
@@ -141,7 +137,7 @@ func (pg *PG) GetSNMPv2cContainer(ctx context.Context, id int32) (exists bool, c
 }
 
 func (pg *PG) GetSNMPv2cGetContainers(ctx context.Context, filters SNMPv2cContainerQueryFilters, limit int, offset int) (containers []models.Container[models.SNMPv2cContainer], err error) {
-	filters.t = types.CTSNMPv2c
+	filters.Type = types.CTSNMPv2c
 	sql, err := applyFilters(filters, customSqlSNMPv2cContainerGet, SNMPv2cContainerValidOrderByColumns)
 	if err != nil {
 		return nil, err
@@ -153,6 +149,7 @@ func (pg *PG) GetSNMPv2cGetContainers(ctx context.Context, filters SNMPv2cContai
 	defer rows.Close()
 	containers = make([]models.Container[models.SNMPv2cContainer], 0, limit)
 	container := models.Container[models.SNMPv2cContainer]{}
+	container.Base.Type = filters.Type
 	for rows.Next() {
 		err = rows.Scan(
 			&container.Base.Id,
@@ -172,6 +169,7 @@ func (pg *PG) GetSNMPv2cGetContainers(ctx context.Context, filters SNMPv2cContai
 		if err != nil {
 			return nil, err
 		}
+		container.Protocol.Id = container.Base.Id
 		containers = append(containers, container)
 	}
 	return containers, nil

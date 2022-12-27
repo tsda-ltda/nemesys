@@ -81,7 +81,7 @@ func Set(s service.Service) {
 	{
 		users.POST("/:userId/logout", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api), uauth.ForceLogout(api))
 
-		users.GET("/", middleware.Protect(api, roles.TeamsManager), middleware.RequestsCounter(api), user.MGetHandler(api))
+		users.GET("/", middleware.Protect(api, roles.TeamsManager), middleware.RequestsCounter(api), user.GetUsers(api))
 		users.GET("/:userId", middleware.ProtectUser(api, roles.Admin), middleware.RequestsCounter(api), user.GetHandler(api))
 		users.GET("/:userId/teams", middleware.ProtectUser(api, roles.Admin), middleware.RequestsCounter(api), user.TeamsHandler(api))
 		users.POST("/", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api), user.CreateHandler(api))
@@ -162,7 +162,7 @@ func Set(s service.Service) {
 
 		metrics := basic.Group("/:containerId/metrics")
 		{
-			metrics.GET("/", metric.MGet(api, types.CTBasic))
+			metrics.GET("/", metric.MGetBasicHandler(api))
 			metrics.GET("/:metricId", metric.GetBasicHandler(api))
 			metrics.POST("/", metric.CreateBasicHandler(api))
 			metrics.PATCH("/:metricId", metric.UpdateBasicHandler(api))
@@ -188,7 +188,7 @@ func Set(s service.Service) {
 
 		metrics := SNMPv2c.Group("/:containerId/metrics")
 		{
-			metrics.GET("/", metric.MGet(api, types.CTSNMPv2c))
+			metrics.GET("/", metric.MGetSNMPv2cHandler(api))
 			metrics.GET("/:metricId", metric.GetSNMPv2cHandler(api))
 			metrics.POST("/", metric.CreateSNMPv2cHandler(api))
 			metrics.PATCH("/:metricId", metric.UpdateSNMPv2cHandler(api))
@@ -206,7 +206,7 @@ func Set(s service.Service) {
 
 		metrics := flexLegacy.Group("/:containerId/metrics")
 		{
-			metrics.GET("/", metric.MGet(api, types.CTFlexLegacy))
+			metrics.GET("/", metric.MGetFlexLegacyHandler(api))
 			metrics.GET("/:metricId", metric.GetFlexLegacyHandler(api))
 			metrics.POST("/", metric.CreateFlexLegacyHandler(api))
 			metrics.PATCH("/:metricId", metric.UpdateFlexLegacyHandler(api))

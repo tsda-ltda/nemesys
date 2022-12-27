@@ -7,6 +7,7 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
+	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,8 +34,19 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		r, err := api.PG.GetAlarmCategories(ctx, limit, offset)
+		level, _ := strconv.ParseInt(c.Query("level"), 0, 32)
+		r, err := api.PG.GetAlarmCategories(ctx, pg.AlarmCategoriesQueryFilters{
+			Name:      c.Query("name"),
+			Descr:     c.Query("descr"),
+			Level:     int32(level),
+			OrderBy:   c.Query("orderBy"),
+			OrderByFn: c.Query("orderByFn"),
+		}, limit, offset)
 		if err != nil {
+			if err == pg.ErrInvalidOrderByColumn || err == pg.ErrInvalidFilterValue || err == pg.ErrInvalidOrderByFn {
+				c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
+				return
+			}
 			if ctx.Err() != nil {
 				return
 			}

@@ -7,12 +7,29 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
+var AlarmCategoriesValidOrderByColumns = []string{"descr", "name"}
+
+type AlarmCategoriesQueryFilters struct {
+	Name      string `type:"ilike" column:"name"`
+	Descr     string `type:"ilike" column:"descr"`
+	Level     int32  `type:"=" column:"level"`
+	OrderBy   string
+	OrderByFn string
+}
+
+func (f AlarmCategoriesQueryFilters) GetOrderBy() string {
+	return f.OrderBy
+}
+
+func (f AlarmCategoriesQueryFilters) GetOrderByFn() string {
+	return f.OrderByFn
+}
+
 const (
 	sqlAlarmCategoriesCreate      = `INSERT INTO alarm_categories (name, descr, level) VALUES($1,$2,$3) RETURNING id;`
 	sqlAlarmCategoriesUpdate      = `UPDATE alarm_categories SET (name, descr, level) = ($1,$2,$3) WHERE id = $4;`
 	sqlAlarmCategoriesDelete      = `DELETE FROM alarm_categories WHERE id = $1;`
 	sqlAlarmCategoriesGet         = `SELECT name, descr, level FROM alarm_categories WHERE id = $1;`
-	sqlAlarmCategoriesMGet        = `SELECT id, name, descr, level FROM alarm_categories LIMIT $1 OFFSET $2;`
 	sqlAlarmCategoriesLevelExists = `SELECT EXISTS (SELECT 1 FROM alarm_categories WHERE level = $1 AND id != $2);`
 	sqlAlarmCategoriesExists      = `SELECT EXISTS (SELECT 1 FROM alarm_categories WHERE id = $1);`
 
@@ -28,6 +45,8 @@ const (
 		LEFT JOIN traps_categories_rel r ON r.category_id = c.id WHERE r.trap_id = $1;`
 	sqlAlarmCategoriesGetTrapRelByTrapIds = `SELECT trap_id, category_id FROM traps_categories_rel WHERE trap_id = ANY($1);`
 	sqlAlarmCategoriesGetTrapRels         = `SELECT trap_id, category_id FROM traps_categories_rel LIMIT $1 OFFSET $2;`
+
+	customSqlAlarmCategoriesMGet = `SELECT id, name, descr, level FROM alarm_categories %s LIMIT $1 OFFSET $2`
 )
 
 func (pg *PG) CreateAlarmCategory(ctx context.Context, category models.AlarmCategory) (id int32, err error) {
@@ -64,8 +83,12 @@ func (pg *PG) GetAlarmCategory(ctx context.Context, id int32) (exists bool, cate
 	return true, category, nil
 }
 
-func (pg *PG) GetAlarmCategories(ctx context.Context, limit int, offset int) (categories []models.AlarmCategory, err error) {
-	rows, err := pg.db.QueryContext(ctx, sqlAlarmCategoriesMGet, limit, offset)
+func (pg *PG) GetAlarmCategories(ctx context.Context, filters AlarmCategoriesQueryFilters, limit int, offset int) (categories []models.AlarmCategory, err error) {
+	sql, err := applyFilters(filters, customSqlAlarmCategoriesMGet, AlarmCategoriesValidOrderByColumns)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
 	if err != nil {
 		return nil, err
 	}

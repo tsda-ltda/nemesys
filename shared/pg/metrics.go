@@ -8,6 +8,26 @@ import (
 	"github.com/fernandotsda/nemesys/shared/types"
 )
 
+var BasicMetricValidOrderByColumns = []string{"name", "descr"}
+
+type BasicMetricQueryFilters struct {
+	ContainerType types.ContainerType `type:"=" column:"container_type"`
+	ContainerId   int32               `type:"=" column:"container_id"`
+	Name          string              `type:"ilike" column:"name"`
+	Descr         string              `type:"ilike" column:"descr"`
+	Enabled       *bool               `type:"=" column:"enabled"`
+	OrderBy       string
+	OrderByFn     string
+}
+
+func (f BasicMetricQueryFilters) GetOrderBy() string {
+	return f.OrderBy
+}
+
+func (f BasicMetricQueryFilters) GetOrderByFn() string {
+	return f.OrderByFn
+}
+
 type MetricsExistsContainerAndDataPolicyResponse struct {
 	// Exists is the metric existence.
 	Exists bool
@@ -61,21 +81,23 @@ const (
 		container_id, container_type, name, descr, enabled, data_policy_id, 
 		rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression FROM metrics WHERE id = $1;`
 	sqlMetricsDelete                  = `DELETE FROM metrics WHERE id = $1;`
-	sqlMetricsMGetSimplified          = `SELECT id, container_id, name, descr, enabled FROM metrics WHERE container_id = $1 AND container_type = $2 LIMIT $3 OFFSET $4;`
 	sqlMetricsGetEvaluableExpression  = `SELECT ev_expression FROM metrics WHERE id = $1;`
 	sqlMetricsGetEvaluableExpressions = `SELECT id, ev_expression FROM metrics WHERE id = ANY($1);`
 	sqlMetricsEnabled                 = `WITH 
-		m AS (SELECT enabled, container_id FROM metrics WHERE id = $1),
-		c AS (SELECT enabled FROM containers WHERE id = (SELECT container_id FROM m))
-		SELECT (SELECT enabled FROM m), (SELECT enabled FROM c);`
+	m AS (SELECT enabled, container_id FROM metrics WHERE id = $1),
+	c AS (SELECT enabled FROM containers WHERE id = (SELECT container_id FROM m))
+	SELECT (SELECT enabled FROM m), (SELECT enabled FROM c);`
 	sqlMetricsGetMetricsRequestsAndIntervals = `SELECT id, type, container_id, container_type, data_policy_id, dhs_interval FROM metrics WHERE dhs_enabled = true AND container_type != $1 LIMIT $2 OFFSET $3;`
 	sqlMetricsGetRequest                     = `SELECT type, container_id, container_type, data_policy_id, enabled FROM metrics WHERE id = $1;`
 	sqlMetricsDHSEnabled                     = `SELECT dhs_enabled FROM metrics WHERE id = $1;`
 	sqlMetricsCountNonFlex                   = `SELECT COUNT(*) FROM metrics WHERE dhs_enabled = true AND container_type != $1;`
 	sqlMetricsGetAlarmExpressions            = `SELECT e.id, e.expression, e.category_id FROM alarm_expressions e
-		LEFT JOIN metrics_alarm_expressions_rel r ON r.expression_id = e.id WHERE r.metric_id = $1;`
+	LEFT JOIN metrics_alarm_expressions_rel r ON r.expression_id = e.id WHERE r.metric_id = $1;`
 	sqlMetricsGetAlarmsExpressions = `SELECT r.metric_id, e.id, e.expression, e.category_id FROM alarm_expressions e
-		FULL OUTER JOIN metrics_alarm_expressions_rel r ON r.expression_id = e.id WHERE r.metric_id = ANY ($1);`
+	FULL OUTER JOIN metrics_alarm_expressions_rel r ON r.expression_id = e.id WHERE r.metric_id = ANY ($1);`
+
+	customSqlBasicMetricsMGet = `SELECT id, name, descr, enabled, data_policy_id, 
+	rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression %s LIMIT $1 OFFSET $2`
 )
 
 func (pg *PG) GetBasicMetric(ctx context.Context, id int64) (exists bool, metric models.Metric[struct{}], err error) {
@@ -138,26 +160,38 @@ func (pg *PG) GetMetric(ctx context.Context, id int64) (exists bool, metric mode
 	return exists, metric, nil
 }
 
-func (pg *PG) GetMetricsSimplified(ctx context.Context, containerType types.ContainerType, containerId int32, limit int, offset int) (metrics []models.BaseMetricSimplified, err error) {
-	metrics = []models.BaseMetricSimplified{}
-	rows, err := pg.db.QueryContext(ctx, sqlMetricsMGetSimplified, containerId, containerType, limit, offset)
+func (pg *PG) GetBasicMetrics(ctx context.Context, filters BasicMetricQueryFilters, limit int, offset int) (metrics []models.Metric[struct{}], err error) {
+	filters.ContainerType = types.CTBasic
+	sql, err := applyFilters(filters, customSqlBasicMetricsMGet, BasicMetricValidOrderByColumns)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var m models.BaseMetricSimplified
+	metrics = make([]models.Metric[struct{}], 0, limit)
+	var m models.Metric[struct{}]
+	m.Base.ContainerId = filters.ContainerId
+	m.Base.ContainerType = filters.ContainerType
 	for rows.Next() {
 		err = rows.Scan(
-			&m.Id,
-			&m.ContainerId,
-			&m.Name,
-			&m.Descr,
-			&m.Enabled,
+			&m.Base.Id,
+			&m.Base.Name,
+			&m.Base.Descr,
+			&m.Base.Enabled,
+			&m.Base.DataPolicyId,
+			&m.Base.RTSPullingTimes,
+			&m.Base.RTSCacheDuration,
+			&m.Base.DHSEnabled,
+			&m.Base.DHSInterval,
+			&m.Base.Type,
+			&m.Base.EvaluableExpression,
 		)
 		if err != nil {
 			return nil, err
 		}
-		m.ContainerType = containerType
 		metrics = append(metrics, m)
 	}
 	return metrics, nil

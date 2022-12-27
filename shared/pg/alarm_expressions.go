@@ -6,6 +6,24 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
+var AlarmExpressionsValidOrderByColumns = []string{"name", "expression", "category_id"}
+
+type AlarmExpressionQueryFilters struct {
+	Name       string `type:"ilike" column:"name"`
+	Expression string `type:"ilike" column:"expression"`
+	CategoryId int32  `type:"=" column:"level"`
+	OrderBy    string
+	OrderByFn  string
+}
+
+func (f AlarmExpressionQueryFilters) GetOrderBy() string {
+	return f.OrderBy
+}
+
+func (f AlarmExpressionQueryFilters) GetOrderByFn() string {
+	return f.OrderByFn
+}
+
 type AlarmExpressionExistsMetricAndRelationResponse struct {
 	// Exists is the alarm expression existence.
 	Exists bool
@@ -19,14 +37,15 @@ const (
 	sqlAlarmExpressionsCreate             = `INSERT INTO alarm_expressions (name, expression, category_id) VALUES($1, $2, $3) RETURNING id;`
 	sqlAlarmExpressionsUpdate             = `UPDATE alarm_expressions SET (name, expression, category_id) = ($1, $2, $3) WHERE id = $4;`
 	sqlAlarmExpressionsDelete             = `DELETE FROM alarm_expressions WHERE id = $1;`
-	sqlAlarmExpressionsMGet               = `SELECT id, name, expression, category_id FROM alarm_expressions LIMIT $1 OFFSET $2;`
 	sqlAlarmExpressionsAddMetric          = `INSERT INTO metrics_alarm_expressions_rel (metric_id, expression_id) VALUES ($1, $2);`
 	sqlAlarmExpressionsRemMetric          = `DELETE FROM metrics_alarm_expressions_rel WHERE metric_id = $1 AND expression_id = $2;`
 	sqlAlarmExpressionsMetricRelExists    = `SELECT EXISTS (SELECT 1 FROM metrics_alarm_expressions_rel WHERE metric_id = $1 AND expression_id = $2);`
 	sqlAlarmExpressionsMetricAndRelExists = `SELECT 
-		EXISTS (SELECT 1 FROM alarm_expressions WHERE id = $1),
-		EXISTS (SELECT 1 FROM metrics WHERE id = $2),
-		EXISTS (SELECT 1 FROM metrics_alarm_expressions_rel WHERE expression_id = $1 AND metric_id = $2);`
+	EXISTS (SELECT 1 FROM alarm_expressions WHERE id = $1),
+	EXISTS (SELECT 1 FROM metrics WHERE id = $2),
+	EXISTS (SELECT 1 FROM metrics_alarm_expressions_rel WHERE expression_id = $1 AND metric_id = $2);`
+
+	customSqlAlarmExpressionsMGet = `SELECT id, name, expression, category_id FROM alarm_expressions %s LIMIT $1 OFFSET $2`
 )
 
 func (pg *PG) CreateAlarmExpression(ctx context.Context, exp models.AlarmExpression) (id int32, err error) {
@@ -51,8 +70,12 @@ func (pg *PG) DeleteAlarmExpression(ctx context.Context, id int32) (exists bool,
 	return rowsAffected != 0, nil
 }
 
-func (pg *PG) GetAlarmExpressions(ctx context.Context, limit int, offset int) (expressions []models.AlarmExpression, err error) {
-	rows, err := pg.db.QueryContext(ctx, sqlAlarmExpressionsMGet, limit, offset)
+func (pg *PG) GetAlarmExpressions(ctx context.Context, filters AlarmExpressionQueryFilters, limit int, offset int) (expressions []models.AlarmExpression, err error) {
+	sql, err := applyFilters(filters, customSqlAlarmExpressionsMGet, AlarmExpressionsValidOrderByColumns)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
 	if err != nil {
 		return nil, err
 	}

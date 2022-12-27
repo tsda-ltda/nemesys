@@ -2,15 +2,44 @@ package pg
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/fernandotsda/nemesys/shared/types"
 )
 
+var SNMPv2cMetricValidOrderByColumns = []string{"name", "descr"}
+
+type SNMPv2cMetricQueryFilters struct {
+	ContainerType types.ContainerType `type:"=" column:"container_type"`
+	ContainerId   int32               `type:"=" column:"container_id"`
+	Name          string              `type:"ilike" column:"name"`
+	Descr         string              `type:"ilike" column:"descr"`
+	Enabled       *bool               `type:"=" column:"enabled"`
+	OrderBy       string
+	OrderByFn     string
+}
+
+func (f SNMPv2cMetricQueryFilters) GetOrderBy() string {
+	return f.OrderBy
+}
+
+func (f SNMPv2cMetricQueryFilters) GetOrderByFn() string {
+	return f.OrderByFn
+}
+
 const (
-	sqlSNMPMetricsGet      = `SELECT oid FROM snmpv2c_metrics WHERE metric_id = $1;`
-	sqlSNMPMetricsGetByIds = `SELECT metric_id, oid FROM snmpv2c_metrics WHERE metric_id = ANY ($1);`
-	sqlSNMPMetricsCreate   = `INSERT INTO snmpv2c_metrics (oid, metric_id) VALUES ($1, $2);`
-	sqlSNMPMetricsUpdate   = `UPDATE snmpv2c_metrics SET (oid, metric_id) = ($1, $2) WHERE metric_id = $3;`
+	sqlSNMPv2cMetricsGet = `SELECT 
+		b.container_id, b.name, b.descr, b.enabled, b.data_policy_id, 
+		b.rts_pulling_times, b.rts_data_cache_duration, b.dhs_enabled, b.dhs_interval, b.type, b.ev_expression 
+		p.oid FROM metrics b FULL JOIN snmpv2c_metrics p ON p.metric_id = b.id WHERE id = $1;`
+	sqlSNMPv2cMetricsGetByIds                   = `SELECT metric_id, oid FROM snmpv2c_metrics WHERE metric_id = ANY ($1);`
+	sqlSNMPv2cMetricsCreate                     = `INSERT INTO snmpv2c_metrics (oid, metric_id) VALUES ($1, $2);`
+	sqlSNMPv2cMetricsUpdate                     = `UPDATE snmpv2c_metrics SET (oid, metric_id) = ($1, $2) WHERE metric_id = $3;`
+	customSqlBasicMetricsMGetSNMPv2cMetricsMGet = `SELECT 
+	b.id, b.name, b.descr, b.enabled, b.data_policy_id, 
+	b.rts_pulling_times, b.rts_data_cache_duration, b.dhs_enabled, b.dhs_interval, b.type, b.ev_expression 
+	p.oid FROM metrics b FULL JOIN snmpv2c_metrics p ON p.metric_id = b.id %s LIMIT $1 OFFSET $2`
 )
 
 func (pg *PG) CreateSNMPv2cMetric(ctx context.Context, m models.Metric[models.SNMPMetric]) (id int64, err error) {
@@ -24,7 +53,7 @@ func (pg *PG) CreateSNMPv2cMetric(ctx context.Context, m models.Metric[models.SN
 		c.Rollback()
 		return id, err
 	}
-	_, err = c.ExecContext(ctx, sqlSNMPMetricsCreate, m.Protocol.OID, id)
+	_, err = c.ExecContext(ctx, sqlSNMPv2cMetricsCreate, m.Protocol.OID, id)
 	if err != nil {
 		c.Rollback()
 		return id, err
@@ -46,7 +75,7 @@ func (pg *PG) UpdateSNMPv2cMetric(ctx context.Context, m models.Metric[models.SN
 	if !exists {
 		return false, nil
 	}
-	t, err := c.ExecContext(ctx, sqlSNMPMetricsUpdate, m.Protocol.OID, m.Protocol.Id, m.Protocol.Id)
+	t, err := c.ExecContext(ctx, sqlSNMPv2cMetricsUpdate, m.Protocol.OID, m.Protocol.Id, m.Protocol.Id)
 	if err != nil {
 		c.Rollback()
 		return false, err
@@ -56,24 +85,73 @@ func (pg *PG) UpdateSNMPv2cMetric(ctx context.Context, m models.Metric[models.SN
 }
 
 func (pg *PG) GetSNMPv2cMetric(ctx context.Context, id int64) (exists bool, metric models.Metric[models.SNMPMetric], err error) {
-	exists, base, err := pg.GetMetric(ctx, id)
+	err = pg.db.QueryRowContext(ctx, sqlFlexLegacyMetricsGet, id).Scan(
+		&metric.Base.ContainerId,
+		&metric.Base.Name,
+		&metric.Base.Descr,
+		&metric.Base.Enabled,
+		&metric.Base.DataPolicyId,
+		&metric.Base.RTSPullingTimes,
+		&metric.Base.RTSCacheDuration,
+		&metric.Base.DHSEnabled,
+		&metric.Base.DHSInterval,
+		&metric.Base.Type,
+		&metric.Base.EvaluableExpression,
+		&metric.Protocol.OID,
+	)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, metric, nil
+		}
 		return false, metric, err
 	}
-	if !exists {
-		return false, metric, nil
-	}
-	exists, protocol, err := pg.GetSNMPv2cMetricProtocol(ctx, id)
+	metric.Base.Id = id
+	metric.Base.ContainerType = types.CTSNMPv2c
+	metric.Protocol.Id = id
+	return true, metric, nil
+}
+
+func (pg *PG) GetSNMPv2cMetrics(ctx context.Context, filters SNMPv2cMetricQueryFilters, limit int, offset int) (metrics []models.Metric[models.SNMPMetric], err error) {
+	filters.ContainerType = types.CTSNMPv2c
+	sql, err := applyFilters(filters, customSqlFlexLegacyMetricsMGet, SNMPv2cMetricValidOrderByColumns)
 	if err != nil {
-		return false, metric, err
+		return nil, err
 	}
-	metric.Base = base
-	metric.Protocol = protocol
-	return exists, metric, err
+	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	metrics = make([]models.Metric[models.SNMPMetric], 0, limit)
+	var metric models.Metric[models.SNMPMetric]
+	metric.Base.ContainerId = filters.ContainerId
+	metric.Base.ContainerType = filters.ContainerType
+	for rows.Next() {
+		err = rows.Scan(
+			&metric.Base.Id,
+			&metric.Base.Name,
+			&metric.Base.Descr,
+			&metric.Base.Enabled,
+			&metric.Base.DataPolicyId,
+			&metric.Base.RTSPullingTimes,
+			&metric.Base.RTSCacheDuration,
+			&metric.Base.DHSEnabled,
+			&metric.Base.DHSInterval,
+			&metric.Base.Type,
+			&metric.Base.EvaluableExpression,
+			&metric.Protocol.OID,
+		)
+		if err != nil {
+			return nil, err
+		}
+		metric.Protocol.Id = metric.Base.Id
+
+	}
+	return metrics, nil
 }
 
 func (pg *PG) GetSNMPv2cMetricProtocol(ctx context.Context, id int64) (exists bool, metric models.SNMPMetric, err error) {
-	rows, err := pg.db.QueryContext(ctx, sqlSNMPMetricsGet, id)
+	rows, err := pg.db.QueryContext(ctx, sqlSNMPv2cMetricsGet, id)
 	if err != nil {
 		return false, metric, err
 	}
@@ -90,7 +168,7 @@ func (pg *PG) GetSNMPv2cMetricProtocol(ctx context.Context, id int64) (exists bo
 }
 
 func (pg *PG) GetSNMPv2cMetricsByIds(ctx context.Context, ids []int64) (metrics []models.SNMPMetric, err error) {
-	rows, err := pg.db.QueryContext(ctx, sqlSNMPMetricsGetByIds, ids)
+	rows, err := pg.db.QueryContext(ctx, sqlSNMPv2cMetricsGetByIds, ids)
 	if err != nil {
 		return nil, err
 	}

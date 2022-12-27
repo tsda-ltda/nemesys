@@ -20,7 +20,7 @@ func (pg *PG) GetCounterWhitelist(ctx context.Context, limit int, offset int) (u
 		return nil, err
 	}
 	defer rows.Close()
-	userIds = []int32{}
+	userIds = make([]int32, 0, limit)
 	var id int32
 	for rows.Next() {
 		err = rows.Scan(&id)

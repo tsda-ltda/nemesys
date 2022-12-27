@@ -7,16 +7,34 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
+var CustomQueryValidOrderByColumns = []string{"descr", "ident"}
+
+type CustomQueryQueryFilters struct {
+	Ident     string `type:"ilike" column:"ident"`
+	Descr     string `type:"ilike" column:"descr"`
+	OrderBy   string
+	OrderByFn string
+}
+
+func (f CustomQueryQueryFilters) GetOrderBy() string {
+	return f.OrderBy
+}
+
+func (f CustomQueryQueryFilters) GetOrderByFn() string {
+	return f.OrderByFn
+}
+
 const (
 	sqlCustomQueriesCreate      = `INSERT INTO custom_queries (ident, descr, flux) VALUES ($1, $2, $3) RETURNING id;`
 	sqlCustomQueriesUpdate      = `UPDATE custom_queries SET (ident, descr, flux) = ($1, $2, $3) WHERE id = $4;`
-	sqlCustomQueriesMGet        = `SELECT id, ident, descr, flux FROM custom_queries LIMIT $1 OFFSET $2;`
 	sqlCustomQueriesGet         = `SELECT ident, descr, flux FROM custom_queries WHERE id = $1;`
 	sqlCustomQueriesGetByIdent  = `SELECT id, descr, flux FROM custom_queries WHERE ident = $1;`
 	sqlCustomQueriesDelete      = `DELETE FROM custom_queries WHERE id = $1;`
 	sqlCustomQueriesExistsIdent = `SELECT 
 		EXISTS (SELECT 1 FROM custom_queries WHERE id != $1 AND ident = $2),
 		EXISTS (SELECT 1 FROM custom_queries WHERE id = $1);`
+
+	customSqlCustomQueriesMGet = `SELECT id, ident, descr, flux FROM custom_queries %s LIMIT $1 OFFSET $2`
 )
 
 func (pg *PG) CreateCustomQuery(ctx context.Context, cq models.CustomQuery) (id int32, err error) {
@@ -41,13 +59,14 @@ func (pg *PG) UpdateCustomQuery(ctx context.Context, cq models.CustomQuery) (exi
 	return rowsAffected != 0, err
 }
 
-func (pg *PG) GetCustomQueries(ctx context.Context, limit int, offset int) (cqs []models.CustomQuery, err error) {
-	cqs = nil
-	rows, err := pg.db.QueryContext(ctx, sqlCustomQueriesMGet, limit, offset)
+func (pg *PG) GetCustomQueries(ctx context.Context, filters CustomQueryQueryFilters, limit int, offset int) (cqs []models.CustomQuery, err error) {
+	sql, err := applyFilters(filters, customSqlCustomQueriesMGet, CustomQueryValidOrderByColumns)
+	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+	cqs = make([]models.CustomQuery, 0, limit)
 	var cq models.CustomQuery
 	for rows.Next() {
 		err = rows.Scan(

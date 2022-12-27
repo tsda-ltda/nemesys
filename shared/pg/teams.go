@@ -6,6 +6,24 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
+var TeamValidOrderByColumns = []string{"ident", "descr", "name"}
+
+type TeamQueryFilters struct {
+	Ident     string `type:"ilike" column:"ident"`
+	Name      string `type:"ilike" column:"name"`
+	Descr     string `type:"ilike" column:"descr"`
+	OrderBy   string
+	OrderByFn string
+}
+
+func (f TeamQueryFilters) GetOrderBy() string {
+	return f.OrderBy
+}
+
+func (f TeamQueryFilters) GetOrderByFn() string {
+	return f.OrderByFn
+}
+
 // TeamsExistsRelUserTeamResponse is the response for ExistsRelUserTeam handler.
 type TeamsExistsRelUserTeamResponse struct {
 	// RelationExist is the relation existence.
@@ -22,7 +40,6 @@ const (
 	sqlTeamsDelete      = `DELETE FROM teams WHERE id = $1;`
 	sqlTeamsGet         = `SELECT ident, descr, name FROM teams WHERE id = $1;`
 	sqlTeamsGetByIdent  = `SELECT id, descr, name FROM teams WHERE ident = $1;`
-	sqlTeamsMGet        = `SELECT id, name, descr, ident FROM teams LIMIT $1 OFFSET $2;`
 	sqlTeamsUpdate      = `UPDATE teams SET (name, ident, descr) = ($1, $2, $3) WHERE id = $4;`
 	sqlTeamsAddMember   = `INSERT INTO users_teams (user_id, team_id) VALUES ($1, $2);`
 	sqlTeamsRemMember   = `DELETE FROM users_teams WHERE user_id = $1 AND team_id = $2;`
@@ -35,6 +52,8 @@ const (
 		EXISTS(SELECT 1 FROM users WHERE id=$1), 
 		EXISTS(SELECT 1 FROM teams WHERE id=$2);`
 	sqlTeamsMemberExists = `SELECT EXISTS (SELECT 1 FROM users_teams WHERE user_id = $1 AND team_id = $2);`
+
+	customSqlTeamsMGet = `SELECT id, name, descr, ident FROM teams %s LIMIT $1 OFFSET $2`
 )
 
 func (pg *PG) TeamIdentExists(ctx context.Context, ident string, id int32) (exists bool, err error) {
@@ -79,13 +98,17 @@ func (pg *PG) GetTeam(ctx context.Context, id int32) (exists bool, team models.T
 	return exists, team, nil
 }
 
-func (pg *PG) GetTeams(ctx context.Context, limit int, offset int) (teams []models.Team, err error) {
-	teams = []models.Team{}
-	rows, err := pg.db.QueryContext(ctx, sqlTeamsMGet, limit, offset)
+func (pg *PG) GetTeams(ctx context.Context, filters TeamQueryFilters, limit int, offset int) (teams []models.Team, err error) {
+	sql, err := applyFilters(filters, customSqlTeamsMGet, TeamValidOrderByColumns)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+	teams = make([]models.Team, 0, limit)
 	var t models.Team
 	for rows.Next() {
 		err = rows.Scan(

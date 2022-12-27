@@ -12,7 +12,7 @@ import (
 var BasicContainerValidOrderByColumns = []string{"name", "descr"}
 
 type BasicContainersQueryFilters struct {
-	t              types.ContainerType `type:"=" column:"type"`
+	Type           types.ContainerType `type:"=" column:"type"`
 	Name           string              `type:"ilike" column:"name"`
 	Descr          string              `type:"ilike" column:"descr"`
 	CreatedAtStart int64               `type:">=" column:"created_at"`
@@ -28,10 +28,6 @@ func (f BasicContainersQueryFilters) GetOrderBy() string {
 
 func (f BasicContainersQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
-}
-
-func (f BasicContainersQueryFilters) ContainerType() types.ContainerType {
-	return types.CTBasic
 }
 
 type BaseContainerGetRTSConfigResponse struct {
@@ -154,7 +150,7 @@ func (pg *PG) GetContainer(ctx context.Context, id int32, t types.ContainerType)
 }
 
 func (pg *PG) GetBasicContainers(ctx context.Context, filter BasicContainersQueryFilters, limit int, offset int) (containers []models.Container[struct{}], err error) {
-	filter.t = types.CTBasic
+	filter.Type = types.CTBasic
 	sql, err := applyFilters(filter, customSqlContainersMGet, BasicContainerValidOrderByColumns)
 	if err != nil {
 		return nil, err
@@ -179,33 +175,6 @@ func (pg *PG) GetBasicContainers(ctx context.Context, filter BasicContainersQuer
 		if err != nil {
 			return nil, err
 		}
-		containers = append(containers, container)
-	}
-	return containers, nil
-}
-
-func (pg *PG) GetContainers(ctx context.Context, t types.ContainerType, limit int, offset int) (containers []models.BaseContainer, err error) {
-	containers = []models.BaseContainer{}
-	rows, err := pg.db.QueryContext(ctx, sqlContainersMGet, t, limit, offset)
-	if err != nil {
-		return containers, err
-	}
-	defer rows.Close()
-	var container models.BaseContainer
-	for rows.Next() {
-		err := rows.Scan(
-			&container.Id,
-			&container.Name,
-			&container.Descr,
-			&container.Enabled,
-			&container.RTSPullingInterval,
-			&container.CreatedAt,
-		)
-
-		if err != nil {
-			return containers, err
-		}
-		container.Type = t
 		containers = append(containers, container)
 	}
 	return containers, nil

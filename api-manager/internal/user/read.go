@@ -7,6 +7,7 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
+	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/gin-gonic/gin"
 )
 
@@ -49,7 +50,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 // Responses:
 //   - 400 If invalid params.
 //   - 200 If succeeded.
-func MGetHandler(api *api.API) func(c *gin.Context) {
+func GetUsers(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
@@ -64,8 +65,23 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		users, err := api.PG.GetUsers(ctx, limit, offset)
+		role, _ := strconv.ParseInt(c.Query("role"), 0, 16)
+		filters := pg.UserQueryFilters{
+			FirstName: c.Query("firstName"),
+			LastName:  c.Query("lastName"),
+			Username:  c.Query("username"),
+			Role:      int16(role),
+			Email:     c.Query("email"),
+			OrderBy:   c.Query("orderBy"),
+			OrderByFn: c.Query("orderByFn"),
+		}
+
+		users, err := api.PG.GetUsers(ctx, filters, limit, offset)
 		if err != nil {
+			if err == pg.ErrInvalidOrderByColumn || err == pg.ErrInvalidFilterValue || err == pg.ErrInvalidOrderByFn {
+				c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
+				return
+			}
 			if ctx.Err() != nil {
 				return
 			}

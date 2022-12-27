@@ -7,6 +7,7 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
+	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/gin-gonic/gin"
 )
 
@@ -71,8 +72,19 @@ func MGetContextHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		ctxs, err := api.PG.GetContexts(ctx, int32(teamId), limit, offset)
+		ctxs, err := api.PG.GetContexts(ctx, pg.ContextQueryFilters{
+			TeamId:    int32(teamId),
+			Name:      c.Query("name"),
+			Descr:     c.Query("descr"),
+			Ident:     c.Query("ident"),
+			OrderBy:   c.Query("orderBy"),
+			OrderByFn: c.Query("orderByFn"),
+		}, limit, offset)
 		if err != nil {
+			if err == pg.ErrInvalidOrderByColumn || err == pg.ErrInvalidFilterValue || err == pg.ErrInvalidOrderByFn {
+				c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
+				return
+			}
 			if ctx.Err() != nil {
 				return
 			}

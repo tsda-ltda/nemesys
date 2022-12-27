@@ -11,7 +11,7 @@ import (
 var FlexLegacyContainerValidOrderByColumns = []string{"name", "descr", "created_at", "target", "serial_number", "model", "city", "region", "country"}
 
 type FlexLegacyContainerQueryFilters struct {
-	t              types.ContainerType `type:"=" column:"type"`
+	Type           types.ContainerType `type:"=" column:"type"`
 	Name           string              `type:"ilike" column:"name"`
 	Descr          string              `type:"ilike" column:"descr"`
 	CreatedAtStart int64               `type:">=" column:"created_at"`
@@ -33,10 +33,6 @@ func (f FlexLegacyContainerQueryFilters) GetOrderBy() string {
 
 func (f FlexLegacyContainerQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
-}
-
-func (f FlexLegacyContainerQueryFilters) ContainerType() types.ContainerType {
-	return types.CTFlexLegacy
 }
 
 type FlexLegacyContainerExistsContainerTargetAndSerialNumberRespose struct {
@@ -73,7 +69,7 @@ const (
 
 	customSqlFlexLegacyContainersMGet = `SELECT b.id, b.name, b.descr, b.enabled, b.rts_pulling_interval, b.created_at,
 	p.target, p.port, p.transport, p.community, p.retries, p.max_oids, p.timeout, p.serial_number, p.model, p.city, p.region, p.country
-	FROM containers b FULL JOIN flex_legacy_containers p ON p.container_id = b.id %s  LIMIT $1 OFFSET $2`
+	FROM containers b FULL JOIN flex_legacy_containers p ON p.container_id = b.id %s LIMIT $1 OFFSET $2`
 )
 
 func (pg *PG) CreateFlexLegacyContainer(ctx context.Context, container models.Container[models.FlexLegacyContainer]) (id int32, err error) {
@@ -150,7 +146,7 @@ func (pg *PG) DeleteFlexLegacyContainer(ctx context.Context, id int32) (exists b
 }
 
 func (pg *PG) GetFlexLegacyContainers(ctx context.Context, filters FlexLegacyContainerQueryFilters, limit int, offset int) (containers []models.Container[models.FlexLegacyContainer], err error) {
-	filters.t = types.CTFlexLegacy
+	filters.Type = types.CTFlexLegacy
 	sql, err := applyFilters(filters, customSqlFlexLegacyContainersMGet, FlexLegacyContainerValidOrderByColumns)
 	if err != nil {
 		return nil, err
@@ -162,6 +158,7 @@ func (pg *PG) GetFlexLegacyContainers(ctx context.Context, filters FlexLegacyCon
 	defer rows.Close()
 	containers = make([]models.Container[models.FlexLegacyContainer], 0, limit)
 	container := models.Container[models.FlexLegacyContainer]{}
+	container.Base.Type = filters.Type
 	for rows.Next() {
 		err = rows.Scan(
 			&container.Base.Id,
@@ -186,6 +183,7 @@ func (pg *PG) GetFlexLegacyContainers(ctx context.Context, filters FlexLegacyCon
 		if err != nil {
 			return nil, err
 		}
+		container.Protocol.Id = container.Base.Id
 		containers = append(containers, container)
 	}
 	return containers, nil

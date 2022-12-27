@@ -7,6 +7,23 @@ import (
 	"github.com/fernandotsda/nemesys/shared/models"
 )
 
+var AlarmProfileValidOrderByColumns = []string{"descr", "name"}
+
+type AlarmProfileQueryFilters struct {
+	Name      string `type:"ilike" column:"name"`
+	Descr     string `type:"ilike" column:"descr"`
+	OrderBy   string
+	OrderByFn string
+}
+
+func (f AlarmProfileQueryFilters) GetOrderBy() string {
+	return f.OrderBy
+}
+
+func (f AlarmProfileQueryFilters) GetOrderByFn() string {
+	return f.OrderByFn
+}
+
 type AlarmProfileExistsCategoryAndRelationResponse struct {
 	// Exists is the alarm profile existence.
 	Exists bool
@@ -20,15 +37,14 @@ const (
 	sqlAlarmProfilesCreate         = `INSERT INTO alarm_profiles (name, descr) VALUES ($1, $2) RETURNING id;`
 	sqlAlarmProfilesUpdate         = `UPDATE alarm_profiles SET (name, descr) = ($1, $2) WHERE id = $3;`
 	sqlAlarmProfilesGet            = `SELECT name, descr FROM alarm_profiles WHERE id = $1;`
-	sqlAlarmProfilesMGet           = `SELECT id, name, descr FROM alarm_profiles LIMIT $1 OFFSET $2;`
 	sqlAlarmProfilesDelete         = `DELETE FROM alarm_profiles WHERE id = $1;`
 	sqlAlarmProfilesExists         = `SELECT EXISTS (SELECT 1 FROM alarm_profiles WHERE id = $1);`
 	sqlAlarmProfilesAddCategory    = `INSERT INTO alarm_profiles_categories_rel (profile_id, category_id) VALUES($1, $2);`
 	sqlAlarmProfilesRemoveCategory = `DELETE FROM alarm_profiles_categories_rel WHERE profile_id = $1 AND category_id = $2;`
 	sqlAlarmProfilesGetCategories  = `SELECT id, name, descr, level FROM alarm_categories c 
-		LEFT JOIN alarm_profiles_categories_rel a ON c.id = a.category_id WHERE a.profile_id = $1 LIMIT $2 OFFSET $3; `
+	LEFT JOIN alarm_profiles_categories_rel a ON c.id = a.category_id WHERE a.profile_id = $1 LIMIT $2 OFFSET $3; `
 	sqlAlarmProfilesExistsCategoryAndRelation = `SELECT
-		EXISTS (SELECT 1 FROM alarm_profiles WHERE id = $1),
+	EXISTS (SELECT 1 FROM alarm_profiles WHERE id = $1),
 		EXISTS (SELECT 1 FROM alarm_categories WHERE id = $2),
 		EXISTS (SELECT 1 FROM alarm_profiles_categories_rel WHERE profile_id = $1 AND category_id = $2);`
 	sqlAlarmProfilesCreateEmail   = `INSERT INTO alarm_profiles_emails (alarm_profile_id, email) VALUES($1, $2) RETURNING id;`
@@ -37,6 +53,8 @@ const (
 	sqlAlarmProfilesGetOnlyEmails = `SELECT email FROM alarm_profiles_emails WHERE alarm_profile_id = ANY($1);`
 	sqlAlarmProfilesDeleteEmail   = `DELETE FROM alarm_profiles_emails WHERE id = $1;`
 	sqlAlarmProfilesDeleteEmails  = `DELETE FROM alarm_profiles_emails WHERE alarm_profile_id = $1;`
+
+	customSqlAlarmProfilesMGet = `SELECT id, name, descr FROM alarm_profiles %s LIMIT $1 OFFSET $2`
 )
 
 func (pg *PG) CreateAlarmProfile(ctx context.Context, profile models.AlarmProfile) (id int64, err error) {
@@ -74,8 +92,12 @@ func (pg *PG) GetAlarmProfile(ctx context.Context, id int32) (exists bool, profi
 	return true, profile, nil
 }
 
-func (pg *PG) GetAlarmProfiles(ctx context.Context, limit int, offset int) (profiles []models.AlarmProfile, err error) {
-	rows, err := pg.db.QueryContext(ctx, sqlAlarmProfilesMGet, limit, offset)
+func (pg *PG) GetAlarmProfiles(ctx context.Context, filters AlarmProfileQueryFilters, limit int, offset int) (profiles []models.AlarmProfile, err error) {
+	sql, err := applyFilters(filters, customSqlAlarmProfilesMGet, AlarmProfileValidOrderByColumns)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -124,12 +146,13 @@ func (pg *PG) RemoveCategoryFromAlarmProfile(ctx context.Context, profileId int3
 }
 
 func (pg *PG) GetAlarmProfileCategories(ctx context.Context, profileId int32, limit int, offset int) (categories []models.AlarmCategory, err error) {
+
 	rows, err := pg.db.QueryContext(ctx, sqlAlarmProfilesGetCategories, profileId, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	categories = make([]models.AlarmCategory, 0)
+	categories = make([]models.AlarmCategory, 0, limit)
 	var category models.AlarmCategory
 	for rows.Next() {
 		err = rows.Scan(
@@ -178,7 +201,7 @@ func (pg *PG) GetAlarmProfileEmails(ctx context.Context, id int32, limit int, of
 		return nil, err
 	}
 	defer rows.Close()
-	emails = []models.AlarmProfileEmailWithoutProfileId{}
+	emails = make([]models.AlarmProfileEmailWithoutProfileId, 0, limit)
 	var e models.AlarmProfileEmailWithoutProfileId
 	for rows.Next() {
 		err = rows.Scan(&e.Id, &e.Email)
@@ -196,7 +219,7 @@ func (pg *PG) GetAlarmProfilesEmails(ctx context.Context, ids []int32) (emails [
 		return nil, err
 	}
 	defer rows.Close()
-	emails = []string{}
+	emails = make([]string, 0, len(ids))
 	var e string
 	for rows.Next() {
 		err = rows.Scan(&e)

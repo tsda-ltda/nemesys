@@ -6,12 +6,9 @@ import (
 	"strings"
 
 	"unicode/utf8"
-
-	"github.com/fernandotsda/nemesys/shared/types"
 )
 
 type queryFilters interface {
-	ContainerType() types.ContainerType
 	GetOrderBy() string
 	GetOrderByFn() string
 }
@@ -37,6 +34,8 @@ func validateOrderFn(fn string) error {
 	return nil
 }
 
+// applyFilters apply the queryFilters in the provided sql. The queryFilters may NOT have any
+// unexported field, otherwise will panic.
 func applyFilters(queryFilters queryFilters, sql string, allowedColumns []string) (sqlResult string, err error) {
 	v := reflect.ValueOf(queryFilters)
 	typeof := reflect.TypeOf(queryFilters)
@@ -77,7 +76,6 @@ func applyFilters(queryFilters queryFilters, sql string, allowedColumns []string
 		}
 	}
 
-	sqlFilters = append(sqlFilters, fmt.Sprintf("type = %d", queryFilters.ContainerType()))
 	frag := mergeFilters(sqlFilters)
 
 	orderBy := queryFilters.GetOrderBy()
@@ -107,28 +105,15 @@ func getFilterFieldValue(v reflect.Value) (parsedValue any, empty bool) {
 	if v.IsZero() {
 		return nil, false
 	}
-	switch v.Kind() {
-	case reflect.String:
-		if v.String() != "" {
-			return v.Interface().(string), true
-		}
-	case reflect.Pointer:
+
+	if reflect.Pointer == v.Kind() {
 		if v.Type() == reflect.PointerTo(reflect.TypeOf(false)) {
 			if *v.Interface().(*bool) {
 				return "true", true
 			}
 			return "false", true
 		}
-	case reflect.Int:
-		return v.Interface(), true
-	case reflect.Int8:
-		return v.Interface(), true
-	case reflect.Int16:
-		return v.Interface(), true
-	case reflect.Int32:
-		return v.Interface(), true
-	case reflect.Int64:
-		return v.Interface(), true
 	}
-	return nil, false
+
+	return v.Interface(), true
 }
