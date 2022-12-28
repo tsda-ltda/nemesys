@@ -3,6 +3,8 @@ package pg
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/fernandotsda/nemesys/shared/env"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -20,8 +22,19 @@ func New() *PG {
 		panic("fail to open sql driver, err: " + err.Error())
 	}
 
-	db.SetConnMaxIdleTime(0)
-	db.SetConnMaxLifetime(0)
+	maxConn, err1 := strconv.Atoi(env.PGMaxOpenConn)
+	maxIdle, err2 := strconv.Atoi(env.PGMaxIdleConn)
+	idleLifetime, err3 := strconv.Atoi(env.PGMaxIdleConnLifetime)
+	lifetime, err4 := strconv.Atoi(env.PGMaxConnLifetime)
+
+	if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
+		panic("Fail to parse pg env variables")
+	}
+
+	db.SetMaxOpenConns(maxConn)
+	db.SetMaxIdleConns(maxIdle)
+	db.SetConnMaxLifetime(time.Duration(lifetime) * time.Second)
+	db.SetConnMaxIdleTime(time.Duration(idleLifetime) * time.Second)
 
 	return &PG{db: db}
 }
