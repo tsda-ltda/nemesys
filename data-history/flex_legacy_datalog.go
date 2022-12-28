@@ -69,7 +69,7 @@ func (d *DHS) getFlexLegacyDatalog(id int32) {
 }
 
 func (d *DHS) createFlexLegacyWorkers() {
-	n, err := strconv.ParseInt(env.DHSFlexLegacyDatalogWorkers, 0, 10)
+	workers, err := strconv.ParseInt(env.DHSFlexLegacyDatalogWorkers, 0, 10)
 	if err != nil {
 		d.log.Fatal("Fail to parse env.DHSFlexLegacyDatalogWorkers to int, received: " + env.DHSFlexLegacyDatalogWorkers)
 		return
@@ -79,19 +79,17 @@ func (d *DHS) createFlexLegacyWorkers() {
 		Timeout: time.Second * 30,
 	}
 
-	var _n int64
-	for _n <= n {
+	for i := 0; i < int(workers); i++ {
 		worker := &flexLegacyDatalogWorker{
-			workerNumber: _n,
+			workerNumber: int64(i),
 			requests:     d.getFlexLegacyDatalogCh,
 			httpClient:   &httpClient,
 			dhs:          d,
 		}
 		go worker.Run()
 		d.flexLegacyDatalogWorkers = append(d.flexLegacyDatalogWorkers, worker)
-		_n++
 	}
-	d.log.Info(fmt.Sprintf("%d flex legacy datalog workers created", _n))
+	d.log.Info(fmt.Sprintf("%d flex legacy datalog workers created", workers))
 }
 
 func (w *flexLegacyDatalogWorker) Close() {
