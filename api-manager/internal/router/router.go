@@ -162,6 +162,8 @@ func Set(s service.Service) {
 
 		metrics := basic.Group("/:containerId/metrics")
 		{
+			setGetAlarmExpressions(api, metrics)
+
 			metrics.GET("/", metric.MGetBasicHandler(api))
 			metrics.GET("/:metricId", metric.GetBasicHandler(api))
 			metrics.POST("/", metric.CreateBasicHandler(api))
@@ -188,6 +190,8 @@ func Set(s service.Service) {
 
 		metrics := SNMPv2c.Group("/:containerId/metrics")
 		{
+			setGetAlarmExpressions(api, metrics)
+
 			metrics.GET("/", metric.MGetSNMPv2cHandler(api))
 			metrics.GET("/:metricId", metric.GetSNMPv2cHandler(api))
 			metrics.POST("/", metric.CreateSNMPv2cHandler(api))
@@ -206,6 +210,8 @@ func Set(s service.Service) {
 
 		metrics := flexLegacy.Group("/:containerId/metrics")
 		{
+			setGetAlarmExpressions(api, metrics)
+
 			metrics.GET("/", metric.MGetFlexLegacyHandler(api))
 			metrics.GET("/:metricId", metric.GetFlexLegacyHandler(api))
 			metrics.POST("/", metric.CreateFlexLegacyHandler(api))
@@ -304,4 +310,8 @@ func Set(s service.Service) {
 			ctxmetric.QueryDataHandler(api),
 		)
 	}
+}
+
+func setGetAlarmExpressions(api *api.API, r *gin.RouterGroup) {
+	r.GET("/:metricId/alarm-expressions", metric.GetAlarmExpressions(api))
 }
