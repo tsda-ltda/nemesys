@@ -37,6 +37,8 @@ func LoadEnvFile() error {
 // Init initialize all variables in the package according to the enviroment.
 func Init() {
 	// set config
+	set("SERVICE_MANAGER_PING_INTERVAL", &ServiceManagerPingInterval)
+
 	set("LOG_CONSOLE_LEVEL_SERVICE_MANAGER", &LogConsoleLevelServiceManager)
 	set("LOG_BROADCAST_LEVEL_SERVICE_MANAGER", &LogBroadcastLevelServiceManager)
 
@@ -70,6 +72,10 @@ func Init() {
 	set("PG_USERNAME", &PGUsername)
 	set("PG_PASSWORD", &PGPassword)
 	set("PG_DB_NAME", &PGDBName)
+	set("PG_MAX_OPEN_CONN", &PGMaxOpenConn)
+	set("PG_MAX_IDLE_CONN", &PGMaxIdleConn)
+	set("PG_MAX_CONN_LIFETIME", &PGMaxConnLifetime)
+	set("PG_MAX_IDLE_CONN_LIFETIME", &PGMaxIdleConnLifetime)
 
 	set("INFLUX_HOST", &InfluxHost)
 	set("INFLUX_PORT", &InfluxPort)
@@ -92,6 +98,7 @@ func Init() {
 	set("API_MANAGER_PORT", &APIManagerPort)
 	set("API_MANAGER_ROUTES_PREFIX", &APIManagerRoutesPrefix)
 	set("API_COOKIE_DOMAIN", &APIManagerCookieDomain)
+	set("API_MANAGE_ALLOW_ORIGINS", &APIManagerAllowOrigins)
 
 	set("USER_SESSION_TTL", &UserSessionTTL)
 	set("USER_SESSION_TOKEN_SIZE", &UserSessionTokenSize)

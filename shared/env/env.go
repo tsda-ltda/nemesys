@@ -64,6 +64,14 @@ var (
 	PGPassword = "postgres"
 	// PGDBName is the database name. Default is "namesys".
 	PGDBName = "nemesys"
+	// PGMaxOpenConn is the maximum number of open connections. Default is "3".
+	PGMaxOpenConn = "6"
+	// PGMaxIdleConn is the maximum number of idle connections. Default is "3".
+	PGMaxIdleConn = "3"
+	// PGMaxConnLifetime is the maximum time that a connection can live in seconds. Default is "0".
+	PGMaxConnLifetime = "0"
+	// PGMaxConnLifetime is the maximum time that a idle connection can stay in idle in seconds. Default is "0".
+	PGMaxIdleConnLifetime = "0"
 
 	// InfluxHost is the influxdb host. Default is "localhost".
 	InfluxHost = "localhost"
@@ -134,7 +142,7 @@ var (
 	// MetricAlarmEmailSenderHostPort is the host port of the sender. Default is "";
 	MetricAlarmEmailSenderHostPort = ""
 
-	// RequestsCountBucketRetention is the retention in hours of the requests-count bucket. Default is
+	// RequestsCountBucketRetention is the retention in hours of the requests-count bucket. Default is "720".
 	RequestsCountBucketRetention = "720" // 30 days
 	// AlarmHistoryBucketRetention is the retention in hours of the alarm-history bucket. Default is "168".
 	AlarmHistoryBucketRetention = "168" // 7 days

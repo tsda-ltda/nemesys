@@ -2,6 +2,7 @@
 
 # SERVICE_MANAGER_PING_INTERVAL is the interval of ping in seconds. Default is "5".
 SERVICE_MANAGER_PING_INTERVAL=5
+
 # LOG_CONSOLE_LEVEL_SERVICE_MANAGER is the log level for console in API Manager service. Default is debug.
 LOG_CONSOLE_LEVEL_SERVICE_MANAGER=debug
 
@@ -68,14 +69,17 @@ PG_PASSWORD=admin
 # PG_DB_NAME is the database name. Default is "namesys".
 PG_DB_NAME=dev
 
-# PG_MAX_CONNS is the postgres maximum number of connections open. Default is "20".
-PG_MAX_CONNS=20
+# PG_MAX_CONNS is the postgres maximum number of connections open. Default is "3".
+PG_MAX_OPEN_CONNS=6
 
-# PG_MAX_IDLE_CONNS is the postgres maximum number of idle connections. Default is "20".
-PG_MAX_IDLE_CONNS=20
+# PG_MAX_IDLE_CONNS is the postgres maximum number of idle connections. Default is "3".
+PG_MAX_IDLE_CONNS=3
 
-# PG_CONN_MAX_LIFETIME is the postgres maximum connection life time in minutes. Default is "10".
-PG_CONN_MAX_LIFETIME=10
+# PG_CONN_MAX_LIFETIME is the postgres maximum connection lifetime in seconds. Default is "0".
+PG_MAX_CONN_LIFETIME=180
+
+# PG_CONN_MAX_LIFETIME is the postgres maximum connection in idle state lifetime in seconds. Default is "0".
+PG_MAX_CONN_IDLE_LIFETIME=180
 
 # INFLUX_HOST is the influxdb host. Default is "localhost".
 INFLUX_HOST=localhost
@@ -87,7 +91,7 @@ INFLUX_PORT=8086
 INFLUX_ORG=nemesys
 
 # INFLUX_TOKEN is the influxdb token. Default is "".
-INFLUX_TOKEN=kvnkkofscxaoddvapyfbzhvqspkppstidpctelogtjcgkfqeusnmwzwsgnpjxawarycslxgswpdlfuycnmizfivhukwkdksxnmkwmaduosxqqez
+INFLUX_TOKEN=
 
 # INFLUX_TLS_CERT_FILE_PATH is the path for the TLS certification file. Default is "".
 INFLUX_TLS_CERT_FILE_PATH=
@@ -128,6 +132,12 @@ API_MANAGER_PORT=5000
 # API_MANAGER_ROUTES_PREFIX is the api manager routes prefix. Default is "api/v1".
 API_MANAGER_ROUTES_PREFIX=api/v1
 
+# API_COOKIE_DOMAIN is the the set-cookie domain for session cookies. Default is "localhost".
+API_COOKIE_DOMAIN=localhost
+
+# API_MANAGE_ALLOW_ORIGINS is the allowed origins for CORS. Default is "http://localhost:5173;https://nemesys.cloud".
+API_MANAGE_ALLOW_ORIGINS=http://localhost:5173;https://nemesys.cloud
+
 # USER_SESSION_TTL is the user session TTL (time to live) in secods. Default is "604900" (one week).
 USER_SESSION_TTL=604900
 
@@ -159,3 +169,27 @@ METRIC_ALARM_EMAIL_SENDER_HOST=
 
 # METRIC_ALARM_EMAIL_SENDER_HOST_PORT is the host port of the sender. Default is "";
 METRIC_ALARM_EMAIL_SENDER_HOST_PORT=
+
+# ALARM_HISTORY_BUCKET_RETENTION is the retention in hours of the alarm-history bucket. Default is "168".
+ALARM_HISTORY_BUCKET_RETENTION=168
+
+# REQUESTS_COUNT_BUCKET_RETENTION is the retention in hours of the requests-count bucket. Default is "720".
+REQUESTS_COUNT_BUCKET_RETENTION=720
+
+# LOGS_BUCKET_RETENTION is the retention in houts of the logs bucket. Default is "168".
+LOGS_BUCKET_RETENTION=168
+
+# ALARM_SERVICE_AMQP_PUBLISHERS is the number of amqp publishers, which means number of socket channels openned. Default is "1".
+ALARM_SERVICE_AMQP_PUBLISHERS=1
+
+# API_MANAGER_AMQP_PUBLISHERS is the number of amqp publishers, which means number of socket channels openned. Default is "3".
+API_MANAGER_AMQP_PUBLISHERS=3
+
+# DHS_SERVICE_AMQP_PUBLISHERS is the number of amqp publishers, which means number of socket channels openned. Default is "5".
+DHS_SERVICE_AMQP_PUBLISHERS=5
+
+# RTS_SERVICE_AMQP_PUBLISHERS is the number of amqp publishers, which means number of socket channels openned. Default is "5".
+RTS_SERVICE_AMQP_PUBLISHERS=5
+
+# SNMP_AMQP_PUBLISHERS is the number of amqp publishers, which means number of socket channels openned. Default is "5".
+SNMP_AMQP_PUBLISHERS=5
