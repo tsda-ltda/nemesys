@@ -5,6 +5,7 @@ import (
 	"time"
 
 	category "github.com/fernandotsda/nemesys/api-manager/internal/alarm-category"
+	endpoint "github.com/fernandotsda/nemesys/api-manager/internal/alarm-endpoint"
 	alarmexp "github.com/fernandotsda/nemesys/api-manager/internal/alarm-expression"
 	profile "github.com/fernandotsda/nemesys/api-manager/internal/alarm-profile"
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
@@ -269,6 +270,15 @@ func Set(s service.Service) {
 		alarmExpression.DELETE("/:expressionId", alarmexp.DeleteHandler(api))
 		alarmExpression.POST("/:expressionId/metrics", alarmexp.CreateMetricRelationHandler(api))
 		alarmExpression.DELETE("/:expressionId/metrics/:metricId", alarmexp.DeleteMetricRelationHandler(api))
+	}
+
+	alarmEndpoints := r.Group("/alarm/endpoints", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))
+	{
+		alarmEndpoints.GET("/", endpoint.MGetHandler(api))
+		alarmEndpoints.GET("/:endpointId", endpoint.GetHandler(api))
+		alarmEndpoints.POST("/", endpoint.CreateHandler(api))
+		alarmEndpoints.PATCH("/:endpointId", endpoint.UpdateHandler(api))
+		alarmEndpoints.DELETE("/:endpointId", endpoint.DeleteHandler(api))
 	}
 
 	trapRelations := r.Group("/alarm/trap-relations/", middleware.Protect(api, roles.Admin), middleware.RequestsCounter(api))

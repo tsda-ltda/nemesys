@@ -15,6 +15,7 @@ import (
 func getEmailMessage(info models.AlarmNotificationInfo) string {
 	return fmt.Sprintf(`METRIC '%s' ALARM!
 	
+Description: %s
 Occurency date:	%s
 ------------------------------
 Alarm Category id: %d
@@ -27,25 +28,19 @@ Metric Value: %v
 ------------------------------
 Container id: %d
 Container Name: %s
-Container Type: %s
-------------------------------
-Alarm Expression id: %d
-Alarm Expression name: %s
-Alarm Expression: %s`,
-		info.Category.Name,
+Container Type: %s`,
+		info.AlarmCategory.Name,
+		info.Descr,
 		time.Unix(info.OccurencyDate, 0).Format(time.RFC3339),
-		info.Category.Id,
-		info.Category.Name,
-		info.Category.Level,
+		info.AlarmCategory.Id,
+		info.AlarmCategory.Name,
+		info.AlarmCategory.Level,
 		info.MetricId,
 		info.MetricName,
 		info.Value,
 		info.ContainerId,
 		info.ContainerName,
 		types.StringfyContainerType(info.ContainerType),
-		info.Expression.Id,
-		info.Expression.Name,
-		info.Expression.Expression,
 	)
 }
 

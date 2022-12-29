@@ -19,31 +19,25 @@ func (a *Alarm) notifyAlarm(ctx context.Context, occurency models.AlarmOccurency
 		return
 	}
 
-	var info models.AlarmNotificationInfo
-
-	if occurency.Type == types.ATChecked {
-		info, err = a.pg.GetAlarmNotificationInfo(context.Background(),
-			occurency.MetricId,
-			occurency.ContainerId,
-			occurency.Category.Id,
-			occurency.ExpressionSimplified.Id,
-		)
-		info.Expression.Expression = occurency.ExpressionSimplified.Expression
-		info.Expression.AlarmCategoryId = occurency.Category.Id
-	} else {
-		info, err = a.pg.GetAlarmNotificationInfoWitoutExpressions(context.Background(),
-			occurency.MetricId,
-			occurency.ContainerId,
-			occurency.Category.Id,
-		)
-	}
+	info, err := a.pg.GetAlarmNotificationInfo(context.Background(),
+		occurency.MetricId,
+		occurency.ContainerId,
+		occurency.Category.Id,
+	)
 	if err != nil {
-		a.log.Error("Fail to get alarm notification", logger.ErrField(err))
+		a.log.Error("Fail to get alarm notification info", logger.ErrField(err))
 		return
 	}
 
-	info.Category.Level = occurency.Category.Level
+	if occurency.Type == types.ATTrapFlexLegacy {
+		info.Descr = occurency.TrapDescr
+	} else {
+		info.Descr = "Alarm occured due to the expression: " + occurency.ExpressionSimplified.Expression
+	}
+
+	info.AlarmCategory.Level = occurency.Category.Level
 	info.OccurencyDate = occurency.Time.Unix()
 
 	go a.notifyEmail(info, profiles)
+	go a.notifyEndpoints(info, profiles)
 }

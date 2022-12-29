@@ -78,25 +78,25 @@ type AlarmState struct {
 
 type AlarmNotificationInfo struct {
 	// Alarm type is the alarm type.
-	AlarmType types.AlarmType
+	AlarmType types.AlarmType `json:"alarm-type"`
 	// MetricId is the metric identifier.
-	MetricId int64
+	MetricId int64 `json:"metric-id"`
 	// MetricName is the metric name.
-	MetricName string
+	MetricName string `json:"metric-name"`
 	// ContainerId is the container id.
-	ContainerId int32
+	ContainerId int32 `json:"container-id"`
 	// ContainerName is the container name.
-	ContainerName string
+	ContainerName string `json:"container-name"`
 	// ContainerType is the container type.
-	ContainerType types.ContainerType
-	// Category is the alarm category.
-	Category AlarmCategory
-	// Expression is the alarm expression.
-	Expression AlarmExpression
+	ContainerType types.ContainerType `json:"container-type"`
+	// AlarmCategory is the alarm category.
+	AlarmCategory AlarmCategory `json:"alarm-category"`
 	// OccurrencyDate is the date of occurency in seconds.
-	OccurencyDate int64
+	OccurencyDate int64 `json:"occurency-date"`
 	// Value is the alarmed value.
-	Value any
+	Value any `json:"value"`
+	// Descr is the description.
+	Descr string `json:"descr"`
 }
 
 type DirectAlarm struct {

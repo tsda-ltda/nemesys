@@ -9,41 +9,19 @@ const (
 	sqlAlarmGetNotficationInfo = `WITH 
 		c AS (SELECT name FROM containers WHERE id = $1),
 		ca AS (SELECT name FROM alarm_categories WHERE id = $2),
-		e AS (SELECT name FROM alarm_expressions WHERE id = $3)
-	SELECT name, container_type,
-		(SELECT * FROM c),
-		(SELECT * FROM ca),
-		(select * from e) FROM metrics WHERE id = $4`
-	sqlAlarmGetNotficationInfoWithoutExpression = `WITH 
-		c AS (SELECT name FROM containers WHERE id = $1),
-		ca AS (SELECT name FROM alarm_categories WHERE id = $2),
 	SELECT name, container_type,
 		(SELECT * FROM c),
 		(SELECT * FROM ca) FROM metrics WHERE id = $3`
 )
 
-func (pg *PG) GetAlarmNotificationInfo(ctx context.Context, metricId int64, containerId int32, categoryId int32, expressionId int32) (info models.AlarmNotificationInfo, err error) {
+func (pg *PG) GetAlarmNotificationInfo(ctx context.Context, metricId int64, containerId int32, categoryId int32) (info models.AlarmNotificationInfo, err error) {
 	info.MetricId = metricId
-	info.Category.Id = categoryId
+	info.AlarmCategory.Id = categoryId
 	info.ContainerId = containerId
-	info.Expression.Id = expressionId
-	return info, pg.db.QueryRowContext(ctx, sqlAlarmGetNotficationInfo, containerId, categoryId, expressionId, metricId).Scan(
+	return info, pg.db.QueryRowContext(ctx, sqlAlarmGetNotficationInfo, containerId, categoryId, metricId).Scan(
 		&info.MetricName,
 		&info.ContainerType,
 		&info.ContainerName,
-		&info.Category.Name,
-		&info.Expression.Name,
-	)
-}
-
-func (pg *PG) GetAlarmNotificationInfoWitoutExpressions(ctx context.Context, metricId int64, containerId int32, categoryId int32) (info models.AlarmNotificationInfo, err error) {
-	info.MetricId = metricId
-	info.Category.Id = categoryId
-	info.ContainerId = containerId
-	return info, pg.db.QueryRowContext(ctx, sqlAlarmGetNotficationInfoWithoutExpression, containerId, categoryId, metricId).Scan(
-		&info.MetricName,
-		&info.ContainerType,
-		&info.ContainerName,
-		&info.Category.Name,
+		&info.AlarmCategory.Name,
 	)
 }

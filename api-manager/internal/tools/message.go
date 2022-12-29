@@ -24,6 +24,8 @@ const (
 	MsgTrapRelationNotFound                = "Trap category relation does not exists."
 	MsgAlarmStateNotFound                  = "Alarm state does not exists."
 	MsgTrapListenerNotFound                = "Trap listener does not exists."
+	MsgAlarmEndpointNotFound               = "Alarm endpoint does not exists."
+	MsgAlarmEndpointRelationNotFound       = "Alarm endpoint relation does not exists."
 
 	MsgParamsNotSameType     = "Params must have same type. Use only numbers or only text."
 	MsgIdentIsNumber         = "Identification must not be number as text."
@@ -58,6 +60,7 @@ const (
 	MsgAlarmExpressionAndMetricRelExists = "Alarm expression and metric relation already exists."
 	MsgTrapRelationExists                = "Trap category already have a relation."
 	MsgTrapListerHostPortExists          = "Trap listener host port already exists."
+	MsgAlarmEndpointRelationExists       = "Alarm endpoint relation already exists."
 )
 
 // MsgRes returns an APIResponse with empty data but with the message.

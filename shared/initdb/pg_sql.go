@@ -265,6 +265,30 @@ var sqlCommands []string = []string{
 	);`,
 	`CREATE INDEX ape_alarm_profile_id_index ON alarm_profiles_emails (alarm_profile_id);`,
 
+	// Create notifications endpoints table
+	`CREATE TABLE alarm_endpoints (
+		id SERIAL4 PRIMARY KEY,
+		name VARCHAR (50) NOT NULL,
+		url VARCHAR (255) NOT NULL,
+		headers bytea NOT NULL
+	);`,
+
+	// Create notifications endpoints relatation table
+	`CREATE TABLE alarm_endpoints_rel (
+		alarm_profile_id INT4 NOT NULL,
+		alarm_endpoint_id INT4 NOT NULL,
+		CONSTRAINT aer2_fk_alarm_profile_id
+			FOREIGN KEY(alarm_profile_id)
+				REFERENCES alarm_profiles(id)
+				ON DELETE CASCADE,
+		CONSTRAINT aer2_fk_alarm_endpoint_id
+			FOREIGN KEY(alarm_endpoint_id)
+				REFERENCES alarm_endpoints(id)
+				ON DELETE CASCADE		
+		);`,
+	`CREATE UNIQUE INDEX ner2_ids_index ON alarm_endpoints_rel (alarm_profile_id, alarm_endpoint_id);`,
+	`CREATE INDEX ner2_alarm_profile_id_index ON alarm_endpoints_rel (alarm_profile_id);`,
+
 	// Create alarm categories table
 	`CREATE TABLE alarm_categories (
 		id SERIAL4 PRIMARY KEY,
