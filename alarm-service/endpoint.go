@@ -1,11 +1,13 @@
 package alarm
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
+	jsoniter "github.com/json-iterator/go"
 )
 
 func (a *Alarm) notifyEndpoints(info models.AlarmNotificationInfo, profiles []models.AlarmProfileSimplified) {
@@ -19,8 +21,15 @@ func (a *Alarm) notifyEndpoints(info models.AlarmNotificationInfo, profiles []mo
 		return
 	}
 
+	b, err := jsoniter.Marshal(info)
+	if err != nil {
+		a.log.Error("Fail to marshal alarm notification info", logger.ErrField(err))
+		return
+	}
+
+	buffer := bytes.NewBuffer(b)
 	for _, endpoint := range endpoints {
-		req, err := http.NewRequest(http.MethodGet, endpoint.URL, nil)
+		req, err := http.NewRequest(http.MethodPost, endpoint.URL, buffer)
 		if err != nil {
 			a.log.Warn("Fail to create http request for "+endpoint.URL, logger.ErrField(err))
 		}

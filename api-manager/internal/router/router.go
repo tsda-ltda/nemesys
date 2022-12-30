@@ -245,11 +245,17 @@ func Set(s service.Service) {
 			emails.DELETE("/:emailId", profile.DeleteEmailHandler(api))
 		}
 
-		category := alarmProfile.Group("/:profileId/categories")
+		categories := alarmProfile.Group("/:profileId/categories")
 		{
-			category.GET("/", profile.GetCategoriesHandler(api))
-			category.POST("/", profile.AddCategoryHandler(api))
-			category.DELETE("/:categoryId", profile.RemoveCategoryHandler(api))
+			categories.GET("/", profile.GetCategoriesHandler(api))
+			categories.POST("/", profile.AddCategoryHandler(api))
+			categories.DELETE("/:categoryId", profile.RemoveCategoryHandler(api))
+		}
+		endpoints := alarmProfile.Group("/:profileId/endpoints")
+		{
+			endpoints.GET("/", profile.GetAlarmEndpoints(api))
+			endpoints.POST("/", profile.CreateAlarmEndpointRelation(api))
+			endpoints.DELETE("/:endpointId", profile.DeleteAlarmEndpointRelation(api))
 		}
 	}
 

@@ -39,8 +39,8 @@ const (
 	sqlAlarmEndpointsGet                 = `SELECT name, url, headers FROM alarm_endpoints WHERE id = $1;`
 	sqlAlarmEndpointsAddAlarmProfile     = `INSERT INTO alarm_endpoints_rel (alarm_profile_id, alarm_endpoint_id) VALUES ($1, $2);`
 	sqlAlarmEndpointsMGetOfAlarmProfiles = `SELECT id, name, url, headers FROM alarm_endpoints ae
-	LEFT JOIN alarm_endpoints_rel aer ON aer.notification_endpoint_id = ae.id WHERE aer.alarm_profile_id = ANY($1);`
-	sqlAlarmEndpointsCreateAlarmProfileRel      = `INSERT INTO alarm_endpoints_rel (alarm_profile_id, alarm_enpoint_id) VALUES($1, $2);`
+	LEFT JOIN alarm_endpoints_rel aer ON aer.alarm_endpoint_id = ae.id WHERE aer.alarm_profile_id = ANY($1);`
+	sqlAlarmEndpointsCreateAlarmProfileRel      = `INSERT INTO alarm_endpoints_rel (alarm_profile_id, alarm_endpoint_id) VALUES($1, $2);`
 	sqlAlarmEndpointsDeleteAlarmProfileRel      = `DELETE FROM alarm_endpoints_rel WHERE alarm_profile_id = $1 AND alarm_endpoint_id = $2;`
 	sqlAlarmEndpointsAlarmProfileRelationExists = `SELECT 
 		EXISTS (SELECT 1 FROM alarm_profiles WHERE id = $1),
@@ -49,7 +49,7 @@ const (
 
 	customSqlAlarmEndpointsMGet               = `SELECT id, name, url, headers FROM alarm_endpoints %s LIMIT $1 OFFSET $2;`
 	customSqlAlarmEndpointsMGetOfAlarmProfile = `SELECT id, name, url, headers FROM alarm_endpoints ae
-		LEFT JOIN alarm_endpoints_rel aer ON aer.notification_endpoint_id = ae.id %s LIMIT $1 OFFSET $1;`
+		LEFT JOIN alarm_endpoints_rel aer ON aer.alarm_endpoint_id = ae.id %s LIMIT $1 OFFSET $2;`
 )
 
 func (pg *PG) CreateAlarmEndpoint(ctx context.Context, endpoint models.AlarmEndpoint) (id int32, err error) {

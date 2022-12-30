@@ -94,7 +94,7 @@ func DeleteAlarmEndpointRelation(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		alarmEndpointId, err := strconv.ParseInt(c.Param("alarmEndpointId"), 0, 32)
+		alarmEndpointId, err := strconv.ParseInt(c.Param("endpointId"), 0, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
