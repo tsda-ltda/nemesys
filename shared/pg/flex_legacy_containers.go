@@ -18,7 +18,7 @@ type FlexLegacyContainerQueryFilters struct {
 	CreatedAtStop  int64               `type:"<=" column:"created_at"`
 	Enabled        *bool               `type:"=" column:"enabled"`
 	Target         string              `type:"ilike" column:"target"`
-	SerialNumber   int64               `type:"=" column:"serial_number"`
+	SerialNumber   string              `type:"=" column:"serial_number"`
 	Model          int16               `type:"=" column:"model"`
 	City           string              `type:"ilike" column:"city"`
 	Region         string              `type:"ilike" column:"region"`
@@ -276,7 +276,7 @@ func (pg *PG) GetFlexLegacyContainerSNMPConfig(ctx context.Context, id int32) (e
 	return exists, container, nil
 }
 
-func (pg *PG) ExistsFlexLegacyContainerTargetPortAndSerialNumber(ctx context.Context, id int32, target string, serialNumber int32) (r FlexLegacyContainerExistsContainerTargetAndSerialNumberRespose, err error) {
+func (pg *PG) ExistsFlexLegacyContainerTargetPortAndSerialNumber(ctx context.Context, id int32, target string, serialNumber string) (r FlexLegacyContainerExistsContainerTargetAndSerialNumberRespose, err error) {
 	return r, pg.db.QueryRowContext(ctx, sqlFlexLegacyContainersExistsContainerTargetAndSerialNumber, id, target, serialNumber).Scan(
 		&r.ContainerExists,
 		&r.TargetExists,

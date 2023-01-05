@@ -20,7 +20,7 @@ type FlexLegacyContainer struct {
 	// Max oids per request.
 	MaxOids int16 `json:"max-oids" validate:"required"`
 	// SerialNumber is the flex serial-number.
-	SerialNumber int32 `json:"serial-number" validate:"required"`
+	SerialNumber string `json:"serial-number" validate:"required,max=10"`
 	// Model is the flex model.
 	Model int16 `json:"model" validate:"required"`
 	// City is whitch city the flex is located.

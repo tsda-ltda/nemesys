@@ -143,7 +143,7 @@ var sqlCommands []string = []string{
 		retries INT2 NOT NULL,
 		max_oids INT2 NOT NULL,
 		timeout INT4 NOT NULL,
-		serial_number INT4 UNIQUE NOT NULL,
+		serial_number VARCHAR (10) UNIQUE NOT NULL,
 		model INT2 NOT NULL,
 		city VARCHAR (50) NOT NULL,
 		region VARCHAR (50) NOT NULL,
