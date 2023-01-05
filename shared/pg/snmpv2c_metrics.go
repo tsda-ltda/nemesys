@@ -18,6 +18,8 @@ type SNMPv2cMetricQueryFilters struct {
 	Enabled       *bool               `type:"=" column:"enabled"`
 	OrderBy       string
 	OrderByFn     string
+	Limit         int
+	Offset        int
 }
 
 func (f SNMPv2cMetricQueryFilters) GetOrderBy() string {
@@ -26,6 +28,14 @@ func (f SNMPv2cMetricQueryFilters) GetOrderBy() string {
 
 func (f SNMPv2cMetricQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
+}
+
+func (f SNMPv2cMetricQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f SNMPv2cMetricQueryFilters) GetOffset() int {
+	return f.Offset
 }
 
 const (
@@ -111,18 +121,18 @@ func (pg *PG) GetSNMPv2cMetric(ctx context.Context, id int64) (exists bool, metr
 	return true, metric, nil
 }
 
-func (pg *PG) GetSNMPv2cMetrics(ctx context.Context, filters SNMPv2cMetricQueryFilters, limit int, offset int) (metrics []models.Metric[models.SNMPMetric], err error) {
+func (pg *PG) GetSNMPv2cMetrics(ctx context.Context, filters SNMPv2cMetricQueryFilters) (metrics []models.Metric[models.SNMPMetric], err error) {
 	filters.ContainerType = types.CTSNMPv2c
-	sql, err := applyFilters(filters, customSqlFlexLegacyMetricsMGet, SNMPv2cMetricValidOrderByColumns)
+	sql, params, err := applyFilters(filters, customSqlFlexLegacyMetricsMGet, SNMPv2cMetricValidOrderByColumns)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	metrics = make([]models.Metric[models.SNMPMetric], 0, limit)
+	metrics = make([]models.Metric[models.SNMPMetric], 0, filters.Limit)
 	var metric models.Metric[models.SNMPMetric]
 	metric.Base.ContainerId = filters.ContainerId
 	metric.Base.ContainerType = filters.ContainerType

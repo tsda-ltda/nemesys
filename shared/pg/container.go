@@ -20,6 +20,8 @@ type BasicContainersQueryFilters struct {
 	Enabled        *bool               `type:"=" column:"enabled"`
 	OrderBy        string
 	OrderByFn      string
+	Limit          int
+	Offset         int
 }
 
 func (f BasicContainersQueryFilters) GetOrderBy() string {
@@ -28,6 +30,14 @@ func (f BasicContainersQueryFilters) GetOrderBy() string {
 
 func (f BasicContainersQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
+}
+
+func (f BasicContainersQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f BasicContainersQueryFilters) GetOffset() int {
+	return f.Limit
 }
 
 type BaseContainerGetRTSConfigResponse struct {
@@ -55,7 +65,7 @@ const (
 	sqlContainersEnabled       = `SELECT enabled FROM containers WHERE id = $1;`
 	sqlContainersMGetIdEnabled = `SELECT id FROM containers WHERE enabled = true AND type = $1 LIMIT $2 OFFSET $3;`
 
-	customSqlContainersMGet = `SELECT b.id, b.name, b.descr, b.enabled, b.rts_pulling_interval, b.created_at FROM containers b %s LIMIT $1 OFFSET $2`
+	customSqlContainersMGet = `SELECT b.id, b.name, b.descr, b.enabled, b.rts_pulling_interval, b.created_at FROM containers b`
 )
 
 func (pg *PG) CreateBasicContainer(ctx context.Context, container models.Container[struct{}]) (id int32, err error) {
@@ -149,18 +159,18 @@ func (pg *PG) GetContainer(ctx context.Context, id int32, t types.ContainerType)
 	return exists, container, nil
 }
 
-func (pg *PG) GetBasicContainers(ctx context.Context, filter BasicContainersQueryFilters, limit int, offset int) (containers []models.Container[struct{}], err error) {
-	filter.Type = types.CTBasic
-	sql, err := applyFilters(filter, customSqlContainersMGet, BasicContainerValidOrderByColumns)
+func (pg *PG) GetBasicContainers(ctx context.Context, filters BasicContainersQueryFilters) (containers []models.Container[struct{}], err error) {
+	filters.Type = types.CTBasic
+	sql, params, err := applyFilters(filters, customSqlContainersMGet, BasicContainerValidOrderByColumns)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	containers = make([]models.Container[struct{}], 0, limit)
+	containers = make([]models.Container[struct{}], 0, filters.Limit)
 	container := models.Container[struct{}]{}
 	container.Base.Type = types.CTBasic
 	for rows.Next() {

@@ -20,6 +20,8 @@ type SNMPv2cContainerQueryFilters struct {
 	Target         string              `type:"ilike" column:"target"`
 	OrderBy        string
 	OrderByFn      string
+	Limit          int
+	Offset         int
 }
 
 func (f SNMPv2cContainerQueryFilters) GetOrderBy() string {
@@ -28,6 +30,14 @@ func (f SNMPv2cContainerQueryFilters) GetOrderBy() string {
 
 func (f SNMPv2cContainerQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
+}
+
+func (f SNMPv2cContainerQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f SNMPv2cContainerQueryFilters) GetOffset() int {
+	return f.Offset
 }
 
 const (
@@ -44,7 +54,7 @@ const (
 
 	customSqlSNMPv2cContainerGet = `SELECT c.id, c.name, c.descr, c.enabled, c.rts_pulling_interval, c.created_at,
 		p.target, p.port, p.transport, p.community, p.retries, p.max_oids, p.timeout
-		FROM containers c FULL JOIN snmpv2c_containers p ON p.container_id = c.id %s LIMIT $1 OFFSET $2`
+		FROM containers c FULL JOIN snmpv2c_containers p ON p.container_id = c.id`
 )
 
 func (pg *PG) CreateSNMPv2cContainer(ctx context.Context, container models.Container[models.SNMPv2cContainer]) (id int32, err error) {
@@ -136,18 +146,18 @@ func (pg *PG) GetSNMPv2cContainer(ctx context.Context, id int32) (exists bool, c
 	return true, container, nil
 }
 
-func (pg *PG) GetSNMPv2cGetContainers(ctx context.Context, filters SNMPv2cContainerQueryFilters, limit int, offset int) (containers []models.Container[models.SNMPv2cContainer], err error) {
+func (pg *PG) GetSNMPv2cGetContainers(ctx context.Context, filters SNMPv2cContainerQueryFilters) (containers []models.Container[models.SNMPv2cContainer], err error) {
 	filters.Type = types.CTSNMPv2c
-	sql, err := applyFilters(filters, customSqlSNMPv2cContainerGet, SNMPv2cContainerValidOrderByColumns)
+	sql, params, err := applyFilters(filters, customSqlSNMPv2cContainerGet, SNMPv2cContainerValidOrderByColumns)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	containers = make([]models.Container[models.SNMPv2cContainer], 0, limit)
+	containers = make([]models.Container[models.SNMPv2cContainer], 0, filters.Limit)
 	container := models.Container[models.SNMPv2cContainer]{}
 	container.Base.Type = filters.Type
 	for rows.Next() {

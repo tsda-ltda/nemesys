@@ -16,6 +16,8 @@ type UserQueryFilters struct {
 	Email     string `type:"ilike" column:"email"`
 	OrderBy   string
 	OrderByFn string
+	Limit     int
+	Offset    int
 }
 
 func (f UserQueryFilters) GetOrderBy() string {
@@ -24,6 +26,14 @@ func (f UserQueryFilters) GetOrderBy() string {
 
 func (f UserQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
+}
+
+func (f UserQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f UserQueryFilters) GetOffset() int {
+	return f.Offset
 }
 
 // UsersLoginInfoResponse is the response for GetLoginInfo handler.
@@ -54,7 +64,7 @@ const (
 	sqlUsersTeams          = `SELECT id, name, ident, descr FROM teams t 
 		LEFT JOIN users_teams ut ON ut.team_id = t.id 
 		WHERE ut.user_id = $1 LIMIT $2 OFFSET $3;`
-	customSqlUsersMGet = `SELECT id, username, first_name, last_name, role, email FROM users %s LIMIT $1 OFFSET $2`
+	customSqlUsersMGet = `SELECT id, username, first_name, last_name, role, email FROM users`
 )
 
 func (pg *PG) CountUsersWithLimit(ctx context.Context, limit int) (users int, err error) {
@@ -89,17 +99,17 @@ func (pg *PG) DeleteUser(ctx context.Context, id int32) (e bool, err error) {
 	return rowsAffected != 0, err
 }
 
-func (pg *PG) GetUsers(ctx context.Context, filters UserQueryFilters, limit int, offset int) (users []models.User, err error) {
-	sql, err := applyFilters(filters, customSqlUsersMGet, UserValidOrderByColumns)
+func (pg *PG) GetUsers(ctx context.Context, filters UserQueryFilters) (users []models.User, err error) {
+	sql, params, err := applyFilters(filters, customSqlUsersMGet, UserValidOrderByColumns)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	users = make([]models.User, 0, limit)
+	users = make([]models.User, 0, filters.Limit)
 	var u models.User
 	for rows.Next() {
 		err = rows.Scan(

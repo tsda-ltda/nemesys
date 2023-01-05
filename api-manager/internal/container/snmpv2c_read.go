@@ -84,9 +84,11 @@ func GetSNMPv2cContainers(api *api.API) func(c *gin.Context) {
 			OrderBy:        c.Query("order-by"),
 			OrderByFn:      c.Query("order-by-fn"),
 			Target:         c.Query("target"),
+			Limit:          limit,
+			Offset:         offset,
 		}
 
-		containers, err := api.PG.GetSNMPv2cGetContainers(ctx, filters, limit, offset)
+		containers, err := api.PG.GetSNMPv2cGetContainers(ctx, filters)
 		if err != nil {
 			if err == pg.ErrInvalidOrderByColumn || err == pg.ErrInvalidFilterValue || err == pg.ErrInvalidOrderByFn {
 				c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))

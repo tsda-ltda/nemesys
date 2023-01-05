@@ -18,6 +18,8 @@ type BasicMetricQueryFilters struct {
 	Enabled       *bool               `type:"=" column:"enabled"`
 	OrderBy       string
 	OrderByFn     string
+	Limit         int
+	Offset        int
 }
 
 func (f BasicMetricQueryFilters) GetOrderBy() string {
@@ -26,6 +28,14 @@ func (f BasicMetricQueryFilters) GetOrderBy() string {
 
 func (f BasicMetricQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
+}
+
+func (f BasicMetricQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f BasicMetricQueryFilters) GetOffset() int {
+	return f.Offset
 }
 
 type MetricsExistsContainerAndDataPolicyResponse struct {
@@ -97,7 +107,7 @@ const (
 	FULL OUTER JOIN metrics_alarm_expressions_rel r ON r.expression_id = e.id WHERE r.metric_id = ANY ($1);`
 
 	customSqlBasicMetricsMGet = `SELECT id, name, descr, enabled, data_policy_id, 
-	rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression %s LIMIT $1 OFFSET $2`
+	rts_pulling_times, rts_data_cache_duration, dhs_enabled, dhs_interval, type, ev_expression`
 )
 
 func (pg *PG) GetBasicMetric(ctx context.Context, id int64) (exists bool, metric models.Metric[struct{}], err error) {
@@ -160,18 +170,18 @@ func (pg *PG) GetMetric(ctx context.Context, id int64) (exists bool, metric mode
 	return exists, metric, nil
 }
 
-func (pg *PG) GetBasicMetrics(ctx context.Context, filters BasicMetricQueryFilters, limit int, offset int) (metrics []models.Metric[struct{}], err error) {
+func (pg *PG) GetBasicMetrics(ctx context.Context, filters BasicMetricQueryFilters) (metrics []models.Metric[struct{}], err error) {
 	filters.ContainerType = types.CTBasic
-	sql, err := applyFilters(filters, customSqlBasicMetricsMGet, BasicMetricValidOrderByColumns)
+	sql, params, err := applyFilters(filters, customSqlBasicMetricsMGet, BasicMetricValidOrderByColumns)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	metrics = make([]models.Metric[struct{}], 0, limit)
+	metrics = make([]models.Metric[struct{}], 0, filters.Limit)
 	var m models.Metric[struct{}]
 	m.Base.ContainerId = filters.ContainerId
 	m.Base.ContainerType = filters.ContainerType

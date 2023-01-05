@@ -15,6 +15,8 @@ type AlarmCategoriesQueryFilters struct {
 	Level     int32  `type:"=" column:"level"`
 	OrderBy   string
 	OrderByFn string
+	Limit     int
+	Offset    int
 }
 
 func (f AlarmCategoriesQueryFilters) GetOrderBy() string {
@@ -23,6 +25,14 @@ func (f AlarmCategoriesQueryFilters) GetOrderBy() string {
 
 func (f AlarmCategoriesQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
+}
+
+func (f AlarmCategoriesQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f AlarmCategoriesQueryFilters) GetOffset() int {
+	return f.Offset
 }
 
 const (
@@ -46,7 +56,7 @@ const (
 	sqlAlarmCategoriesGetTrapRelByTrapIds = `SELECT trap_id, category_id FROM traps_categories_rel WHERE trap_id = ANY($1);`
 	sqlAlarmCategoriesGetTrapRels         = `SELECT trap_id, category_id FROM traps_categories_rel LIMIT $1 OFFSET $2;`
 
-	customSqlAlarmCategoriesMGet = `SELECT id, name, descr, level FROM alarm_categories %s LIMIT $1 OFFSET $2`
+	customSqlAlarmCategoriesMGet = `SELECT id, name, descr, level FROM alarm_categories`
 )
 
 func (pg *PG) CreateAlarmCategory(ctx context.Context, category models.AlarmCategory) (id int32, err error) {
@@ -83,17 +93,17 @@ func (pg *PG) GetAlarmCategory(ctx context.Context, id int32) (exists bool, cate
 	return true, category, nil
 }
 
-func (pg *PG) GetAlarmCategories(ctx context.Context, filters AlarmCategoriesQueryFilters, limit int, offset int) (categories []models.AlarmCategory, err error) {
-	sql, err := applyFilters(filters, customSqlAlarmCategoriesMGet, AlarmCategoriesValidOrderByColumns)
+func (pg *PG) GetAlarmCategories(ctx context.Context, filters AlarmCategoriesQueryFilters) (categories []models.AlarmCategory, err error) {
+	sql, params, err := applyFilters(filters, customSqlAlarmCategoriesMGet, AlarmCategoriesValidOrderByColumns)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	categories = make([]models.AlarmCategory, 0, limit)
+	categories = make([]models.AlarmCategory, 0, filters.Limit)
 	var category models.AlarmCategory
 	for rows.Next() {
 		err = rows.Scan(

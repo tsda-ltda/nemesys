@@ -83,9 +83,11 @@ func GetBasicContainersHandlers(api *api.API) func(c *gin.Context) {
 			Enabled:        enabled,
 			OrderBy:        c.Query("order-by"),
 			OrderByFn:      c.Query("order-by-fn"),
+			Limit:          limit,
+			Offset:         offset,
 		}
 
-		containers, err := api.PG.GetBasicContainers(ctx, filters, limit, offset)
+		containers, err := api.PG.GetBasicContainers(ctx, filters)
 		if err != nil {
 			if err == pg.ErrInvalidOrderByColumn || err == pg.ErrInvalidFilterValue || err == pg.ErrInvalidOrderByFn {
 				c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))

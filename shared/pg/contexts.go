@@ -15,6 +15,8 @@ type ContextQueryFilters struct {
 	Ident     string `type:"ilike" column:"ident"`
 	OrderBy   string
 	OrderByFn string
+	Limit     int
+	Offset    int
 }
 
 func (f ContextQueryFilters) GetOrderBy() string {
@@ -23,6 +25,14 @@ func (f ContextQueryFilters) GetOrderBy() string {
 
 func (f ContextQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
+}
+
+func (f ContextQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f ContextQueryFilters) GetOffset() int {
+	return f.Offset
 }
 
 // ContextsExistsTeamAndIdentResponse is the response for the Get handler.
@@ -55,7 +65,7 @@ const (
 	sqlCtxGet    = `SELECT ident, descr, name, team_id FROM contexts WHERE id = $1;`
 	sqlCtxExists = `SELECT EXISTS (SELECT 1 FROM contexts WHERE id = $1);`
 
-	customSqlCtxMGet = `SELECT id, ident, descr, name FROM contexts %s LIMIT $1 OFFSET $2`
+	customSqlCtxMGet = `SELECT id, ident, descr, name FROM contexts`
 )
 
 func (pg *PG) ContextExists(ctx context.Context, id int32) (exists bool, err error) {
@@ -101,14 +111,17 @@ func (pg *PG) DeleteContext(ctx context.Context, id int32) (exists bool, err err
 	return rowsAffected != 0, err
 }
 
-func (pg *PG) GetContexts(ctx context.Context, filters ContextQueryFilters, limit int, offset int) (contexts []models.Context, err error) {
-	sql, err := applyFilters(filters, customSqlCtxMGet, ContextValidOrderByColumns)
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+func (pg *PG) GetContexts(ctx context.Context, filters ContextQueryFilters) (contexts []models.Context, err error) {
+	sql, params, err := applyFilters(filters, customSqlCtxMGet, ContextValidOrderByColumns)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	contexts = make([]models.Context, 0, limit)
+	contexts = make([]models.Context, 0, filters.Limit)
 	var c models.Context
 	for rows.Next() {
 		err = rows.Scan(&c.Id, &c.Ident, &c.Descr, &c.Name)

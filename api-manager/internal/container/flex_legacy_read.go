@@ -90,9 +90,11 @@ func GetFlexLegacyContainersHandler(api *api.API) func(c *gin.Context) {
 			City:           c.Query("city"),
 			Region:         c.Query("region"),
 			Country:        c.Query("country"),
+			Limit:          limit,
+			Offset:         offset,
 		}
 
-		containers, err := api.PG.GetFlexLegacyContainers(ctx, filters, limit, offset)
+		containers, err := api.PG.GetFlexLegacyContainers(ctx, filters)
 		if err != nil {
 			if err == pg.ErrInvalidOrderByColumn || err == pg.ErrInvalidFilterValue || err == pg.ErrInvalidOrderByFn {
 				c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))

@@ -14,6 +14,8 @@ type TeamQueryFilters struct {
 	Descr     string `type:"ilike" column:"descr"`
 	OrderBy   string
 	OrderByFn string
+	Limit     int
+	Offset    int
 }
 
 func (f TeamQueryFilters) GetOrderBy() string {
@@ -22,6 +24,13 @@ func (f TeamQueryFilters) GetOrderBy() string {
 
 func (f TeamQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
+}
+func (f TeamQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f TeamQueryFilters) GetOffset() int {
+	return f.Offset
 }
 
 // TeamsExistsRelUserTeamResponse is the response for ExistsRelUserTeam handler.
@@ -53,7 +62,7 @@ const (
 		EXISTS(SELECT 1 FROM teams WHERE id=$2);`
 	sqlTeamsMemberExists = `SELECT EXISTS (SELECT 1 FROM users_teams WHERE user_id = $1 AND team_id = $2);`
 
-	customSqlTeamsMGet = `SELECT id, name, descr, ident FROM teams %s LIMIT $1 OFFSET $2`
+	customSqlTeamsMGet = `SELECT id, name, descr, ident FROM teams`
 )
 
 func (pg *PG) TeamIdentExists(ctx context.Context, ident string, id int32) (exists bool, err error) {
@@ -98,17 +107,17 @@ func (pg *PG) GetTeam(ctx context.Context, id int32) (exists bool, team models.T
 	return exists, team, nil
 }
 
-func (pg *PG) GetTeams(ctx context.Context, filters TeamQueryFilters, limit int, offset int) (teams []models.Team, err error) {
-	sql, err := applyFilters(filters, customSqlTeamsMGet, TeamValidOrderByColumns)
+func (pg *PG) GetTeams(ctx context.Context, filters TeamQueryFilters) (teams []models.Team, err error) {
+	sql, params, err := applyFilters(filters, customSqlTeamsMGet, TeamValidOrderByColumns)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	teams = make([]models.Team, 0, limit)
+	teams = make([]models.Team, 0, filters.Limit)
 	var t models.Team
 	for rows.Next() {
 		err = rows.Scan(

@@ -86,7 +86,9 @@ func MGetSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			Enabled:     enabled,
 			OrderBy:     c.Query("order-by"),
 			OrderByFn:   c.Query("order-by-fn"),
-		}, limit, offset)
+			Limit:       limit,
+			Offset:      offset,
+		})
 		if err != nil {
 			if err == pg.ErrInvalidOrderByColumn || err == pg.ErrInvalidFilterValue || err == pg.ErrInvalidOrderByFn {
 				c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))

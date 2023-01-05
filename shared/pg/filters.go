@@ -3,21 +3,20 @@ package pg
 import (
 	"fmt"
 	"reflect"
-	"strings"
-
-	"unicode/utf8"
 )
 
-type queryFilters interface {
+type queryFilters2 interface {
 	GetOrderBy() string
 	GetOrderByFn() string
+	GetLimit() int
+	GetOffset() int
 }
 
 func mergeFilters(filters []string) string {
 	if len(filters) == 0 {
 		return ""
 	}
-	e := `WHERE `
+	e := ` WHERE `
 	for i, f := range filters {
 		e += f
 		if i != len(filters)-1 {
@@ -36,14 +35,12 @@ func validateOrderFn(fn string) error {
 
 // applyFilters apply the queryFilters in the provided sql. The queryFilters may NOT have any
 // unexported field, otherwise will panic.
-func applyFilters(queryFilters queryFilters, sql string, allowedColumns []string) (sqlResult string, err error) {
+func applyFilters(queryFilters queryFilters2, sql string, allowedColumns []string) (sqlResult string, params []any, err error) {
 	v := reflect.ValueOf(queryFilters)
 	typeof := reflect.TypeOf(queryFilters)
 
-	sqlFilters := make([]string, 0, v.NumField())
-
-	// replacer for special postgres chars
-	re := strings.NewReplacer("_", "/_", "%", "/%", "'", "''")
+	params = make([]any, 0, v.NumField())
+	statements := make([]string, 0, v.NumField())
 
 	for i := 0; i < v.NumField(); i++ {
 		_i := []int{i}
@@ -55,34 +52,33 @@ func applyFilters(queryFilters queryFilters, sql string, allowedColumns []string
 			continue
 		}
 
-		// replace special chars if fieldValue is a string
-		if reflect.TypeOf(fieldValue) == reflect.TypeOf("") {
-			asString := fieldValue.(string)
-			if !utf8.ValidString(asString) {
-				return "", ErrInvalidFilterValue
-			}
-			fieldValue = re.Replace(asString)
+		operator := field.Tag.Get("type")
+		if len(operator) == 0 {
+			continue
 		}
 
-		switch field.Tag.Get("type") {
-		case "=":
-			sqlFilters = append(sqlFilters, fmt.Sprintf("%s = %v", field.Tag.Get("column"), fieldValue))
-		case "<=":
-			sqlFilters = append(sqlFilters, fmt.Sprintf("%s <= %v", field.Tag.Get("column"), fieldValue))
-		case ">=":
-			sqlFilters = append(sqlFilters, fmt.Sprintf("%s >= %v", field.Tag.Get("column"), fieldValue))
-		case "ilike":
-			sqlFilters = append(sqlFilters, fmt.Sprintf("%s ILIKE '%s", field.Tag.Get("column"), fieldValue)+"%'")
+		index := len(statements) + 1
+		column := field.Tag.Get("column")
+
+		statements = append(statements, getStatement(column, operator, index))
+
+		fieldValueS, ok := fieldValue.(string)
+		if operator == "ilike" && ok {
+			fieldValue = fieldValueS + "%"
 		}
+		params = append(params, fieldValue)
 	}
 
-	frag := mergeFilters(sqlFilters)
+	statementMerged := mergeFilters(statements)
+
+	statementMerged += fmt.Sprintf(` LIMIT $%d OFFSET $%d`, len(statements)+1, len(statements)+2)
+	params = append(params, queryFilters.GetLimit(), queryFilters.GetOffset())
 
 	orderBy := queryFilters.GetOrderBy()
 	orderByFn := queryFilters.GetOrderByFn()
 	if orderBy != "" && orderByFn != "" {
 		if err := validateOrderFn(orderByFn); err != nil {
-			return "", err
+			return "", nil, err
 		}
 
 		var founded bool
@@ -92,13 +88,17 @@ func applyFilters(queryFilters queryFilters, sql string, allowedColumns []string
 			}
 		}
 		if !founded {
-			return "", ErrInvalidFilterValue
+			return "", nil, ErrInvalidFilterValue
 		}
 
-		frag += fmt.Sprintf(` ORDER BY %s %s`, orderBy, orderByFn)
+		statementMerged += fmt.Sprintf(` ORDER BY %s %s`, orderBy, orderByFn)
 	}
 
-	return fmt.Sprintf(sql, frag), nil
+	return sql + statementMerged, params, nil
+}
+
+func getStatement(column string, operator string, index int) string {
+	return fmt.Sprintf("%s %s $%d", column, operator, index)
 }
 
 func getFilterFieldValue(v reflect.Value) (parsedValue any, empty bool) {

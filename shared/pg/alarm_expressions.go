@@ -14,6 +14,8 @@ type AlarmExpressionQueryFilters struct {
 	CategoryId int32  `type:"=" column:"level"`
 	OrderBy    string
 	OrderByFn  string
+	Limit      int
+	Offset     int
 }
 
 func (f AlarmExpressionQueryFilters) GetOrderBy() string {
@@ -22,6 +24,14 @@ func (f AlarmExpressionQueryFilters) GetOrderBy() string {
 
 func (f AlarmExpressionQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
+}
+
+func (f AlarmExpressionQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f AlarmExpressionQueryFilters) GetOffset() int {
+	return f.Offset
 }
 
 type AlarmExpressionExistsMetricAndRelationResponse struct {
@@ -45,7 +55,7 @@ const (
 	EXISTS (SELECT 1 FROM metrics WHERE id = $2),
 	EXISTS (SELECT 1 FROM metrics_alarm_expressions_rel WHERE expression_id = $1 AND metric_id = $2);`
 
-	customSqlAlarmExpressionsMGet = `SELECT id, name, expression, category_id FROM alarm_expressions %s LIMIT $1 OFFSET $2`
+	customSqlAlarmExpressionsMGet = `SELECT id, name, expression, category_id FROM alarm_expressions`
 )
 
 func (pg *PG) CreateAlarmExpression(ctx context.Context, exp models.AlarmExpression) (id int32, err error) {
@@ -70,17 +80,17 @@ func (pg *PG) DeleteAlarmExpression(ctx context.Context, id int32) (exists bool,
 	return rowsAffected != 0, nil
 }
 
-func (pg *PG) GetAlarmExpressions(ctx context.Context, filters AlarmExpressionQueryFilters, limit int, offset int) (expressions []models.AlarmExpression, err error) {
-	sql, err := applyFilters(filters, customSqlAlarmExpressionsMGet, AlarmExpressionsValidOrderByColumns)
+func (pg *PG) GetAlarmExpressions(ctx context.Context, filters AlarmExpressionQueryFilters) (expressions []models.AlarmExpression, err error) {
+	sql, params, err := applyFilters(filters, customSqlAlarmExpressionsMGet, AlarmExpressionsValidOrderByColumns)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	expressions = make([]models.AlarmExpression, 0, limit)
+	expressions = make([]models.AlarmExpression, 0, filters.Limit)
 	var exp models.AlarmExpression
 	for rows.Next() {
 		err = rows.Scan(&exp.Id, &exp.Name, &exp.Expression, &exp.AlarmCategoryId)

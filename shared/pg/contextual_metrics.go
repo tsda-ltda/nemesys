@@ -15,6 +15,8 @@ type ContextualMetricQueryFilters struct {
 	Ident     string `type:"ilike" column:"ident"`
 	OrderBy   string
 	OrderByFn string
+	Limit     int
+	Offset    int
 }
 
 func (f ContextualMetricQueryFilters) GetOrderBy() string {
@@ -23,6 +25,14 @@ func (f ContextualMetricQueryFilters) GetOrderBy() string {
 
 func (f ContextualMetricQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
+}
+
+func (f ContextualMetricQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f ContextualMetricQueryFilters) GetOffset() int {
+	return f.Offset
 }
 
 // ContextualMetricsGetIdsByIdentResponse is the response for GetIdsByIdent handler.
@@ -79,7 +89,7 @@ const (
 	sqlCtxMetricsDelete = `DELETE FROM contextual_metrics WHERE id = $1;`
 	sqlCtxMetricsGet    = `SELECT ctx_id, metric_id, ident, name, descr FROM contextual_metrics WHERE id = $1;`
 
-	customSqlCtxMetricsMGet = `SELECT id, metric_id, ident, name, descr FROM contextual_metrics %s LIMIT $1 OFFSET $2`
+	customSqlCtxMetricsMGet = `SELECT id, metric_id, ident, name, descr FROM contextual_metrics`
 )
 
 func (pg *PG) GetContextualMetricTreeId(ctx context.Context, metricIdent string, ctxIdent string, teamIdent string) (r ContextualMetricsGetIdsByIdentResponse, err error) {
@@ -122,17 +132,17 @@ func (pg *PG) GetContextualMetric(ctx context.Context, id int64) (exists bool, m
 	return exists, metric, err
 }
 
-func (pg *PG) GetContextualMetrics(ctx context.Context, filters ContextualMetricQueryFilters, limit int, offset int) (metrics []models.ContextualMetric, err error) {
-	sql, err := applyFilters(filters, customSqlCtxMetricsMGet, ContextualMetricValidOrderByColumns)
+func (pg *PG) GetContextualMetrics(ctx context.Context, filters ContextualMetricQueryFilters) (metrics []models.ContextualMetric, err error) {
+	sql, params, err := applyFilters(filters, customSqlCtxMetricsMGet, ContextualMetricValidOrderByColumns)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	metrics = make([]models.ContextualMetric, 0, limit)
+	metrics = make([]models.ContextualMetric, 0, filters.Limit)
 	var m models.ContextualMetric
 	for rows.Next() {
 		err = rows.Scan(

@@ -20,6 +20,8 @@ type FlexLegacyMetricQueryFilters struct {
 	PortType      int16               `type:"=" column:"port_type"`
 	OrderBy       string
 	OrderByFn     string
+	Limit         int
+	Offset        int
 }
 
 func (f FlexLegacyMetricQueryFilters) GetOrderBy() string {
@@ -28,6 +30,14 @@ func (f FlexLegacyMetricQueryFilters) GetOrderBy() string {
 
 func (f FlexLegacyMetricQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
+}
+
+func (f FlexLegacyMetricQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f FlexLegacyMetricQueryFilters) GetOffset() int {
+	return f.Limit
 }
 
 const (
@@ -49,7 +59,7 @@ const (
 	customSqlFlexLegacyMetricsMGet = `SELECT 
 		b.id, b.container_id, b.name, b.descr, b.enabled, b.data_policy_id, 
 		b.rts_pulling_times, b.rts_data_cache_duration, b.dhs_enabled, b.dhs_interval, b.type, b.ev_expression, 
-		p.oid, p.port, p.port_type FROM metrics b FULL JOIN flex_legacy_metrics p ON p.metric_id = b.id %s LIMIT $1 AND OFFSET $2`
+		p.oid, p.port, p.port_type FROM metrics b FULL JOIN flex_legacy_metrics p ON p.metric_id = b.id`
 )
 
 func (pg *PG) CreateFlexLegacyMetric(ctx context.Context, metric models.Metric[models.FlexLegacyMetric]) (id int64, err error) {
@@ -131,18 +141,18 @@ func (pg *PG) GetFlexLegacyMetric(ctx context.Context, id int64) (exists bool, m
 	return true, metric, nil
 }
 
-func (pg *PG) GetFlexLegacyMetrics(ctx context.Context, filters FlexLegacyMetricQueryFilters, limit int, offset int) (metrics []models.Metric[models.FlexLegacyMetric], err error) {
+func (pg *PG) GetFlexLegacyMetrics(ctx context.Context, filters FlexLegacyMetricQueryFilters) (metrics []models.Metric[models.FlexLegacyMetric], err error) {
 	filters.ContainerType = types.CTFlexLegacy
-	sql, err := applyFilters(filters, customSqlFlexLegacyMetricsMGet, FlexLegacyMetricValidOrderByColumns)
+	sql, params, err := applyFilters(filters, customSqlFlexLegacyMetricsMGet, FlexLegacyMetricValidOrderByColumns)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	metrics = make([]models.Metric[models.FlexLegacyMetric], 0, limit)
+	metrics = make([]models.Metric[models.FlexLegacyMetric], 0, filters.Limit)
 	var metric models.Metric[models.FlexLegacyMetric]
 	metric.Base.ContainerId = filters.ContainerId
 	metric.Base.ContainerType = types.CTFlexLegacy

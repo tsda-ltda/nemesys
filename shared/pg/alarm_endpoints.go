@@ -16,6 +16,8 @@ type AlarmEndpointQueryFilters struct {
 	URL            string `type:"ilike" column:"url"`
 	OrderBy        string
 	OrderByFn      string
+	Limit          int
+	Offset         int
 }
 
 func (f AlarmEndpointQueryFilters) GetOrderBy() string {
@@ -24,6 +26,14 @@ func (f AlarmEndpointQueryFilters) GetOrderBy() string {
 
 func (f AlarmEndpointQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
+}
+
+func (f AlarmEndpointQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f AlarmEndpointQueryFilters) GetOffset() int {
+	return f.Offset
 }
 
 type AlarmEndpointRelationExistsRes struct {
@@ -47,9 +57,9 @@ const (
 		EXISTS (SELECT 1 FROM alarm_endpoints WHERE id = $2),
 		EXISTS (SELECT 1 FROM alarm_endpoints_rel WHERE alarm_profile_id = $1 AND alarm_endpoint_id = $2)`
 
-	customSqlAlarmEndpointsMGet               = `SELECT id, name, url, headers FROM alarm_endpoints %s LIMIT $1 OFFSET $2;`
+	customSqlAlarmEndpointsMGet               = `SELECT id, name, url, headers FROM alarm_endpoints`
 	customSqlAlarmEndpointsMGetOfAlarmProfile = `SELECT id, name, url, headers FROM alarm_endpoints ae
-		LEFT JOIN alarm_endpoints_rel aer ON aer.alarm_endpoint_id = ae.id %s LIMIT $1 OFFSET $2;`
+		LEFT JOIN alarm_endpoints_rel aer ON aer.alarm_endpoint_id = ae.id`
 )
 
 func (pg *PG) CreateAlarmEndpoint(ctx context.Context, endpoint models.AlarmEndpoint) (id int32, err error) {
@@ -113,18 +123,18 @@ func (pg *PG) GetAlarmEndpoint(ctx context.Context, id int32) (exists bool, endp
 	return true, endpoint, nil
 }
 
-func (pg *PG) GetAlarmEndpoints(ctx context.Context, filters AlarmEndpointQueryFilters, limit int, offset int) (endpoints []models.AlarmEndpoint, err error) {
+func (pg *PG) GetAlarmEndpoints(ctx context.Context, filters AlarmEndpointQueryFilters) (endpoints []models.AlarmEndpoint, err error) {
 	filters.AlarmProfileId = 0
-	sql, err := applyFilters(filters, customSqlAlarmEndpointsMGet, AlarmEndpointValidOrderByColumn)
+	sql, params, err := applyFilters(filters, customSqlAlarmEndpointsMGet, AlarmEndpointValidOrderByColumn)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	endpoints = make([]models.AlarmEndpoint, 0, limit)
+	endpoints = make([]models.AlarmEndpoint, 0, filters.Limit)
 	var endpoint models.AlarmEndpoint
 	var hbytes []byte
 	for rows.Next() {
@@ -146,17 +156,17 @@ func (pg *PG) GetAlarmEndpoints(ctx context.Context, filters AlarmEndpointQueryF
 	return endpoints, nil
 }
 
-func (pg *PG) GetAlamProfileAlarmEndpoints(ctx context.Context, filters AlarmEndpointQueryFilters, limit int, offset int) (endpoints []models.AlarmEndpoint, err error) {
-	sql, err := applyFilters(filters, customSqlAlarmEndpointsMGetOfAlarmProfile, AlarmEndpointValidOrderByColumn)
+func (pg *PG) GetAlamProfileAlarmEndpoints(ctx context.Context, filters AlarmEndpointQueryFilters) (endpoints []models.AlarmEndpoint, err error) {
+	sql, params, err := applyFilters(filters, customSqlAlarmEndpointsMGetOfAlarmProfile, AlarmEndpointValidOrderByColumn)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	endpoints = make([]models.AlarmEndpoint, 0)
+	endpoints = make([]models.AlarmEndpoint, filters.Limit)
 	var endpoint models.AlarmEndpoint
 	var hbytes []byte
 	for rows.Next() {

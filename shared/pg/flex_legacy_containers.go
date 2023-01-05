@@ -23,6 +23,8 @@ type FlexLegacyContainerQueryFilters struct {
 	City           string              `type:"ilike" column:"city"`
 	Region         string              `type:"ilike" column:"region"`
 	Country        string              `type:"ilike" column:"country"`
+	Limit          int
+	Offset         int
 	OrderBy        string
 	OrderByFn      string
 }
@@ -33,6 +35,14 @@ func (f FlexLegacyContainerQueryFilters) GetOrderBy() string {
 
 func (f FlexLegacyContainerQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
+}
+
+func (f FlexLegacyContainerQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f FlexLegacyContainerQueryFilters) GetOffset() int {
+	return f.Offset
 }
 
 type FlexLegacyContainerExistsContainerTargetAndSerialNumberRespose struct {
@@ -69,7 +79,7 @@ const (
 
 	customSqlFlexLegacyContainersMGet = `SELECT b.id, b.name, b.descr, b.enabled, b.rts_pulling_interval, b.created_at,
 	p.target, p.port, p.transport, p.community, p.retries, p.max_oids, p.timeout, p.serial_number, p.model, p.city, p.region, p.country
-	FROM containers b FULL JOIN flex_legacy_containers p ON p.container_id = b.id %s LIMIT $1 OFFSET $2`
+	FROM containers b FULL JOIN flex_legacy_containers p ON p.container_id = b.id`
 )
 
 func (pg *PG) CreateFlexLegacyContainer(ctx context.Context, container models.Container[models.FlexLegacyContainer]) (id int32, err error) {
@@ -145,18 +155,18 @@ func (pg *PG) DeleteFlexLegacyContainer(ctx context.Context, id int32) (exists b
 	return pg.DeleteContainer(ctx, id)
 }
 
-func (pg *PG) GetFlexLegacyContainers(ctx context.Context, filters FlexLegacyContainerQueryFilters, limit int, offset int) (containers []models.Container[models.FlexLegacyContainer], err error) {
+func (pg *PG) GetFlexLegacyContainers(ctx context.Context, filters FlexLegacyContainerQueryFilters) (containers []models.Container[models.FlexLegacyContainer], err error) {
 	filters.Type = types.CTFlexLegacy
-	sql, err := applyFilters(filters, customSqlFlexLegacyContainersMGet, FlexLegacyContainerValidOrderByColumns)
+	sql, params, err := applyFilters(filters, customSqlFlexLegacyContainersMGet, FlexLegacyContainerValidOrderByColumns)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	containers = make([]models.Container[models.FlexLegacyContainer], 0, limit)
+	containers = make([]models.Container[models.FlexLegacyContainer], 0, filters.Limit)
 	container := models.Container[models.FlexLegacyContainer]{}
 	container.Base.Type = filters.Type
 	for rows.Next() {

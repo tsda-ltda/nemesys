@@ -14,6 +14,8 @@ type AlarmProfileQueryFilters struct {
 	Descr     string `type:"ilike" column:"descr"`
 	OrderBy   string
 	OrderByFn string
+	Limit     int
+	Offset    int
 }
 
 func (f AlarmProfileQueryFilters) GetOrderBy() string {
@@ -22,6 +24,14 @@ func (f AlarmProfileQueryFilters) GetOrderBy() string {
 
 func (f AlarmProfileQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
+}
+
+func (f AlarmProfileQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f AlarmProfileQueryFilters) GetOffset() int {
+	return f.Offset
 }
 
 type AlarmProfileExistsCategoryAndRelationResponse struct {
@@ -54,7 +64,7 @@ const (
 	sqlAlarmProfilesDeleteEmail   = `DELETE FROM alarm_profiles_emails WHERE id = $1;`
 	sqlAlarmProfilesDeleteEmails  = `DELETE FROM alarm_profiles_emails WHERE alarm_profile_id = $1;`
 
-	customSqlAlarmProfilesMGet = `SELECT id, name, descr FROM alarm_profiles %s LIMIT $1 OFFSET $2`
+	customSqlAlarmProfilesMGet = `SELECT id, name, descr FROM alarm_profiles`
 )
 
 func (pg *PG) CreateAlarmProfile(ctx context.Context, profile models.AlarmProfile) (id int64, err error) {
@@ -92,17 +102,17 @@ func (pg *PG) GetAlarmProfile(ctx context.Context, id int32) (exists bool, profi
 	return true, profile, nil
 }
 
-func (pg *PG) GetAlarmProfiles(ctx context.Context, filters AlarmProfileQueryFilters, limit int, offset int) (profiles []models.AlarmProfile, err error) {
-	sql, err := applyFilters(filters, customSqlAlarmProfilesMGet, AlarmProfileValidOrderByColumns)
+func (pg *PG) GetAlarmProfiles(ctx context.Context, filters AlarmProfileQueryFilters) (profiles []models.AlarmProfile, err error) {
+	sql, params, err := applyFilters(filters, customSqlAlarmProfilesMGet, AlarmProfileValidOrderByColumns)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	profiles = make([]models.AlarmProfile, 0, limit)
+	profiles = make([]models.AlarmProfile, 0, filters.Limit)
 	var profile models.AlarmProfile
 	for rows.Next() {
 		err = rows.Scan(

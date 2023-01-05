@@ -79,7 +79,9 @@ func MGetContextHandler(api *api.API) func(c *gin.Context) {
 			Ident:     c.Query("ident"),
 			OrderBy:   c.Query("order-by"),
 			OrderByFn: c.Query("order-by-fn"),
-		}, limit, offset)
+			Limit:     limit,
+			Offset:    offset,
+		})
 		if err != nil {
 			if err == pg.ErrInvalidOrderByColumn || err == pg.ErrInvalidFilterValue || err == pg.ErrInvalidOrderByFn {
 				c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))

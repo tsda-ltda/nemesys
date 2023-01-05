@@ -14,6 +14,8 @@ type CustomQueryQueryFilters struct {
 	Descr     string `type:"ilike" column:"descr"`
 	OrderBy   string
 	OrderByFn string
+	Limit     int
+	Offset    int
 }
 
 func (f CustomQueryQueryFilters) GetOrderBy() string {
@@ -22,6 +24,14 @@ func (f CustomQueryQueryFilters) GetOrderBy() string {
 
 func (f CustomQueryQueryFilters) GetOrderByFn() string {
 	return f.OrderByFn
+}
+
+func (f CustomQueryQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f CustomQueryQueryFilters) GetOffset() int {
+	return f.Limit
 }
 
 const (
@@ -34,7 +44,7 @@ const (
 		EXISTS (SELECT 1 FROM custom_queries WHERE id != $1 AND ident = $2),
 		EXISTS (SELECT 1 FROM custom_queries WHERE id = $1);`
 
-	customSqlCustomQueriesMGet = `SELECT id, ident, descr, flux FROM custom_queries %s LIMIT $1 OFFSET $2`
+	customSqlCustomQueriesMGet = `SELECT id, ident, descr, flux FROM custom_queries`
 )
 
 func (pg *PG) CreateCustomQuery(ctx context.Context, cq models.CustomQuery) (id int32, err error) {
@@ -59,14 +69,17 @@ func (pg *PG) UpdateCustomQuery(ctx context.Context, cq models.CustomQuery) (exi
 	return rowsAffected != 0, err
 }
 
-func (pg *PG) GetCustomQueries(ctx context.Context, filters CustomQueryQueryFilters, limit int, offset int) (cqs []models.CustomQuery, err error) {
-	sql, err := applyFilters(filters, customSqlCustomQueriesMGet, CustomQueryValidOrderByColumns)
-	rows, err := pg.db.QueryContext(ctx, sql, limit, offset)
+func (pg *PG) GetCustomQueries(ctx context.Context, filters CustomQueryQueryFilters) (cqs []models.CustomQuery, err error) {
+	sql, params, err := applyFilters(filters, customSqlCustomQueriesMGet, CustomQueryValidOrderByColumns)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	cqs = make([]models.CustomQuery, 0, limit)
+	cqs = make([]models.CustomQuery, 0, filters.Limit)
 	var cq models.CustomQuery
 	for rows.Next() {
 		err = rows.Scan(

@@ -74,9 +74,11 @@ func GetUsers(api *api.API) func(c *gin.Context) {
 			Email:     c.Query("email"),
 			OrderBy:   c.Query("order-by"),
 			OrderByFn: c.Query("order-by-fn"),
+			Limit:     limit,
+			Offset:    offset,
 		}
 
-		users, err := api.PG.GetUsers(ctx, filters, limit, offset)
+		users, err := api.PG.GetUsers(ctx, filters)
 		if err != nil {
 			if err == pg.ErrInvalidOrderByColumn || err == pg.ErrInvalidFilterValue || err == pg.ErrInvalidOrderByFn {
 				c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
