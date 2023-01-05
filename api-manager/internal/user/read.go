@@ -72,8 +72,8 @@ func GetUsers(api *api.API) func(c *gin.Context) {
 			Username:  c.Query("username"),
 			Role:      int16(role),
 			Email:     c.Query("email"),
-			OrderBy:   c.Query("orderBy"),
-			OrderByFn: c.Query("orderByFn"),
+			OrderBy:   c.Query("order-by"),
+			OrderByFn: c.Query("order-by-fn"),
 		}
 
 		users, err := api.PG.GetUsers(ctx, filters, limit, offset)

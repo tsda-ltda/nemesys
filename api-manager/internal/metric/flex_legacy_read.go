@@ -88,8 +88,8 @@ func MGetFlexLegacyHandler(api *api.API) func(c *gin.Context) {
 			Enabled:     enabled,
 			Port:        int16(port),
 			PortType:    int16(portType),
-			OrderBy:     c.Query("orderBy"),
-			OrderByFn:   c.Query("orderByFn"),
+			OrderBy:     c.Query("order-by"),
+			OrderByFn:   c.Query("order-by-fn"),
 		}, limit, offset)
 		if err != nil {
 			if err == pg.ErrInvalidOrderByColumn || err == pg.ErrInvalidFilterValue || err == pg.ErrInvalidOrderByFn {

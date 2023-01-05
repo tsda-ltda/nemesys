@@ -63,7 +63,6 @@ func GetFlexLegacyContainersHandler(api *api.API) func(c *gin.Context) {
 
 		createdAtStart, _ := strconv.ParseInt(c.Query("createdAtStart"), 0, 64)
 		createdAtStop, _ := strconv.ParseInt(c.Query("createdAtStop"), 0, 64)
-		serialNumber, _ := strconv.ParseInt(c.Query("serial_number"), 0, 64)
 		model, _ := strconv.ParseInt(c.Query("model"), 0, 16)
 
 		var e bool
@@ -83,10 +82,10 @@ func GetFlexLegacyContainersHandler(api *api.API) func(c *gin.Context) {
 			CreatedAtStart: createdAtStart,
 			CreatedAtStop:  createdAtStop,
 			Enabled:        enabled,
-			OrderBy:        c.Query("orderBy"),
-			OrderByFn:      c.Query("orderByFn"),
+			OrderBy:        c.Query("order-by"),
+			OrderByFn:      c.Query("order-by-fn"),
 			Target:         c.Query("target"),
-			SerialNumber:   serialNumber,
+			SerialNumber:   c.Query("serial-number"),
 			Model:          int16(model),
 			City:           c.Query("city"),
 			Region:         c.Query("region"),

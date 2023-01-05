@@ -81,8 +81,8 @@ func GetBasicContainersHandlers(api *api.API) func(c *gin.Context) {
 			CreatedAtStart: createdAtStart,
 			CreatedAtStop:  createdAtStop,
 			Enabled:        enabled,
-			OrderBy:        c.Query("orderBy"),
-			OrderByFn:      c.Query("orderByFn"),
+			OrderBy:        c.Query("order-by"),
+			OrderByFn:      c.Query("order-by-fn"),
 		}
 
 		containers, err := api.PG.GetBasicContainers(ctx, filters, limit, offset)

@@ -47,7 +47,7 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("Fail to check if container, target port combination and serial-number exists", logger.ErrField(err))
+			api.Log.Error("Fail to check if container, target and serial-number exists", logger.ErrField(err))
 			return
 		}
 		if r.TargetExists {

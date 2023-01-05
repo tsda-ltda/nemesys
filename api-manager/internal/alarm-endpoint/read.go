@@ -65,8 +65,8 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 		endpoints, err := api.PG.GetAlarmEndpoints(ctx, pg.AlarmEndpointQueryFilters{
 			Name:      c.Query("name"),
 			URL:       c.Query("url"),
-			OrderBy:   c.Query("orderBy"),
-			OrderByFn: c.Query("orderByFn"),
+			OrderBy:   c.Query("order-by"),
+			OrderByFn: c.Query("order-by-fn"),
 		}, limit, offset)
 		if err != nil {
 			if err == pg.ErrInvalidOrderByColumn || err == pg.ErrInvalidFilterValue || err == pg.ErrInvalidOrderByFn {

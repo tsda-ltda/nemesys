@@ -50,7 +50,7 @@ func UpdateFlexLegacy(api *api.API) func(c *gin.Context) {
 		r, err := api.PG.ExistsFlexLegacyContainerTargetPortAndSerialNumber(ctx,
 			int32(id),
 			container.Protocol.Target,
-			container.Protocol.Port,
+			container.Protocol.SerialNumber,
 		)
 		if err != nil {
 			if ctx.Err() != nil {

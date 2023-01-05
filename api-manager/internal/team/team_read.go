@@ -70,8 +70,8 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 			Name:      c.Query("name"),
 			Ident:     c.Query("ident"),
 			Descr:     c.Query("descr"),
-			OrderBy:   c.Query("orderBy"),
-			OrderByFn: c.Query("orderByFn"),
+			OrderBy:   c.Query("order-by"),
+			OrderByFn: c.Query("order-by-fn"),
 		}, limit, offset)
 		if err != nil {
 			if err == pg.ErrInvalidOrderByColumn || err == pg.ErrInvalidFilterValue || err == pg.ErrInvalidOrderByFn {
