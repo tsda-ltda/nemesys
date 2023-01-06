@@ -3,6 +3,7 @@ package pg
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 type queryFilters2 interface {
@@ -68,14 +69,10 @@ func applyFilters(queryFilters queryFilters2, sql string, allowedColumns []strin
 		}
 		params = append(params, fieldValue)
 	}
-
 	statementMerged := mergeFilters(statements)
 
-	statementMerged += fmt.Sprintf(` LIMIT $%d OFFSET $%d`, len(statements)+1, len(statements)+2)
-	params = append(params, queryFilters.GetLimit(), queryFilters.GetOffset())
-
 	orderBy := queryFilters.GetOrderBy()
-	orderByFn := queryFilters.GetOrderByFn()
+	orderByFn := strings.ToUpper(queryFilters.GetOrderByFn())
 	if orderBy != "" && orderByFn != "" {
 		if err := validateOrderFn(orderByFn); err != nil {
 			return "", nil, err
@@ -93,6 +90,9 @@ func applyFilters(queryFilters queryFilters2, sql string, allowedColumns []strin
 
 		statementMerged += fmt.Sprintf(` ORDER BY %s %s`, orderBy, orderByFn)
 	}
+
+	statementMerged += fmt.Sprintf(` LIMIT $%d OFFSET $%d`, len(statements)+1, len(statements)+2)
+	params = append(params, queryFilters.GetLimit(), queryFilters.GetOffset())
 
 	return sql + statementMerged, params, nil
 }
