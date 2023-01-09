@@ -112,7 +112,7 @@ func Start() {
 	if initialized {
 		log.Info("Postgres inicialized with success")
 	} else {
-		log.Info("Database inicialization skipped")
+		log.Info("Postgres inicialization skipped")
 	}
 
 	interval, err := strconv.ParseInt(env.ServiceManagerPingInterval, 0, 64)
