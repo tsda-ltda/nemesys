@@ -52,6 +52,7 @@ var sqlCommands []string = []string{
 	// Data policy table
 	`CREATE TABLE data_policies (
 		id SERIAL2  PRIMARY KEY,
+		name VARCHAR (50) NOT NULL,
 		descr VARCHAR (255) NOT NULL,
 		retention INT4 NOT NULL,
 		use_aggr BOOLEAN NOT NULL,

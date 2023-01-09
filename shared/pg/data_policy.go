@@ -8,11 +8,11 @@ import (
 )
 
 const (
-	sqlDPCreate = `INSERT INTO data_policies (descr, use_aggr, retention, aggr_retention, aggr_interval, aggr_fn) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;`
-	sqlDPUpdate = `UPDATE data_policies SET (descr, retention, use_aggr, aggr_retention, agg_interval, aggr_fn) = ($1, $2, $3, $4, $5, $6) WHERE id = $7;`
+	sqlDPCreate = `INSERT INTO data_policies (name, descr, use_aggr, retention, aggr_retention, aggr_interval, aggr_fn) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;`
+	sqlDPUpdate = `UPDATE data_policies SET (name, descr, retention, use_aggr, aggr_retention, aggr_interval, aggr_fn) = ($1, $2, $3, $4, $5, $6, $7) WHERE id = $8;`
 	sqlDPDelete = `DELETE FROM data_policies WHERE id = $1;`
-	sqlDPGet    = `SELECT id, descr, retention, use_aggr, aggr_retention, aggr_interval, aggr_fn FROM data_policies WHERE id = $1;`
-	sqlDPMGet   = `SELECT id, descr, retention, use_aggr, aggr_retention, aggr_interval, aggr_fn FROM data_policies;`
+	sqlDPGet    = `SELECT id, name, descr, retention, use_aggr, aggr_retention, aggr_interval, aggr_fn FROM data_policies WHERE id = $1;`
+	sqlDPMGet   = `SELECT id, name, descr, retention, use_aggr, aggr_retention, aggr_interval, aggr_fn FROM data_policies;`
 	sqlDPCount  = `SELECT COUNT(*) FROM data_policies;`
 )
 
@@ -27,12 +27,13 @@ func (pg *PG) CreateDataPolicy(ctx context.Context, dp models.DataPolicy) (tx *s
 		return nil, id, err
 	}
 	err = c.QueryRowContext(ctx, sqlDPCreate,
-		&dp.Descr,
-		&dp.UseAggr,
-		&dp.Retention,
-		&dp.AggrRetention,
-		&dp.AggrInterval,
-		&dp.AggrFn,
+		dp.Name,
+		dp.Descr,
+		dp.UseAggr,
+		dp.Retention,
+		dp.AggrRetention,
+		dp.AggrInterval,
+		dp.AggrFn,
 	).Scan(&id)
 	if err != nil {
 		return nil, id, err
@@ -46,13 +47,14 @@ func (pg *PG) UpdateDataPolicy(ctx context.Context, dp models.DataPolicy) (tx *s
 		return nil, false, err
 	}
 	t, err := c.ExecContext(ctx, sqlDPUpdate,
+		dp.Name,
 		dp.Descr,
 		dp.Retention,
 		dp.UseAggr,
 		dp.AggrRetention,
 		dp.AggrInterval,
-		dp.Id,
 		dp.AggrFn,
+		dp.Id,
 	)
 	if err != nil {
 		return nil, false, err
@@ -79,6 +81,7 @@ func (pg *PG) GetDataPolicy(ctx context.Context, id int16) (exists bool, dp mode
 	for rows.Next() {
 		err = rows.Scan(
 			&dp.Id,
+			&dp.Name,
 			&dp.Descr,
 			&dp.Retention,
 			&dp.UseAggr,
@@ -105,6 +108,7 @@ func (pg *PG) GetDataPolicies(ctx context.Context) (dps []models.DataPolicy, err
 	for rows.Next() {
 		err = rows.Scan(
 			&dp.Id,
+			&dp.Name,
 			&dp.Descr,
 			&dp.Retention,
 			&dp.UseAggr,
