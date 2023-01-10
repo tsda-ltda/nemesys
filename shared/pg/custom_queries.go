@@ -31,7 +31,7 @@ func (f CustomQueryQueryFilters) GetLimit() int {
 }
 
 func (f CustomQueryQueryFilters) GetOffset() int {
-	return f.Limit
+	return f.Offset
 }
 
 const (

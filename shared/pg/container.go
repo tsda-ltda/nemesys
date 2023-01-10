@@ -37,7 +37,7 @@ func (f BasicContainersQueryFilters) GetLimit() int {
 }
 
 func (f BasicContainersQueryFilters) GetOffset() int {
-	return f.Limit
+	return f.Offset
 }
 
 type BaseContainerGetRTSConfigResponse struct {
