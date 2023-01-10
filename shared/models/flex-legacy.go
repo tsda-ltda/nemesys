@@ -4,7 +4,7 @@ import "github.com/fernandotsda/nemesys/shared/types"
 
 type FlexLegacyContainer struct {
 	// Id is the unique indentifier.
-	Id int32 `json:"id" validate:"-"`
+	Id int32 `json:"-" validate:"-"`
 	// Target is an ipv4 address.
 	Target string `json:"target" validate:"required,max=15"`
 	// Port is a port.

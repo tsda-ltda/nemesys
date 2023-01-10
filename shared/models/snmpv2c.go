@@ -8,7 +8,7 @@ import (
 
 type SNMPv2cContainer struct {
 	// Id is the container id.
-	Id int32 `json:"container-id" validate:"-"`
+	Id int32 `json:"-" validate:"-"`
 
 	// Target is an ipv4 address.
 	Target string `json:"target" validate:"required,max=15"`
