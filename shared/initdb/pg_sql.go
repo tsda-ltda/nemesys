@@ -93,6 +93,10 @@ var sqlCommands []string = []string{
 		CONSTRAINT m_fk_container_id
 			FOREIGN KEY(container_id)
 				REFERENCES containers(id)
+				ON DELETE CASCADE,
+		CONSTRAINT m_fk_data_policy_id
+			FOREIGN KEY(data_policy_id)
+				REFERENCES data_policie	s(id)
 				ON DELETE CASCADE
 	);`,
 
