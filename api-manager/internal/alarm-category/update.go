@@ -69,7 +69,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmCategoryNotFound))
 			return
 		}
-		api.Log.Debug("Alarm category updated with success, name: " + category.Name)
+		api.Log.Info("Alarm category updated with success, name: " + category.Name)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

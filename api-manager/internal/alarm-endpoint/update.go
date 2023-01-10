@@ -2,6 +2,7 @@ package endpoint
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -20,8 +21,15 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
+		rawId := c.Param("endpointId")
+		id, err := strconv.ParseInt(rawId, 0, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
+			return
+		}
+
 		var endpoint models.AlarmEndpoint
-		err := c.ShouldBind(&endpoint)
+		err = c.ShouldBind(&endpoint)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
@@ -32,6 +40,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
+		endpoint.Id = int32(id)
 
 		exists, err := api.PG.UpdateAlarmEndpoint(ctx, endpoint)
 		if err != nil {
@@ -39,13 +48,14 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("Fail to create notification endpoint", logger.ErrField(err))
+			api.Log.Error("Fail to update alarm endpoint", logger.ErrField(err))
 			return
 		}
 		if !exists {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmEndpointNotFound))
 			return
 		}
+		api.Log.Info("Alarm endpoint updated, id: " + rawId)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

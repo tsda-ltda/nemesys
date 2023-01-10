@@ -31,7 +31,7 @@ func GetHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("Fail to get notification endpoint", logger.ErrField(err))
+			api.Log.Error("Fail to get alarm endpoint", logger.ErrField(err))
 			return
 		}
 		if !exists {
@@ -79,7 +79,7 @@ func MGetHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("Fail to get notification endpoint", logger.ErrField(err))
+			api.Log.Error("Fail to get alarm endpoint", logger.ErrField(err))
 			return
 		}
 

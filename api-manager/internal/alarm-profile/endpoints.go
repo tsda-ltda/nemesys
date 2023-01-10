@@ -1,6 +1,7 @@
 package profile
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -74,6 +75,7 @@ func CreateAlarmEndpointRelation(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to create alarm endpoint relation", logger.ErrField(err))
 			return
 		}
+		api.Log.Info(fmt.Sprintf("Alarm endpoint added to alarm profile, profile id: %d, endpoint id: %d", alarmProfileId, alarmEndpoint.Id))
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
@@ -114,6 +116,7 @@ func DeleteAlarmEndpointRelation(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmEndpointNotFound))
 			return
 		}
+		api.Log.Info(fmt.Sprintf("Alarm endpoint remove from alarm profile, profile id: %d, endpoint id: %d", alarmProfileId, alarmEndpointId))
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

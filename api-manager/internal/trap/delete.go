@@ -38,6 +38,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgTrapListenerNotFound))
 			return
 		}
+		api.Log.Info("Trap listener deleted, id: " + rawId)
 		api.DeleteTrapListener(int32(id))
 
 		c.JSON(http.StatusOK, tools.EmptyRes())

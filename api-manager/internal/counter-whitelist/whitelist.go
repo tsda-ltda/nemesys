@@ -52,7 +52,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		api.Counter.LoadWhitelist()
-		api.Log.Debug("User added to counter whitelist, user id: " + strconv.FormatInt(int64(id32.Id), 10))
+		api.Log.Info("User added to counter whitelist, id: " + strconv.FormatInt(int64(id32.Id), 10))
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
@@ -83,7 +83,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 		api.Counter.LoadWhitelist()
-		api.Log.Debug("User removed from counter whitelist, user id: " + rawId)
+		api.Log.Info("User removed from counter whitelist, id: " + rawId)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

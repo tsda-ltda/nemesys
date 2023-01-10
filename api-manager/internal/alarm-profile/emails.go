@@ -56,7 +56,7 @@ func CreateEmailHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to add email to alarm profile", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("Email added to alarm profile, profile id: " + rawId)
+		api.Log.Info("Email added to alarm profile, profile id: " + rawId)
 
 		c.JSON(http.StatusOK, tools.IdRes(int64(nId)))
 	}
@@ -88,7 +88,7 @@ func DeleteEmailHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmProfileEmailNotFound))
 			return
 		}
-		api.Log.Debug("Email removed from alarm profile, id: " + rawEmailId)
+		api.Log.Info("Email removed from alarm profile, id: " + rawEmailId)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

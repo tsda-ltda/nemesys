@@ -1,7 +1,6 @@
 package datapolicy
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -52,7 +51,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		}
 		t.NotifyDataPolicyDeleted(api.Amqph, int16(id))
 
-		api.Log.Info("Data policy deleted, id: " + fmt.Sprint(id))
+		api.Log.Info("Data policy deleted, id: " + strconv.FormatInt(int64(id), 10))
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

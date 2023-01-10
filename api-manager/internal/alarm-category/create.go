@@ -55,7 +55,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		api.Log.Debug("Alarm category created with success, name: " + category.Name)
+		api.Log.Info("Alarm category created with success, name: " + category.Name)
 
 		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}

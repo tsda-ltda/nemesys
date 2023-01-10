@@ -1,6 +1,7 @@
 package profile
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -66,7 +67,7 @@ func AddCategoryHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to add category to alarm profile", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("New alarm category added to alarm profile, profile id: " + strconv.FormatInt(profileId, 10))
+		api.Log.Info(fmt.Sprintf("Alamr category added to alarm profile, profile id: %d, category id: %d", profileId, id32.Id))
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
@@ -105,7 +106,7 @@ func RemoveCategoryHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmProfileAndCategoryRelNotFound))
 			return
 		}
-		api.Log.Debug("Alarm category and alarm profile relation deleted, profile id: " + strconv.FormatInt(profileId, 10))
+		api.Log.Info(fmt.Sprintf("Alamr category removed from alarm profile, profile id: %d, category id: %d", profileId, categoryId))
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

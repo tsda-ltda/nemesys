@@ -61,7 +61,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgMetricNotFound))
 			return
 		}
-		api.Log.Debug("Metric deleted, id: " + rawId)
+		api.Log.Info("Metric deleted, id: " + rawId)
 		t.NotifyMetricDeleted(api.Amqph, int32(containerId), id)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())

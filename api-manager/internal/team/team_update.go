@@ -1,7 +1,6 @@
 package team
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -24,7 +23,8 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		id, err := strconv.ParseInt(c.Param("teamId"), 10, 32)
+		rawId := c.Param("teamId")
+		id, err := strconv.ParseInt(rawId, 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
@@ -78,7 +78,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		api.Log.Debug("Team updated successfully, id" + fmt.Sprint(id))
+		api.Log.Info("Team updated, id: " + rawId)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

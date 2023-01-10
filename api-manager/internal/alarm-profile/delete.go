@@ -39,7 +39,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmProfileNotFound))
 			return
 		}
-		api.Log.Debug("Alarm profile deleted, id: " + rawId)
+		api.Log.Info("Alarm profile deleted, id: " + rawId)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

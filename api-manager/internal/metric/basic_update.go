@@ -95,7 +95,7 @@ func UpdateBasicHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgMetricNotFound))
 			return
 		}
-		api.Log.Debug("Metric updated, name" + metric.Base.Name)
+		api.Log.Info("Metric updated, id: " + rawId)
 		t.NotifyMetricUpdated(api.Amqph, metric.Base, metric.Protocol)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())

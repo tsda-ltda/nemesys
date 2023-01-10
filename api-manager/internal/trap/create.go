@@ -2,6 +2,7 @@ package trap
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -73,7 +74,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 		tl.Id = id
 		api.CreateTrapListener(tl)
 
-		api.Log.Debug("New trap listener created")
+		api.Log.Info("Trap listener created, id: " + strconv.FormatInt(int64(id), 10))
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

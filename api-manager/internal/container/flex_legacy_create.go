@@ -2,6 +2,7 @@ package container
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -70,7 +71,7 @@ func CreateFlexLegacy(api *api.API) func(c *gin.Context) {
 		}
 		container.Base.Id = id
 		container.Protocol.Id = id
-		api.Log.Debug("Flex legacy container created with success, name: " + container.Base.Name)
+		api.Log.Info("Flex legacy container created with success, id: " + strconv.FormatInt(int64(id), 10))
 		t.NotifyContainerCreated(api.Amqph, container.Base, container.Protocol)
 
 		c.JSON(http.StatusOK, tools.IdRes(int64(id)))

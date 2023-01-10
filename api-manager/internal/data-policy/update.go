@@ -1,7 +1,6 @@
 package datapolicy
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -90,7 +89,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		api.Log.Info("Data policy updated, id: " + fmt.Sprint(id))
+		api.Log.Info("Data policy updated, id: " + strconv.FormatInt(int64(id), 10))
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

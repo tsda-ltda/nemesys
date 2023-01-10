@@ -1,7 +1,6 @@
 package team
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -19,7 +18,8 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		id, err := strconv.ParseInt(c.Param("teamId"), 10, 32)
+		rawId := c.Param("teamId")
+		id, err := strconv.ParseInt(rawId, 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
@@ -38,7 +38,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgTeamNotFound))
 			return
 		}
-		api.Log.Debug("Team deleted, id: " + fmt.Sprint(id))
+		api.Log.Debug("Team deleted, id: " + rawId)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

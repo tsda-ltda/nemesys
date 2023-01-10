@@ -80,7 +80,7 @@ func CreateContextHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		api.Log.Debug("Context created with success, ident: " + context.Ident)
+		api.Log.Info("Context created with success, id: " + strconv.FormatInt(int64(id), 10))
 		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}
 }

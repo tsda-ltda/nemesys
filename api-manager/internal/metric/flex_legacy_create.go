@@ -81,7 +81,7 @@ func CreateFlexLegacyHandler(api *api.API) func(c *gin.Context) {
 		metric.Base.Id = id
 		metric.Protocol.Id = id
 
-		api.Log.Debug("Flex legacy metric created, name: " + metric.Base.Name)
+		api.Log.Info("Flex legacy metric created, id: " + strconv.FormatInt(id, 10))
 		t.NotifyMetricCreated(api.Amqph, metric.Base, metric.Protocol)
 
 		c.JSON(http.StatusOK, tools.IdRes(id))

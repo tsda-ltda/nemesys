@@ -24,7 +24,8 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		id, err := strconv.ParseInt(c.Param("userId"), 10, 32)
+		rawId := c.Param("userId")
+		id, err := strconv.ParseInt(rawId, 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
@@ -91,7 +92,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		api.Log.Debug("User updated with success, username: " + user.Username)
+		api.Log.Info("User updated, id: " + rawId)
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

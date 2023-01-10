@@ -40,7 +40,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		api.Log.Debug("User deleted with success, id: " + fmt.Sprint(id))
+		api.Log.Info("User deleted, id: " + fmt.Sprint(id))
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

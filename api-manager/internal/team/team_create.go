@@ -68,7 +68,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to create team", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("Team created, ident: " + team.Ident)
+		api.Log.Info("Team created, id: " + strconv.FormatInt(int64(id), 10))
 
 		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}

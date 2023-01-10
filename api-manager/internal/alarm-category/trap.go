@@ -66,7 +66,7 @@ func CreateTrapRelationHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to create trap category relation", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("Trap category relation created, category id: " + strconv.Itoa(int(relation.AlarmCategoryId)))
+		api.Log.Info("Trap category relation created, category id: " + strconv.Itoa(int(relation.AlarmCategoryId)))
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
@@ -101,7 +101,7 @@ func DeleteTrapRelationHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgTrapRelationNotFound))
 			return
 		}
-		api.Log.Debug("Trap relation removed, trap id: " + rawTrapId)
+		api.Log.Info("Trap relation removed, trap id: " + rawTrapId)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

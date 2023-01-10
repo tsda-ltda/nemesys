@@ -78,7 +78,7 @@ func CreateBasicHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to create basic metric", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("Basic metric created, name: " + metric.Base.Name)
+		api.Log.Info("Basic metric created, id: " + strconv.FormatInt(id, 10))
 		t.NotifyMetricCreated(api.Amqph, metric.Base, metric.Protocol)
 
 		c.JSON(http.StatusOK, tools.IdRes(id))

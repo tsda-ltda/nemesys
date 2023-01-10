@@ -23,7 +23,8 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		id, err := strconv.ParseInt(c.Param("containerId"), 10, 32)
+		rawId := c.Param("containerId")
+		id, err := strconv.ParseInt(rawId, 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
@@ -76,7 +77,7 @@ func UpdateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContainerNotFound))
 			return
 		}
-		api.Log.Debug("SNMPv2c container updated, name: " + container.Base.Name)
+		api.Log.Debug("SNMPv2c container updated, id: " + rawId)
 		t.NotifyContainerUpdated(api.Amqph, container.Base, container.Protocol)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())

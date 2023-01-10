@@ -29,7 +29,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// delete container
-		e, err := api.PG.DeleteContainer(ctx, int32(id))
+		exists, err := api.PG.DeleteContainer(ctx, int32(id))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -40,7 +40,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 		}
 
 		// check if exists
-		if !e {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContainerNotFound))
 			return
 		}

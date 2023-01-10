@@ -2,6 +2,7 @@ package user
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/auth"
@@ -76,7 +77,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to create user", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("new user created, username: " + user.Username)
+		api.Log.Info("User created, id: " + strconv.FormatInt(int64(id), 10))
 
 		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}

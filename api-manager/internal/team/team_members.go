@@ -1,6 +1,7 @@
 package team
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -22,7 +23,8 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		teamId, err := strconv.ParseInt(c.Param("teamId"), 10, 32)
+		rawTeamId := c.Param("teamId")
+		teamId, err := strconv.ParseInt(rawTeamId, 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
@@ -72,6 +74,7 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
+		api.Log.Info(fmt.Sprintf("User added to team, team id: %s, user id: %d", rawTeamId, userId.UserId))
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

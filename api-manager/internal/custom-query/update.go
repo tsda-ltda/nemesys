@@ -22,7 +22,8 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		id, err := strconv.ParseInt(c.Param("cqId"), 0, 32)
+		rawId := c.Param("cqId")
+		id, err := strconv.ParseInt(rawId, 0, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
@@ -76,7 +77,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to update custom query", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("Custom query updated, ident: " + cq.Ident)
+		api.Log.Info("Custom query updated, id: " + rawId)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

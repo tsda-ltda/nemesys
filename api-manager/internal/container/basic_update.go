@@ -22,7 +22,8 @@ func UpdateBasicHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		id, err := strconv.ParseInt(c.Param("containerId"), 0, 10)
+		rawId := c.Param("containerId")
+		id, err := strconv.ParseInt(rawId, 0, 10)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
@@ -57,6 +58,7 @@ func UpdateBasicHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContainerNotFound))
 			return
 		}
+		api.Log.Info("Basic container updated, id: " + rawId)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

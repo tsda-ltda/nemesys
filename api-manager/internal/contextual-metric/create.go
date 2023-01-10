@@ -74,7 +74,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		api.Log.Debug("Contextual metric created, ident: " + cmetric.Ident)
+		api.Log.Debug("Contextual metric created, id: " + strconv.FormatInt(id, 10))
 
 		c.JSON(http.StatusOK, tools.IdRes(id))
 	}

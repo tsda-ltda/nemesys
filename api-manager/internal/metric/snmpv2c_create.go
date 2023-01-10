@@ -80,7 +80,7 @@ func CreateSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 		}
 		metric.Base.Id = id
 		metric.Protocol.Id = id
-		api.Log.Debug("SNMPv2c metric created, name: " + metric.Base.Name)
+		api.Log.Info("SNMPv2c metric created, id: " + strconv.FormatInt(id, 10))
 		t.NotifyMetricCreated(api.Amqph, metric.Base, metric.Protocol)
 
 		c.JSON(http.StatusOK, tools.IdRes(id))

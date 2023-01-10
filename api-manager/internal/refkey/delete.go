@@ -18,13 +18,14 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		rkId, err := strconv.ParseInt(c.Param("refkeyId"), 10, 32)
+		rawId := c.Param("refkeyId")
+		id, err := strconv.ParseInt(rawId, 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
 		}
 
-		exists, err := api.PG.DeleteMetricRefkey(ctx, rkId)
+		exists, err := api.PG.DeleteMetricRefkey(ctx, id)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -37,6 +38,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgRefkeyNotFound))
 			return
 		}
+		api.Log.Info("Refkey deleted, id: " + rawId)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

@@ -78,7 +78,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgContextualMetricNotFound))
 			return
 		}
-		api.Log.Debug("Contextual metric updated, id: " + rawId)
+		api.Log.Info("Contextual metric updated, id: " + rawId)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

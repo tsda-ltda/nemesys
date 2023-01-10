@@ -2,6 +2,7 @@ package endpoint
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -38,9 +39,10 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 				return
 			}
 			c.Status(http.StatusInternalServerError)
-			api.Log.Error("Fail to create notification endpoint", logger.ErrField(err))
+			api.Log.Error("Fail to create alarm endpoint", logger.ErrField(err))
 			return
 		}
+		api.Log.Info("Alarm endpoint created, id: " + strconv.FormatInt(int64(id), 10))
 
 		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}

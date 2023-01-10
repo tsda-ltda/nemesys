@@ -19,7 +19,8 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		id, err := strconv.ParseInt(c.Param("cqId"), 0, 10)
+		rawId := c.Param("cqId")
+		id, err := strconv.ParseInt(rawId, 0, 10)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
@@ -38,6 +39,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgCustomQueryNotFound))
 			return
 		}
+		api.Log.Info("Custom Query deleted, id: " + rawId)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

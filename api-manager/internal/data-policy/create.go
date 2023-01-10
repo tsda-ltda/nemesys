@@ -102,7 +102,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		api.Log.Info("Data policy created")
+		api.Log.Info("Data policy created, id: " + strconv.FormatInt(int64(id), 10))
 		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}
 }

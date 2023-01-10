@@ -29,7 +29,8 @@ func UpdateHandler(api *api.API, containerType types.ContainerType) func(c *gin.
 			return
 		}
 
-		rkId, err := strconv.ParseInt(c.Param("refkeyId"), 10, 32)
+		rawRkid := c.Param("refkeyId")
+		rkId, err := strconv.ParseInt(rawRkid, 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
@@ -82,6 +83,7 @@ func UpdateHandler(api *api.API, containerType types.ContainerType) func(c *gin.
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgRefkeyNotFound))
 			return
 		}
+		api.Log.Info("Refkey updated, id: " + rawRkid)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

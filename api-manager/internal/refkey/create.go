@@ -70,6 +70,7 @@ func CreateHandler(api *api.API, containerType types.ContainerType) func(c *gin.
 			api.Log.Error("Fail to create refkey", logger.ErrField(err))
 			return
 		}
+		api.Log.Info("Refkey created, id: " + strconv.FormatInt(id, 10))
 
 		c.JSON(http.StatusOK, tools.IdRes(id))
 	}

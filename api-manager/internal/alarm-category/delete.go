@@ -37,7 +37,7 @@ func DeleteHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgAlarmCategoryNotFound))
 			return
 		}
-		api.Log.Debug("Alarm category delete with success, id: " + strconv.FormatInt(id, 10))
+		api.Log.Info("Alarm category delete with success, id: " + strconv.FormatInt(id, 10))
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

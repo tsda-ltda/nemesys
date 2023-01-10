@@ -2,6 +2,7 @@ package container
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/fernandotsda/nemesys/api-manager/internal/api"
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
@@ -44,6 +45,7 @@ func CreateBasicHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to create basic container", logger.ErrField(err))
 			return
 		}
+		api.Log.Info("Basic container created, id: " + strconv.FormatInt(int64(id), 10))
 
 		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}

@@ -92,6 +92,7 @@ func RecognizeAlarmStateHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to update alarm state", logger.ErrField(err))
 			return
 		}
+		api.Log.Info("Metric alarm state recognized, ctx metric id: " + rawId)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
@@ -144,6 +145,7 @@ func ResolveAlarmStateHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to update alarm state", logger.ErrField(err))
 			return
 		}
+		api.Log.Info("Metric alarm state resolved, ctx metric id: " + rawId)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}

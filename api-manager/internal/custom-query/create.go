@@ -64,7 +64,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to create custom query", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("Custom query created, ident: " + cq.Ident)
+		api.Log.Info("Custom query created, id: " + strconv.FormatInt(int64(id), 10))
 
 		c.JSON(http.StatusOK, tools.IdRes(int64(id)))
 	}

@@ -24,7 +24,8 @@ func UpdateContextHandler(api *api.API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		ctxId, err := strconv.ParseInt(c.Param("ctxId"), 10, 32)
+		rawId := c.Param("ctxId")
+		ctxId, err := strconv.ParseInt(rawId, 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidParams))
 			return
@@ -88,7 +89,7 @@ func UpdateContextHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		api.Log.Debug("Context created with success, ident: " + context.Ident)
+		api.Log.Info("Context created with success, id: " + rawId)
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
 }

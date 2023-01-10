@@ -54,20 +54,14 @@ func (c *Counter) Run() {
 			if r > 0 {
 				c.influxClient.WriteRequestsCount(r)
 				c.log.Debug("Requests count writed")
-			} else {
-				c.log.Debug("Requests count write skipped.")
 			}
 			if rrd > 0 {
 				c.influxClient.WriteRealtimeDataRequestsCount(rrd)
 				c.log.Debug("Realtime data requests count writed")
-			} else {
-				c.log.Debug("Realtime data requests count write skipped.")
 			}
 			if rhd > 0 {
 				c.influxClient.WriteHistoryDataRequestsCount(rhd)
 				c.log.Debug("Data history requests count writed")
-			} else {
-				c.log.Debug("Data history requests count write skipped.")
 			}
 		case <-c.done:
 			return

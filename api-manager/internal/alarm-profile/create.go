@@ -41,7 +41,7 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to create alarm profile", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("Alarm profile created, id: " + strconv.FormatInt(id, 10))
+		api.Log.Info("Alarm profile created, id: " + strconv.FormatInt(id, 10))
 
 		c.JSON(http.StatusOK, tools.IdRes(id))
 	}

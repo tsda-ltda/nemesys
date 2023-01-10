@@ -85,6 +85,7 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgTrapListenerNotFound))
 			return
 		}
+		api.Log.Info("Trap listener created, id: " + rawId)
 		api.UpdateTrapListener(tl)
 
 		c.JSON(http.StatusOK, tools.EmptyRes())

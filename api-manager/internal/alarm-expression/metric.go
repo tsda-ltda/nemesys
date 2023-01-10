@@ -72,7 +72,7 @@ func CreateMetricRelationHandler(api *api.API) func(c *gin.Context) {
 			api.Log.Error("Fail to create alarm expression and metric relation", logger.ErrField(err))
 			return
 		}
-		api.Log.Debug("Metric and alarm expression created, metric id: " + strconv.FormatInt(id64.Id, 10))
+		api.Log.Info("Metric and alarm expression created, metric id: " + strconv.FormatInt(id64.Id, 10))
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
