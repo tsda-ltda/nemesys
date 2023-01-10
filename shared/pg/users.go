@@ -56,7 +56,8 @@ const (
 	sqlUsersExistsUsername = `SELECT EXISTS(SELECT 1 FROM users WHERE username = $1);`
 	sqlUsersExists         = `SELECT EXISTS(SELECT 1 FROM users WHERE id = $1);`
 	sqlUsersCreate         = `INSERT INTO users (role, first_name, last_name, username, password, email) VALUES($1, $2, $3, $4, $5, $6) RETURNING id;`
-	sqlUsersUpdate         = `UPDATE users SET (role, first_name, last_name, username, password, email) = ($1, $2, $3, $4, $5, $6) WHERE id = $6`
+	sqlUsersUpdate         = `UPDATE users SET (role, first_name, last_name, username, password, email) = ($1, $2, $3, $4, $5, $6) WHERE id = $7`
+	sqlUsersUpdateKeepPW   = `UPDATE users SET (role, first_name, last_name, username, email) = ($1, $2, $3, $4, $5) WHERE id = $6`
 	sqlUsersDelete         = `DELETE FROM users WHERE id=$1;`
 	sqlUsersGetWithoutPW   = `SELECT username, first_name, last_name, email, role FROM users WHERE id = $1;`
 	sqlUsersLoginInfo      = `SELECT id, role, password FROM users WHERE username = $1;`
@@ -158,6 +159,22 @@ func (pg *PG) UpdateUser(ctx context.Context, user models.User) (exists bool, er
 		user.LastName,
 		user.Username,
 		user.Password,
+		user.Email,
+		user.Id,
+	)
+	if err != nil {
+		return false, err
+	}
+	rowsAffected, _ := t.RowsAffected()
+	return rowsAffected != 0, err
+}
+
+func (pg *PG) UpdateUserKeepPW(ctx context.Context, user models.User) (exists bool, err error) {
+	t, err := pg.db.ExecContext(ctx, sqlUsersUpdateKeepPW,
+		user.Role,
+		user.FirstName,
+		user.LastName,
+		user.Username,
 		user.Email,
 		user.Id,
 	)

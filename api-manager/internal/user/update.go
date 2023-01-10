@@ -38,6 +38,12 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
+		keepPw := false
+		if user.Password == "" {
+			keepPw = true
+			user.Password = "placeholder-to-pass-validation"
+		}
+
 		err = api.Validate.Struct(user)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
@@ -46,6 +52,20 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 
 		if !roles.ValidateRole(user.Role) {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidRole))
+			return
+		}
+
+		meta, err := tools.GetSessionMeta(c)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			api.Log.Error("Fail to get user metadata", logger.ErrField(err))
+			return
+		}
+
+		if meta.UserId == int32(id) {
+			user.Role = meta.Role
+		} else if meta.Role != roles.Master && meta.Role <= user.Role {
+			c.Status(http.StatusForbidden)
 			return
 		}
 
@@ -69,25 +89,37 @@ func UpdateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		pwHashed, err := auth.Hash(user.Password, api.UserPWBcryptCost)
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			api.Log.Error("Fail to hash password", logger.ErrField(err))
-			return
-		}
-
 		user.Id = int32(id)
-		user.Password = pwHashed
-		exists, err := api.PG.UpdateUser(ctx, user)
-		if err != nil {
-			if ctx.Err() != nil {
+		var exists bool
+		if !keepPw {
+			pwHashed, err := auth.Hash(user.Password, api.UserPWBcryptCost)
+			if err != nil {
+				c.Status(http.StatusInternalServerError)
+				api.Log.Error("Fail to hash password", logger.ErrField(err))
 				return
 			}
-			c.Status(http.StatusInternalServerError)
-			api.Log.Error("Fail to update user", logger.ErrField(err))
-			return
+			user.Password = pwHashed
+			exists, err = api.PG.UpdateUser(ctx, user)
+			if err != nil {
+				if ctx.Err() != nil {
+					return
+				}
+				c.Status(http.StatusInternalServerError)
+				api.Log.Error("Fail to update user", logger.ErrField(err))
+				return
+			}
+		} else {
+			exists, err = api.PG.UpdateUserKeepPW(ctx, user)
+			if err != nil {
+				if ctx.Err() != nil {
+					return
+				}
+				c.Status(http.StatusInternalServerError)
+				api.Log.Error("Fail to update user", logger.ErrField(err))
+				return
+			}
 		}
-		if exists {
+		if !exists {
 			c.JSON(http.StatusNotFound, tools.MsgRes(tools.MsgUserNotFound))
 			return
 		}

@@ -42,6 +42,18 @@ func CreateHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
+		meta, err := tools.GetSessionMeta(c)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			api.Log.Error("Fail to get user metadata", logger.ErrField(err))
+			return
+		}
+
+		if meta.Role != roles.Master && user.Role >= meta.Role {
+			c.Status(http.StatusForbidden)
+			return
+		}
+
 		usernameExists, emailExists, err := api.PG.UsernameAndEmailExists(ctx, user.Username, user.Email, -1)
 		if err != nil {
 			if ctx.Err() != nil {

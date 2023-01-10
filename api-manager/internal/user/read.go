@@ -67,8 +67,8 @@ func GetUsers(api *api.API) func(c *gin.Context) {
 
 		role, _ := strconv.ParseInt(c.Query("role"), 0, 16)
 		filters := pg.UserQueryFilters{
-			FirstName: c.Query("firstName"),
-			LastName:  c.Query("lastName"),
+			FirstName: c.Query("first-name"),
+			LastName:  c.Query("last-name"),
 			Username:  c.Query("username"),
 			Role:      int16(role),
 			Email:     c.Query("email"),
