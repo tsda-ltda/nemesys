@@ -16,6 +16,7 @@ type SNMPv2cMetricQueryFilters struct {
 	Name          string              `type:"ilike" column:"name"`
 	Descr         string              `type:"ilike" column:"descr"`
 	Enabled       *bool               `type:"=" column:"enabled"`
+	DataPolicyId  int16               `type:"=" column:"data_policy_id"`
 	OrderBy       string
 	OrderByFn     string
 	Limit         int

@@ -13,6 +13,7 @@ var FlexLegacyMetricValidOrderByColumns = []string{"name", "descr", "port", "por
 type FlexLegacyMetricQueryFilters struct {
 	ContainerType types.ContainerType `type:"=" column:"container_type"`
 	ContainerId   int32               `type:"=" column:"container_id"`
+	DataPolicyId  int16               `type:"=" column:"data_policy_id"`
 	Name          string              `type:"ilike" column:"name"`
 	Descr         string              `type:"ilike" column:"descr"`
 	Enabled       *bool               `type:"=" column:"enabled"`
@@ -37,7 +38,7 @@ func (f FlexLegacyMetricQueryFilters) GetLimit() int {
 }
 
 func (f FlexLegacyMetricQueryFilters) GetOffset() int {
-	return f.Limit
+	return f.Offset
 }
 
 const (

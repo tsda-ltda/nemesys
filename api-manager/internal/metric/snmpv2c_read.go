@@ -79,15 +79,17 @@ func MGetSNMPv2cHandler(api *api.API) func(c *gin.Context) {
 			enabled = &e
 		}
 
+		dpId, _ := strconv.ParseInt(c.Query("data-policy-id"), 0, 16)
 		metrics, err := api.PG.GetSNMPv2cMetrics(ctx, pg.SNMPv2cMetricQueryFilters{
-			ContainerId: int32(containerId),
-			Name:        c.Query("name"),
-			Descr:       c.Query("descr"),
-			Enabled:     enabled,
-			OrderBy:     c.Query("order-by"),
-			OrderByFn:   c.Query("order-by-fn"),
-			Limit:       limit,
-			Offset:      offset,
+			ContainerId:  int32(containerId),
+			Name:         c.Query("name"),
+			Descr:        c.Query("descr"),
+			Enabled:      enabled,
+			OrderBy:      c.Query("order-by"),
+			OrderByFn:    c.Query("order-by-fn"),
+			DataPolicyId: int16(dpId),
+			Limit:        limit,
+			Offset:       offset,
 		})
 		if err != nil {
 			if err == pg.ErrInvalidOrderByColumn || err == pg.ErrInvalidFilterValue || err == pg.ErrInvalidOrderByFn {
