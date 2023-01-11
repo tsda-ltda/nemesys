@@ -18,6 +18,34 @@ type TeamQueryFilters struct {
 	Offset    int
 }
 
+type MemberQueryFilters struct {
+	TeamId    int32  `type:"=" column:"team_id"`
+	FirstName string `type:"ilike" column:"first_name"`
+	LastName  string `type:"ilike" column:"last_name"`
+	Username  string `type:"ilike" column:"username"`
+	Role      int16  `type:"=" column:"role"`
+	Email     string `type:"ilike" column:"email"`
+	OrderBy   string
+	OrderByFn string
+	Limit     int
+	Offset    int
+}
+
+func (f MemberQueryFilters) GetOrderBy() string {
+	return f.OrderBy
+}
+
+func (f MemberQueryFilters) GetOrderByFn() string {
+	return f.OrderByFn
+}
+func (f MemberQueryFilters) GetLimit() int {
+	return f.Limit
+}
+
+func (f MemberQueryFilters) GetOffset() int {
+	return f.Offset
+}
+
 func (f TeamQueryFilters) GetOrderBy() string {
 	return f.OrderBy
 }
@@ -44,24 +72,22 @@ type TeamsExistsRelUserTeamResponse struct {
 }
 
 const (
-	sqlTeamsCreate      = `INSERT INTO teams (ident, descr, name) VALUES($1, $2, $3) RETURNING id;`
-	sqlTeamsExistsIdent = `SELECT EXISTS (SELECT 1 FROM teams WHERE ident = $1 AND id != $2);`
-	sqlTeamsDelete      = `DELETE FROM teams WHERE id = $1;`
-	sqlTeamsGet         = `SELECT ident, descr, name FROM teams WHERE id = $1;`
-	sqlTeamsGetByIdent  = `SELECT id, descr, name FROM teams WHERE ident = $1;`
-	sqlTeamsUpdate      = `UPDATE teams SET (name, ident, descr) = ($1, $2, $3) WHERE id = $4;`
-	sqlTeamsAddMember   = `INSERT INTO users_teams (user_id, team_id) VALUES ($1, $2);`
-	sqlTeamsRemMember   = `DELETE FROM users_teams WHERE user_id = $1 AND team_id = $2;`
-	sqlTeamsMGetMembers = `SELECT u.id, u.first_name, u.last_name, u.username, u.role, u.email 
-		FROM users u 
-		LEFT JOIN users_teams ut ON ut.user_id = u.id WHERE ut.team_id = $1
-		LIMIT $2 OFFSET $3;`
+	sqlTeamsCreate            = `INSERT INTO teams (ident, descr, name) VALUES($1, $2, $3) RETURNING id;`
+	sqlTeamsExistsIdent       = `SELECT EXISTS (SELECT 1 FROM teams WHERE ident = $1 AND id != $2);`
+	sqlTeamsDelete            = `DELETE FROM teams WHERE id = $1;`
+	sqlTeamsGet               = `SELECT ident, descr, name FROM teams WHERE id = $1;`
+	sqlTeamsGetByIdent        = `SELECT id, descr, name FROM teams WHERE ident = $1;`
+	sqlTeamsUpdate            = `UPDATE teams SET (name, ident, descr) = ($1, $2, $3) WHERE id = $4;`
+	sqlTeamsAddMember         = `INSERT INTO users_teams (user_id, team_id) VALUES ($1, $2);`
+	sqlTeamsRemMember         = `DELETE FROM users_teams WHERE user_id = $1 AND team_id = $2;`
 	sqlTeamsExistsRelUserTeam = `SELECT 
 		EXISTS(SELECT 1 FROM users_teams WHERE user_id = $1 AND team_id = $2), 
 		EXISTS(SELECT 1 FROM users WHERE id=$1), 
 		EXISTS(SELECT 1 FROM teams WHERE id=$2);`
-	sqlTeamsMemberExists = `SELECT EXISTS (SELECT 1 FROM users_teams WHERE user_id = $1 AND team_id = $2);`
-
+	sqlTeamsMemberExists      = `SELECT EXISTS (SELECT 1 FROM users_teams WHERE user_id = $1 AND team_id = $2);`
+	customSqlTeamsMGetMembers = `SELECT u.id, u.first_name, u.last_name, u.username, u.role, u.email 
+	FROM users u 
+	LEFT JOIN users_teams ut ON ut.user_id = u.id`
 	customSqlTeamsMGet = `SELECT id, name, descr, ident FROM teams`
 )
 
@@ -170,13 +196,17 @@ func (pg *PG) RemoveTeamMember(ctx context.Context, userId int32, teamId int32) 
 	return rowsAffected != 0, err
 }
 
-func (pg *PG) GetTeamMembers(ctx context.Context, teamId int32, limit int, offset int) (users []models.User, err error) {
-	rows, err := pg.db.QueryContext(ctx, sqlTeamsMGetMembers, teamId, limit, offset)
+func (pg *PG) GetTeamMembers(ctx context.Context, filters MemberQueryFilters) (users []models.User, err error) {
+	sql, params, err := applyFilters(filters, customSqlTeamsMGetMembers, UserValidOrderByColumns)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := pg.db.QueryContext(ctx, sql, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	users = make([]models.User, 0, limit)
+	users = make([]models.User, 0, filters.Limit)
 	var u models.User
 	for rows.Next() {
 		err = rows.Scan(

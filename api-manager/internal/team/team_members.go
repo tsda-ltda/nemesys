@@ -9,6 +9,7 @@ import (
 	"github.com/fernandotsda/nemesys/api-manager/internal/tools"
 	"github.com/fernandotsda/nemesys/shared/logger"
 	"github.com/fernandotsda/nemesys/shared/models"
+	"github.com/fernandotsda/nemesys/shared/pg"
 	"github.com/gin-gonic/gin"
 )
 
@@ -30,20 +31,20 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		var userId models.AddMemberReq
-		err = c.ShouldBind(&userId)
+		var id models.Id32
+		err = c.ShouldBind(&id)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidBody))
 			return
 		}
 
-		err = api.Validate.Struct(userId)
+		err = api.Validate.Struct(id)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, tools.MsgRes(tools.MsgInvalidJSONFields))
 			return
 		}
 
-		r, err := api.PG.ExistsRelUserTeam(ctx, userId.UserId, int32(teamId))
+		r, err := api.PG.ExistsRelUserTeam(ctx, id.Id, int32(teamId))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -65,7 +66,7 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		err = api.PG.AddTeamMember(ctx, userId.UserId, int32(teamId))
+		err = api.PG.AddTeamMember(ctx, id.Id, int32(teamId))
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -74,7 +75,7 @@ func AddMemberHandler(api *api.API) func(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
-		api.Log.Info(fmt.Sprintf("User added to team, team id: %s, user id: %d", rawTeamId, userId.UserId))
+		api.Log.Info(fmt.Sprintf("User added to team, team id: %s, user id: %d", rawTeamId, id.Id))
 
 		c.JSON(http.StatusOK, tools.EmptyRes())
 	}
@@ -124,7 +125,7 @@ func RemoveMemberHandler(api *api.API) func(c *gin.Context) {
 	}
 }
 
-// Remove a member.
+// Get team's members.
 // Params:
 //   - "limit" Limit of teams returned. Default is 30, max is 30, min is 0.
 //   - "offset" Offset for searching. Default is 0, min is 0.
@@ -152,7 +153,19 @@ func MGetMembersHandler(api *api.API) func(c *gin.Context) {
 			return
 		}
 
-		m, err := api.PG.GetTeamMembers(ctx, int32(id), limit, offset)
+		role, _ := strconv.ParseInt(c.Query("role"), 0, 16)
+		m, err := api.PG.GetTeamMembers(ctx, pg.MemberQueryFilters{
+			Limit:     limit,
+			Offset:    offset,
+			TeamId:    int32(id),
+			Role:      int16(role),
+			FirstName: c.Query("first-name"),
+			LastName:  c.Query("last-name"),
+			Username:  c.Query("username"),
+			Email:     c.Query("email"),
+			OrderBy:   c.Query("order-by"),
+			OrderByFn: c.Query("order-by-fn"),
+		})
 		if err != nil {
 			if ctx.Err() != nil {
 				return
