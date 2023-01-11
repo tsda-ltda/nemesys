@@ -96,7 +96,7 @@ var sqlCommands []string = []string{
 				ON DELETE CASCADE,
 		CONSTRAINT m_fk_data_policy_id
 			FOREIGN KEY(data_policy_id)
-				REFERENCES data_policie	s(id)
+				REFERENCES data_policies(id)
 				ON DELETE CASCADE
 	);`,
 
